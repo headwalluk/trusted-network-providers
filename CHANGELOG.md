@@ -1,5 +1,11 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 1.4.4 :: 2024-10-14
+
+* Tidied up assets.
+* Moved the repos to Github. 
+* Updated deps.
+
 ## 1.4.3 :: 2024-08-03
 
 * Removed GTmetrix from the list of trusted servers because of a Cloudflare issue.
