@@ -1,5 +1,9 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 1.4.5 :: 2024-10-15
+
+* Version bump to push the new readme to npm
+
 ## 1.4.4 :: 2024-10-14
 
 * Tidied up assets.
