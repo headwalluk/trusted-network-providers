@@ -1,6 +1,6 @@
 {
   "name": "@headwall/trusted-network-providers",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Trusted network hosts and address ranges.",
   "main": "./src/index.js",
   "homepage": "https://github.com/headwalluk/trusted-network-providers",
