@@ -1,0 +1,24 @@
+{
+  "name": "@headwall/trusted-network-providers",
+  "version": "1.4.4",
+  "description": "Trusted network hosts and address ranges.",
+  "main": "./src/index.js",
+  "homepage": "https://github.com/headwalluk/trusted-network-providers",
+  "scripts": {
+    "test": "node ./src/test.js",
+    "build": "./scripts/build-dist.sh",
+    "clean": "./scripts/build-dist.sh clean"
+  },
+  "author": "Paul Faulkner",
+  "license": "MIT",
+  "dependencies": {
+    "fast-xml-parser": "^4.2.2",
+    "ipaddr.js": "^2.0.1",
+    "superagent": "^10.1.0"
+  },
+  "keywords": [
+    "network",
+    "addresses",
+    "trusted"
+  ]
+}
