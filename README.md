@@ -50,7 +50,7 @@ trustedProviders.addProvider({
 
 Addresses ranges can be specified in CIDR format:
 
-```json
+```javascript
 ipv4: {
 	addresses: [],
 	ranges: [
