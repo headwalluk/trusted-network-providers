@@ -25,13 +25,21 @@ PACKAGE_FILE_NAME="${PROJECT_DIR}/package.json"
 PROJECT_VERSION="$(cat "${PACKAGE_FILE_NAME}" | jq -r '.version')"
 DIST_FOLDER_NAME="${PROJECT_DIR}/dist"
 
+ACTION="${1}"
+
 echo "PROJECT: ${PROJECT_NAME}"
 echo "VERSION: ${PROJECT_VERSION}"
 echo "SOURCE:  ${SOURCE_DIR}"
 
-if [ "${1}" == 'clean' ]; then
+if [ -z "${ACTION}" ]; then
+  echo "No action specified" >&2
+  exit 1
+fi
+
+if [ "${ACTION}" == 'clean' ]; then
   rm -fr "${DIST_FOLDER_NAME}"
-else
+  rm -fr "${PROJECT_DIR}/node_modules"
+elif [ "${ACTION}" == 'zip' ]; then
   mkdir -p "${DIST_FOLDER_NAME}"
 
   pushd "${PROJECT_DIR}" > /dev/null
@@ -54,4 +62,9 @@ else
   fi
 
   popd > /dev/null
+else
+  echo "Unknown action: ${ACTION}"
+  exit 1
 fi
+
+exit 0

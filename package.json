@@ -6,8 +6,8 @@
   "homepage": "https://github.com/headwalluk/trusted-network-providers",
   "scripts": {
     "test": "node ./src/test.js",
-    "build": "./scripts/build-dist.sh",
-    "clean": "./scripts/build-dist.sh clean"
+    "build-zip": "./scripts/build.sh zip",
+    "clean": "./scripts/build.sh clean"
   },
   "author": "Paul Faulkner",
   "license": "MIT",

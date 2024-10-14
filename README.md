@@ -2,6 +2,12 @@
 
 Provides a quick way of taking an IP address and seeing if it matches against a trusted network provider.
 
+## Install
+
+```bash
+npm install @headwall/trusted-network-providers
+```
+
 ## Sample usage
 
 The main function is `getTrustedProvider(ipAddress)` and it returns the name of the trusted provider (if found) or null.
