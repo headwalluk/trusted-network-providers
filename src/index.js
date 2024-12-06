@@ -11,7 +11,6 @@ const defaultProviders = [
   require('./providers/googlebot.js'),
   require('./providers/google-workspace.js'),
   require('./providers/google-services.js'),
-  require('./providers/mailgun.js'),
   require('./providers/stripe-api.js'),
   require('./providers/stripe-webhooks.js'),
   require('./providers/opayo.js'),
@@ -21,6 +20,11 @@ const defaultProviders = [
   require('./providers/ezoic.js'),
   require('./providers/ship-hero.js'),
   require('./providers/bunnynet.js'),
+  require('./providers/semrush.js'),
+  require('./providers/ahrefsbot.js'),
+  require('./providers/facebookbot.js'),
+
+  // require('./providers/mailgun.js'),
   // require('./providers/gtmetrix.js'),
   // require('./providers/seobility.js'), // Unreliable
 ];

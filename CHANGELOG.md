@@ -1,5 +1,11 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 1.5.0 :: 2024-12-06
+
+* Added SemrushBot provider
+* Added AHrefsBot provider
+* Added FacebookBot provider
+
 ## 1.4.5 :: 2024-10-15
 
 * Version bump to push the new readme to npm
