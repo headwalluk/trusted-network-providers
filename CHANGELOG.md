@@ -1,5 +1,9 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 1.5.1 :: 2024/12/06
+
+* Tidy up
+
 ## 1.5.0 :: 2024-12-06
 
 * Added SemrushBot provider
