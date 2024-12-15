@@ -5,7 +5,7 @@
   "main": "./src/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/headwalluk/trusted-network-providers"
+    "url": "git+https://github.com/headwalluk/trusted-network-providers.git"
   },
   "scripts": {
     "test": "node ./src/test.js",
