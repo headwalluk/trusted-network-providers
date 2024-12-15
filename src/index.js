@@ -23,6 +23,7 @@ const defaultProviders = [
   require('./providers/semrush.js'),
   require('./providers/ahrefsbot.js'),
   require('./providers/facebookbot.js'),
+  require('./providers/brevo.js'),
 
   // require('./providers/mailgun.js'),
   // require('./providers/gtmetrix.js'),

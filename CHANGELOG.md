@@ -1,6 +1,11 @@
 # Changelog for @headwall/trusted-network-providers
 
-## 1.5.1 :: 2024/12/06
+## 1.6.0 :: 2024-12-15
+
+* Added Brevo provider
+* Updated assets with scripts/update-assets.sh
+
+## 1.5.1 :: 2024-12-06
 
 * Tidy up
 
