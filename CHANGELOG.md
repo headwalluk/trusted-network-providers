@@ -1,5 +1,10 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 1.7.0 :: 2025-06-02
+
+* Added GetTerms provider
+* Updated assets with scripts/update-assets.sh
+
 ## 1.6.0 :: 2024-12-15
 
 * Added Brevo provider

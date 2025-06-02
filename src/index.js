@@ -24,6 +24,7 @@ const defaultProviders = [
   require('./providers/ahrefsbot.js'),
   require('./providers/facebookbot.js'),
   require('./providers/brevo.js'),
+  require('./providers/get-terms.js'),
 
   // require('./providers/mailgun.js'),
   // require('./providers/gtmetrix.js'),
