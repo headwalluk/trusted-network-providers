@@ -25,6 +25,7 @@ const defaultProviders = [
   require('./providers/facebookbot.js'),
   require('./providers/brevo.js'),
   require('./providers/get-terms.js'),
+  require('./providers/labrika.js'),
 
   // require('./providers/mailgun.js'),
   // require('./providers/gtmetrix.js'),
@@ -214,9 +215,9 @@ const self = {
         }
 
         if (provider !== test.provider) {
-          console.log(`🟥 ${test.ip} => ${foundProviderName} (should be ${testProviderName})`);
+          console.log(`❌${test.ip} => ${foundProviderName} (should be ${testProviderName})`);
         } else {
-          console.log(`🟩 ${test.ip} => ${foundProviderName}`);
+          console.log(`✅${test.ip} => ${foundProviderName}`);
         }
       });
 
