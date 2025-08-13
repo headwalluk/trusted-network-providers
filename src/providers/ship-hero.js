@@ -4,10 +4,10 @@
 
 module.exports = {
   name: 'ShipHero',
-  testAddresses: ['44.199.222.200', '44.199.222.207'],
+  testAddresses: ['3.214.244.144', '52.20.176.127'],
   ipv4: {
-    addresses: [],
-    ranges: ['44.199.222.200/29'],
+    addresses: ['3.214.244.144', '52.20.176.127', '54.226.43.55'],
+    ranges: [],
   },
   ipv6: {
     addresses: [],
