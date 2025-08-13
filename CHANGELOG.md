@@ -1,5 +1,10 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 1.8.1 :: 2025-08-13
+
+* Updated the ShipHero provider.
+* Updated assets with scripts/update-assets.sh
+
 ## 1.8.0 :: 2025-07-13
 
 * Added Labrika provider
