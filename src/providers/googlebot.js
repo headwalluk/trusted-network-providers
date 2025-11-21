@@ -43,7 +43,7 @@ const self = {
   reloadFromWeb: async () => {
     try {
       const data = await fetchJSON(GOOGLE_ADDRESS_LIST_URL);
-      
+
       if (data && data.prefixes && Array.isArray(data.prefixes)) {
         // Clear existing ranges
         self.ipv4.ranges.length = 0;

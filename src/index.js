@@ -4,7 +4,9 @@
 
 const ipaddr = require('ipaddr.js');
 
-// const providers = [];
+// Constants for IP address versions
+const IP_VERSION_V4 = 'ipv4';
+const IP_VERSION_V6 = 'ipv6';
 
 const defaultProviders = [
   require('./providers/private.js'),
@@ -34,9 +36,43 @@ const defaultProviders = [
 
 const parsedAddresses = {};
 
+/**
+ * @typedef {Object} Provider
+ * @property {string} name - The display name of the provider
+ * @property {string[]} [testAddresses] - Sample IP addresses for testing
+ * @property {Function|Function[]} [reload] - Function(s) to reload provider data
+ * @property {Object} ipv4 - IPv4 configuration
+ * @property {string[]} ipv4.addresses - Individual IPv4 addresses
+ * @property {string[]} ipv4.ranges - IPv4 CIDR ranges
+ * @property {Object} ipv6 - IPv6 configuration
+ * @property {string[]} ipv6.addresses - Individual IPv6 addresses
+ * @property {string[]} ipv6.ranges - IPv6 CIDR ranges
+ */
+
 const self = {
   providers: [],
   isDiagnosticsEnabled: false,
+
+  /**
+   * Adds a new provider to the trusted network list.
+   * Providers must have a unique name and will be checked in order during IP lookups.
+   *
+   * @param {Provider} provider - The provider configuration object
+   * @returns {void}
+   *
+   * @example
+   * trustedProviders.addProvider({
+   *   name: 'My CDN',
+   *   ipv4: {
+   *     addresses: ['1.2.3.4'],
+   *     ranges: ['10.0.0.0/8']
+   *   },
+   *   ipv6: {
+   *     addresses: [],
+   *     ranges: ['2001:db8::/32']
+   *   }
+   * });
+   */
   addProvider: (provider) => {
     if (provider && typeof provider.name !== 'undefined' && !self.hasProvider(provider.name)) {
       if (self.isDiagnosticsEnabled) {
@@ -46,28 +82,72 @@ const self = {
       self.providers.push(provider);
     }
   },
+
+  /**
+   * Removes a provider from the trusted network list by name.
+   *
+   * @param {string} providerName - The name of the provider to remove
+   * @returns {void}
+   *
+   * @example
+   * trustedProviders.deleteProvider('My CDN');
+   */
   deleteProvider: (providerName) => {
     if (self.hasProvider(providerName)) {
-      const providerIndex = self.providers.findIndex((testProvider) => testProvider.name == providerName);
+      const providerIndex = self.providers.findIndex((testProvider) => testProvider.name === providerName);
       if (providerIndex >= 0) {
         self.providers.splice(providerIndex, 1);
       }
     }
   },
+
+  /**
+   * Returns an array of all registered providers.
+   *
+   * @returns {Provider[]} Array of provider objects
+   *
+   * @example
+   * const providers = trustedProviders.getAllProviders();
+   * console.log(`Loaded ${providers.length} providers`);
+   */
   getAllProviders: () => {
     return self.providers;
   },
+
+  /**
+   * Checks if a provider with the given name is already registered.
+   *
+   * @param {string} providerName - The name of the provider to check
+   * @returns {boolean} True if the provider exists, false otherwise
+   *
+   * @example
+   * if (trustedProviders.hasProvider('Cloudflare')) {
+   *   console.log('Cloudflare provider is loaded');
+   * }
+   */
   hasProvider: (providerName) => {
     let isFound = false;
 
     if (providerName) {
       self.providers.forEach((testProvider) => {
-        isFound |= testProvider.name == providerName;
+        isFound |= testProvider.name === providerName;
       });
     }
 
     return isFound;
   },
+
+  /**
+   * Loads all built-in providers (Googlebot, Stripe, Cloudflare, etc.).
+   * This is typically called once during application initialization.
+   *
+   * @returns {void}
+   *
+   * @example
+   * const trustedProviders = require('@headwall/trusted-network-providers');
+   * trustedProviders.loadDefaultProviders();
+   * await trustedProviders.reloadAll();
+   */
   loadDefaultProviders: () => {
     defaultProviders.forEach((defaultProvider) => {
       if (!self.hasProvider(defaultProvider.name)) {
@@ -75,6 +155,29 @@ const self = {
       }
     });
   },
+
+  /**
+   * Reloads data for all providers that support dynamic updates.
+   * This fetches fresh IP ranges from external sources (APIs, DNS, bundled assets).
+   * Should be called periodically (e.g., daily) to keep provider data current.
+   *
+   * @returns {Promise<void[]>} Promise that resolves when all providers have reloaded
+   *
+   * @example
+   * // Initial load
+   * trustedProviders.loadDefaultProviders();
+   * await trustedProviders.reloadAll();
+   *
+   * // Periodic update (once per day)
+   * setInterval(async () => {
+   *   try {
+   *     await trustedProviders.reloadAll();
+   *     console.log('Provider data updated');
+   *   } catch (error) {
+   *     console.error('Failed to reload providers:', error);
+   *   }
+   * }, 24 * 60 * 60 * 1000);
+   */
   reloadAll: () => {
     const reloadRequests = [];
 
@@ -100,13 +203,40 @@ const self = {
 
     return Promise.all(reloadRequests);
   },
+
+  /**
+   * Identifies which trusted provider (if any) an IP address belongs to.
+   * Returns the provider name on match, or null if the IP is not trusted.
+   *
+   * This function performs a linear search through providers in registration order.
+   * First match wins, so provider order matters if ranges overlap.
+   *
+   * @param {string} ipAddress - The IP address to check (IPv4 or IPv6)
+   * @returns {string|null} The name of the trusted provider, or null if not found
+   *
+   * @example
+   * const provider = trustedProviders.getTrustedProvider('66.249.66.1');
+   * if (provider === 'Googlebot') {
+   *   console.log('Request is from Googlebot');
+   * }
+   *
+   * @example
+   * // Express.js middleware example
+   * app.use((req, res, next) => {
+   *   const provider = trustedProviders.getTrustedProvider(req.ip);
+   *   if (provider) {
+   *     req.trustedProvider = provider;
+   *   }
+   *   next();
+   * });
+   */
   getTrustedProvider: (ipAddress) => {
     let trustedSource = null;
 
     let parsedIp = null;
     try {
       parsedIp = ipaddr.parse(ipAddress);
-    } catch (error) {
+    } catch {
       console.error(`Failed to parse IP: ${ipAddress}`);
       parsedIp = null;
     }
@@ -119,13 +249,10 @@ const self = {
       while (providerIndex < providerCount) {
         const provider = self.providers[providerIndex];
 
-        // Diagnostics
-        // console.log(`Check ${ipAddressVersion} : ${provider.name}`);
-
         let testPool = null;
-        if (ipAddressVersion == 'ipv4') {
+        if (ipAddressVersion === IP_VERSION_V4) {
           testPool = provider.ipv4;
-        } else if (ipAddressVersion == 'ipv6') {
+        } else if (ipAddressVersion === IP_VERSION_V6) {
           testPool = provider.ipv6;
         } else {
           // ...
@@ -135,7 +262,7 @@ const self = {
           if (testPool) {
             const addressCount = testPool.addresses.length;
             for (let addressIndex = 0; addressIndex < addressCount; ++addressIndex) {
-              if (testPool.addresses[addressIndex] == ipAddress) {
+              if (testPool.addresses[addressIndex] === ipAddress) {
                 trustedSource = provider.name;
                 break;
               }
@@ -170,11 +297,37 @@ const self = {
 
     return trustedSource;
   },
+
+  /**
+   * Checks if an IP address belongs to any trusted provider.
+   * This is a convenience wrapper around getTrustedProvider().
+   *
+   * @param {string} ipAddress - The IP address to check (IPv4 or IPv6)
+   * @returns {boolean} True if the IP belongs to a trusted provider, false otherwise
+   *
+   * @example
+   * if (trustedProviders.isTrusted('34.237.253.141')) {
+   *   console.log('IP is from a trusted source');
+   * }
+   */
   isTrusted: (ipAddress) => {
-    return getTrustedProvider(ipAddress) !== null;
+    return self.getTrustedProvider(ipAddress) !== null;
   },
+
+  /**
+   * Runs tests against all registered providers using their configured test addresses.
+   * Outputs results to console with ✅ for passing tests and ❌ for failures.
+   * Useful for verifying provider configuration after loading or reloading.
+   *
+   * @returns {Promise<void>} Promise that resolves when all tests complete
+   *
+   * @example
+   * trustedProviders.loadDefaultProviders();
+   * await trustedProviders.reloadAll();
+   * await trustedProviders.runTests();
+   */
   runTests: () => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const tests = [
         { ip: '192.42.116.182', provider: null },
         { ip: '123.123.123.123', provider: null },
@@ -183,7 +336,7 @@ const self = {
       let failedProviderIndex = 0;
       self.getAllProviders().forEach((testProvider) => {
         if (!Array.isArray(testProvider.testAddresses)) {
-          if (failedProviderIndex == 0) {
+          if (failedProviderIndex === 0) {
             console.log();
           }
 

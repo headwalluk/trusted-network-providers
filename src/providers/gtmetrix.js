@@ -19,11 +19,16 @@ const self = {
       const xmlBody = await fetchXML(GTMETRIX_ADDRESS_LIST_URL, {
         timeout: 60000, // Allow 1 minute for XML download
       });
-      
+
       const parser = new XMLParser();
       const gtmetrixData = parser.parse(xmlBody.toString());
 
-      if (gtmetrixData.rss && gtmetrixData.rss.channel && gtmetrixData.rss.channel.item && Array.isArray(gtmetrixData.rss.channel.item)) {
+      if (
+        gtmetrixData.rss &&
+        gtmetrixData.rss.channel &&
+        gtmetrixData.rss.channel.item &&
+        Array.isArray(gtmetrixData.rss.channel.item)
+      ) {
         // Clear existing addresses
         self.ipv4.addresses.length = 0;
         self.ipv6.addresses.length = 0;
@@ -32,9 +37,9 @@ const self = {
           try {
             const parsedIp = ipaddr.parse(serverMeta['gtmetrix:ip']);
 
-            if (parsedIp.kind() == 'ipv4') {
+            if (parsedIp.kind() === 'ipv4') {
               self.ipv4.addresses.push(parsedIp.toString());
-            } else if (parsedIp.kind() == 'ipv6') {
+            } else if (parsedIp.kind() === 'ipv6') {
               self.ipv6.addresses.push(parsedIp.toString());
             }
           } catch (error) {

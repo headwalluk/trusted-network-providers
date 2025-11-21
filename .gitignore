@@ -54,6 +54,9 @@ web_modules/
 # Optional eslint cache
 .eslintcache
 
+# Optional prettier cache
+.prettiercache
+
 # Optional stylelint cache
 .stylelintcache
 
@@ -89,7 +92,10 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+dist/
+
+# Build artifacts
+*.zip
 
 # Gatsby files
 .cache/
@@ -121,6 +127,34 @@ dist
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IDE - IntelliJ / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # yarn v2
 .yarn/cache

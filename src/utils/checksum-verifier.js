@@ -1,6 +1,6 @@
 /**
  * checksum-verifier.js
- * 
+ *
  * Utilities for verifying checksums of bundled assets
  */
 
@@ -56,11 +56,11 @@ function verifyAssetChecksum(filePath, providerKey, strict = false) {
     const expectedChecksum = providerConfig.sha256;
 
     if (actualChecksum !== expectedChecksum) {
-      const message = 
+      const message =
         `Checksum mismatch for ${providerKey} at ${filePath}\n` +
         `Expected: ${expectedChecksum}\n` +
         `Got:      ${actualChecksum}\n` +
-        `This may indicate file corruption or tampering.`;
+        'This may indicate file corruption or tampering.';
 
       if (strict) {
         throw new Error(message);

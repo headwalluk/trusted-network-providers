@@ -29,7 +29,7 @@ trustedProviders.addProvider(require('./providers/fake-provider.js'));
 trustedProviders.addProvider({
   name: 'My Custom Network',
   reload: () => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       // Simulate a slow update of the addresses/ranges.
       setTimeout(resolve, 3000);
     });

@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+
+# Package files
+package-lock.json
+
+# Assets (don't format JSON data files)
+src/assets/*.json
+src/assets/*.txt
+
+# Documentation that might have specific formatting
+CHANGELOG.md
+
+# Git
+.git/

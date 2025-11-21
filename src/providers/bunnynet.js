@@ -34,9 +34,9 @@ const self = {
         newIps.forEach((address) => {
           const parsedIp = ipaddr.parse(address);
 
-          if (parsedIp.kind() == 'ipv4') {
+          if (parsedIp.kind() === 'ipv4') {
             self.ipv4.addresses.push(address);
-          } else if (parsedIp.kind() == 'ipv6') {
+          } else if (parsedIp.kind() === 'ipv6') {
             self.ipv6.addresses.push(address);
           }
         });

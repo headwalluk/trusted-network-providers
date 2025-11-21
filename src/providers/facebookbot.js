@@ -9,14 +9,10 @@ const self = {
   name: 'FacebookBot',
   testAddresses: ['57.141.0.3'],
   reload: () => {
-    return new Promise((resolve, reject) => {
-      while (self.ipv4.ranges.length > 0) {
-        self.ipv4.ranges.pop();
-      }
-
-      while (self.ipv6.ranges.length > 0) {
-        self.ipv6.ranges.pop();
-      }
+    return new Promise((resolve) => {
+      // Clear existing data
+      self.ipv4.ranges.length = 0;
+      self.ipv6.ranges.length = 0;
 
       try {
         const ranges = fs.readFileSync(path.resolve(__dirname, '../assets/facebookbot-ip4s.txt'), 'utf8').split('\n');

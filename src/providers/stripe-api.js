@@ -12,15 +12,17 @@ const self = {
     try {
       // Structure verification function for Stripe API response
       const verifyStructure = (data) => {
-        return data && 
-               data.API && 
-               Array.isArray(data.API) && 
-               data.API.length > 0 &&
-               data.API.every(ip => typeof ip === 'string' && ip.match(/^\d+\.\d+\.\d+\.\d+$/));
+        return (
+          data &&
+          data.API &&
+          Array.isArray(data.API) &&
+          data.API.length > 0 &&
+          data.API.every((ip) => typeof ip === 'string' && ip.match(/^\d+\.\d+\.\d+\.\d+$/))
+        );
       };
 
       const data = await fetchJSON(STRIPE_ADDRESSES_URL, { verifyStructure });
-      
+
       if (data && data.API && Array.isArray(data.API)) {
         // Clear existing addresses
         self.ipv4.addresses.length = 0;

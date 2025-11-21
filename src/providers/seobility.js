@@ -39,7 +39,7 @@ const self = {
           .catch((error) => {
             console.error(`Failed to reload Seobility ${addressListType} IPs: ${error.message}`);
             throw error;
-          }),
+          })
       );
     }
 

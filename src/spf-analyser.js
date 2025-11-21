@@ -1,18 +1,18 @@
 /**
  * spf-analyser.js
- * 
+ *
  * Extracts IP addresses from DNS SPF (Sender Policy Framework) records.
- * 
+ *
  * SECURITY WARNING: This module does NOT perform DNSSEC validation.
  * DNS responses are not cryptographically verified and could be spoofed
- * via DNS poisoning attacks. 
- * 
+ * via DNS poisoning attacks.
+ *
  * Mitigations:
  * - Use DNSSEC-validating DNS resolvers (e.g., 1.1.1.1, 8.8.8.8)
  * - Run update-assets.sh to fetch SPF data at build time instead of runtime
  * - Use bundled assets in high-security environments
  * - Verify DNS records out-of-band when possible
- * 
+ *
  * For production use, consider disabling runtime DNS lookups and relying
  * on bundled assets that are updated via the build process.
  */
@@ -20,13 +20,10 @@
 const dns = require('node:dns/promises');
 
 module.exports = (domain, provider) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     dns.resolveTxt(domain).then((records) => {
-      // console.log(records);
-
       const sourceNetblocks = [];
-      const resolvedNetblocks = [];
-      let errorCount = 0;
+      const errorCount = 0;
 
       records.forEach((record) => {
         if (Array.isArray(record)) {
@@ -37,7 +34,7 @@ module.exports = (domain, provider) => {
             fields.forEach((field) => {
               if (isSpf && field.startsWith('include:')) {
                 const components = field.split(':');
-                if (components.length == 2) {
+                if (components.length === 2) {
                   const potentialNetblock = components[1];
                   if (!sourceNetblocks.includes(potentialNetblock)) {
                     sourceNetblocks.push(potentialNetblock);
@@ -45,7 +42,7 @@ module.exports = (domain, provider) => {
                 }
               }
 
-              if (fieldIndex === 0 && field == 'v=spf1') {
+              if (fieldIndex === 0 && field === 'v=spf1') {
                 isSpf = true;
               }
 
@@ -115,33 +112,29 @@ module.exports = (domain, provider) => {
             const components = field.split(':');
             if (components.length < 1) {
               // ...
-            } else if (components[0] == 'ip4') {
+            } else if (components[0] === 'ip4') {
               const possibleAddress = components[1];
               if (possibleAddress.indexOf('/') > 0) {
                 newAddresses.ipv4.ranges.push(possibleAddress);
               } else {
                 newAddresses.ipv4.addresses.push(possibleAddress);
               }
-            } else if (components[0] == 'ip6') {
+            } else if (components[0] === 'ip6') {
               const possibleAddress = field.substring(4);
               if (possibleAddress.indexOf('/') > 0) {
                 newAddresses.ipv6.ranges.push(possibleAddress);
               } else {
                 newAddresses.ipv6.addresses.push(possibleAddress);
               }
+            } else if (components[0] === 'include') {
+              // Handle include directives (recursive SPF lookups)
+              // Not implemented in this version
             } else {
               // ...
             }
           });
         });
 
-        // DIAGNOSTICS
-        // console.log(newAddresses);
-
-        // resolvedNetblocks.push(sourceNetblock);
-        // if (resolvedNetblocks.length < sourceNetblocks.length) {
-        // 	// Keep going.
-        // } else
         if (sourceNetblocks.length === 0) {
           console.log(`Not updating ${domain.name} addresses because of initial SPF error`);
           resolve();
@@ -149,30 +142,13 @@ module.exports = (domain, provider) => {
           console.log(`Not updating ${domain.name} addresses because of errors (${errorCount})`);
           resolve();
         } else {
-          // DIAGNOSTICS
-          // console.log();
-          // console.log(`Finished grabbing ${domain.name} addresses`);
-          // console.log(newAddresses);
-          // console.log();
-          // console.log();
+          // Clear existing data
+          provider.ipv4.ranges.length = 0;
+          provider.ipv4.addresses.length = 0;
+          provider.ipv6.ranges.length = 0;
+          provider.ipv6.addresses.length = 0;
 
-          while (provider.ipv4.ranges.length > 0) {
-            provider.ipv4.ranges.pop();
-          }
-          while (provider.ipv4.addresses.length > 0) {
-            provider.ipv4.addresses.pop();
-          }
-          while (provider.ipv6.ranges.length > 0) {
-            provider.ipv6.ranges.pop();
-          }
-          while (provider.ipv6.addresses.length > 0) {
-            provider.ipv6.addresses.pop();
-          }
-
-          config = Object.assign(provider, newAddresses);
-
-          // DIAGNOSTICS
-          // console.log(`Fetched ${provider.name}`);
+          Object.assign(provider, newAddresses);
 
           resolve();
         }

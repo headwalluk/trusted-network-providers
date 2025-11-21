@@ -29,8 +29,8 @@ All HTTP requests use the centralized `secure-http-client.js` module which enfor
 
 ```javascript
 const httpsAgent = new https.Agent({
-  rejectUnauthorized: true,  // Reject invalid certificates
-  minVersion: 'TLSv1.2',     // Minimum TLS version
+  rejectUnauthorized: true, // Reject invalid certificates
+  minVersion: 'TLSv1.2', // Minimum TLS version
 });
 ```
 
@@ -77,6 +77,7 @@ Checksums are stored in `src/assets/checksums.json`:
 4. Mismatch logged as warning (non-blocking)
 
 **Example:**
+
 ```javascript
 const { verifyAssetChecksum } = require('./utils/checksum-verifier');
 
@@ -91,11 +92,13 @@ For APIs that change frequently, structure validation is used instead:
 
 ```javascript
 const verifyStructure = (data) => {
-  return data && 
-         data.API && 
-         Array.isArray(data.API) && 
-         data.API.length > 0 &&
-         data.API.every(ip => typeof ip === 'string' && ip.match(/^\d+\.\d+\.\d+\.\d+$/));
+  return (
+    data &&
+    data.API &&
+    Array.isArray(data.API) &&
+    data.API.length > 0 &&
+    data.API.every((ip) => typeof ip === 'string' && ip.match(/^\d+\.\d+\.\d+\.\d+$/))
+  );
 };
 
 const data = await fetchJSON(url, { verifyStructure });
@@ -110,12 +113,14 @@ Checksums are automatically updated when running `scripts/update-assets.sh`:
 ```
 
 This script:
+
 1. Downloads latest assets from provider sources
 2. Validates JSON format
 3. Calculates SHA-256 checksums
 4. Updates `checksums.json` with new values
 
 **Manual Checksum Calculation:**
+
 ```bash
 sha256sum src/assets/googlebot-ips.json
 ```
@@ -133,15 +138,14 @@ For providers whose data changes frequently (like Stripe), structure validation 
 ```javascript
 const verifyStructure = (data) => {
   // Validate expected structure
-  return data && 
-         data.WEBHOOKS && 
-         Array.isArray(data.WEBHOOKS) && 
-         data.WEBHOOKS.length > 0 &&
-         // Validate each IP is a valid format
-         data.WEBHOOKS.every(ip => 
-           typeof ip === 'string' && 
-           ip.match(/^\d+\.\d+\.\d+\.\d+$/)
-         );
+  return (
+    data &&
+    data.WEBHOOKS &&
+    Array.isArray(data.WEBHOOKS) &&
+    data.WEBHOOKS.length > 0 &&
+    // Validate each IP is a valid format
+    data.WEBHOOKS.every((ip) => typeof ip === 'string' && ip.match(/^\d+\.\d+\.\d+\.\d+$/))
+  );
 };
 ```
 
@@ -158,10 +162,10 @@ const verifyStructure = (data) => {
 
 ```javascript
 const DEFAULT_CONFIG = {
-  timeout: 30000,      // 30 seconds
-  retries: 2,          // 2 retry attempts
-  retryDelay: 1000,    // 1 second between retries
-  strictSSL: true,     // Enforce certificate validation
+  timeout: 30000, // 30 seconds
+  retries: 2, // 2 retry attempts
+  retryDelay: 1000, // 1 second between retries
+  strictSSL: true, // Enforce certificate validation
 };
 ```
 
@@ -176,7 +180,7 @@ For large files (like GTmetrix XML):
 
 ```javascript
 const xmlBody = await fetchXML(url, {
-  timeout: 60000  // 1 minute for large XML files
+  timeout: 60000, // 1 minute for large XML files
 });
 ```
 
@@ -205,13 +209,16 @@ const xmlBody = await fetchXML(url, {
 ### For Library Users
 
 1. **Run Update Script Regularly**
+
    ```bash
    ./scripts/update-assets.sh
    ```
+
    Updates bundled assets and checksums before each release.
 
 2. **Monitor Warnings**
    Checksum mismatches are logged as warnings:
+
    ```
    Warning: Checksum mismatch for googlebot at ...
    Expected: abc123...
@@ -236,19 +243,19 @@ const myProvider = {
     const verifyStructure = (data) => {
       return data && Array.isArray(data.ips) && data.ips.length > 0;
     };
-    
+
     const data = await fetchJSON('https://api.example.com/ips', {
       verifyStructure,
-      timeout: 30000
+      timeout: 30000,
     });
-    
+
     // Process data...
-  }
+  },
 };
 
 // ❌ Bad - HTTP URL
 const badProvider = {
-  reload: () => fetchJSON('http://insecure.example.com/ips')
+  reload: () => fetchJSON('http://insecure.example.com/ips'),
   // This will throw: "Insecure URL rejected"
 };
 ```
@@ -302,6 +309,7 @@ const badProvider = {
 Some providers (Google Workspace, Mailgun) fetch IP addresses from DNS SPF (Sender Policy Framework) records. While this provides up-to-date information, it introduces additional security considerations.
 
 **Affected Providers:**
+
 - **Google Workspace** - Queries `_spf.google.com`
 - **Mailgun** - Queries `mailgun.org`
 
@@ -310,11 +318,13 @@ Some providers (Google Workspace, Mailgun) fetch IP addresses from DNS SPF (Send
 #### No DNSSEC Validation
 
 **The Problem:**
+
 - Node.js built-in `dns` module does NOT support DNSSEC validation
 - DNS responses are not cryptographically verified
 - Attackers could inject false IP ranges via DNS poisoning
 
 **Why Not Implement DNSSEC?**
+
 1. **Node.js Limitation**: Native DNS module lacks DNSSEC support
 2. **Complexity**: External DNSSEC libraries (e.g., `dnssecjs`) add significant complexity
 3. **Dependencies**: Would require native bindings or complex JavaScript implementations
@@ -322,6 +332,7 @@ Some providers (Google Workspace, Mailgun) fetch IP addresses from DNS SPF (Send
 5. **Resolver Dependency**: Even with validation, you trust your recursive resolver
 
 **Industry Context:**
+
 - Most applications using Node.js DNS don't validate DNSSEC
 - Major cloud providers recommend DNSSEC-validating resolvers instead
 - Defense-in-depth approach is more practical than perfect validation
@@ -335,6 +346,7 @@ Some providers (Google Workspace, Mailgun) fetch IP addresses from DNS SPF (Send
 **Impact:** Application accepts fake IP addresses as trusted.
 
 **Example:**
+
 ```
 Legitimate: _spf.google.com -> ip4:35.190.247.0/24
 Poisoned:   _spf.google.com -> ip4:198.51.100.0/24 (attacker's IPs)
@@ -374,12 +386,14 @@ git commit -m "Update provider assets"
 ```
 
 **Advantages:**
+
 - No runtime DNS dependency
 - Assets verified with checksums
 - Reproducible builds
 - No DNS poisoning risk at runtime
 
 **Disadvantages:**
+
 - Must update periodically
 - Slightly stale data (but providers rarely change IPs)
 
@@ -391,6 +405,7 @@ To disable runtime DNS for Google Workspace, modify the provider to load from a 
 Configure your system to use resolvers that perform DNSSEC validation:
 
 **Cloudflare DNS (1.1.1.1):**
+
 ```bash
 # /etc/resolv.conf
 nameserver 1.1.1.1
@@ -398,6 +413,7 @@ nameserver 1.0.0.1
 ```
 
 **Google Public DNS (8.8.8.8):**
+
 ```bash
 # /etc/resolv.conf
 nameserver 8.8.8.8
@@ -405,11 +421,13 @@ nameserver 8.8.4.4
 ```
 
 **Advantages:**
+
 - Transparent to application
 - Resolver validates DNSSEC chains
 - Easy to implement
 
 **Disadvantages:**
+
 - Trust is moved to the resolver
 - Application doesn't control validation
 - Resolver could be compromised or MitM'd
@@ -503,8 +521,8 @@ Potential configuration to disable DNS-based providers:
 ```javascript
 // Future API (not yet implemented)
 trustedProviders.configure({
-  disableDNSLookups: true,  // Only use bundled assets
-  strictMode: true,          // Fail if DNS provider can't load
+  disableDNSLookups: true, // Only use bundled assets
+  strictMode: true, // Fail if DNS provider can't load
 });
 ```
 
@@ -534,6 +552,7 @@ dig _spf.google.com TXT +dnssec @1.1.1.1
 ```
 
 Example output:
+
 ```
 ;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
                        ^^ AD flag indicates DNSSEC validation succeeded
@@ -553,11 +572,12 @@ const getdns = require('getdns');
 
 const context = getdns.createContext({
   resolution_type: getdns.RESOLUTION_STUB,
-  dnssec_trust_anchors: '/etc/unbound/root.key'
+  dnssec_trust_anchors: '/etc/unbound/root.key',
 });
 ```
 
 **Problems:**
+
 - Requires native compilation (C library)
 - Platform-specific dependencies
 - Complex build process
@@ -569,6 +589,7 @@ const context = getdns.createContext({
 **Library:** `dnssecjs` or similar
 
 **Problems:**
+
 - Incomplete implementations
 - Performance overhead
 - Still requires trust anchor management
@@ -582,11 +603,12 @@ const context = getdns.createContext({
 ```javascript
 // Query Cloudflare DNS-over-HTTPS with DNSSEC
 const response = await fetch('https://1.1.1.1/dns-query?name=_spf.google.com&type=TXT', {
-  headers: { 'Accept': 'application/dns-json' }
+  headers: { Accept: 'application/dns-json' },
 });
 ```
 
 **Problems:**
+
 - Adds HTTP dependency for DNS
 - Trust moved to DoH provider
 - Additional latency
@@ -595,12 +617,14 @@ const response = await fetch('https://1.1.1.1/dns-query?name=_spf.google.com&typ
 ### Conclusion
 
 **Current Approach:**
+
 - Document limitations clearly
 - Recommend trusted DNS resolvers
 - Provide bundled asset workflow
 - Accept reasonable risk for most use cases
 
 **Future Enhancements:**
+
 - Add configuration to disable DNS providers
 - Add change detection and alerting
 - Implement bundled asset fallback
@@ -672,6 +696,7 @@ mv googlebot-ips.json.backup src/assets/googlebot-ips.json
 ```
 
 Expected output:
+
 ```
 Warning: Checksum mismatch for googlebot at ...
 Expected: 1cc6d5f5...
@@ -697,7 +722,7 @@ Currently checksum mismatches are warnings (non-blocking). To make them blocking
 
 ```javascript
 // In checksum-verifier.js
-verifyAssetChecksum(assetPath, 'googlebot', true);  // strict=true
+verifyAssetChecksum(assetPath, 'googlebot', true); // strict=true
 ```
 
 With `strict=true`, checksum mismatches throw errors and stop execution.
@@ -708,7 +733,7 @@ For testing only:
 
 ```javascript
 const data = await fetchJSON(url, {
-  strictSSL: false  // DANGER: Disables certificate validation
+  strictSSL: false, // DANGER: Disables certificate validation
 });
 ```
 

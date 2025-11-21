@@ -41,10 +41,12 @@ echo "nameserver 1.0.0.1" | sudo tee -a /etc/resolv.conf
 ### What Providers Are Affected?
 
 Only providers that use DNS SPF lookups:
+
 - ✅ **Google Workspace** - Uses DNS
 - ✅ **Mailgun** - Uses DNS
 
 These providers are NOT affected:
+
 - ❌ **Googlebot** - Uses bundled JSON (checksummed)
 - ❌ **Stripe** - Uses HTTPS API (certificate validated)
 - ❌ **Cloudflare** - Hardcoded ranges
@@ -56,12 +58,14 @@ These providers are NOT affected:
 **Scenario:** DNS poisoning attack injects fake IP ranges
 
 **Before attack:**
+
 ```javascript
 const provider = trustedProviders.getTrustedProvider('35.190.247.1');
 console.log(provider); // "Google Workspace" ✅ Correct
 ```
 
 **After attack (DNS poisoned):**
+
 ```javascript
 const provider = trustedProviders.getTrustedProvider('198.51.100.1');
 console.log(provider); // "Google Workspace" ❌ Attacker's IP!
@@ -96,35 +100,35 @@ const { verifyAssetChecksum } = require('../utils/checksum-verifier');
 const self = {
   name: 'Google Workspace',
   testAddresses: ['216.58.192.190'],
-  
+
   // Load from bundled asset instead of DNS
   reload: () => {
     return new Promise((resolve, reject) => {
       try {
         const assetPath = path.join(__dirname, '../assets/google-workspace-ips.json');
         verifyAssetChecksum(assetPath, 'google-workspace', false);
-        
+
         const data = require('../assets/google-workspace-ips.json');
-        
+
         self.ipv4.addresses.length = 0;
         self.ipv4.ranges.length = 0;
         self.ipv6.addresses.length = 0;
         self.ipv6.ranges.length = 0;
-        
-        data.ipv4.addresses.forEach(ip => self.ipv4.addresses.push(ip));
-        data.ipv4.ranges.forEach(range => self.ipv4.ranges.push(range));
-        data.ipv6.addresses.forEach(ip => self.ipv6.addresses.push(ip));
-        data.ipv6.ranges.forEach(range => self.ipv6.ranges.push(range));
-        
+
+        data.ipv4.addresses.forEach((ip) => self.ipv4.addresses.push(ip));
+        data.ipv4.ranges.forEach((range) => self.ipv4.ranges.push(range));
+        data.ipv6.addresses.forEach((ip) => self.ipv6.addresses.push(ip));
+        data.ipv6.ranges.forEach((range) => self.ipv6.ranges.push(range));
+
         resolve();
       } catch (error) {
         reject(error);
       }
     });
   },
-  
+
   ipv4: { addresses: [], ranges: [] },
-  ipv6: { addresses: [], ranges: [] }
+  ipv6: { addresses: [], ranges: [] },
 };
 
 module.exports = self;
@@ -173,6 +177,7 @@ WORKSPACE_CHECKSUM=$(sha256sum "${WORKSPACE_ASSET}" | cut -d' ' -f1)
 ### How It Works
 
 Use DNS resolvers that validate DNSSEC signatures:
+
 - Resolver checks cryptographic signatures on DNS records
 - Invalid/missing signatures are rejected
 - Your application trusts the resolver's validation
@@ -254,10 +259,12 @@ dig sigok.verteiltesysteme.net @1.1.1.1
 Combine both solutions for defense in depth:
 
 ### Development
+
 - Use DNSSEC-validating resolvers (1.1.1.1)
 - Runtime DNS lookups for faster iteration
 
 ### Production
+
 - Use bundled assets (checksummed)
 - Configure DNSSEC resolvers as backup
 - Monitor for unexpected changes
@@ -374,6 +381,7 @@ await trustedProviders.reloadAll();
 ### Q: Which solution should I use?
 
 **A:**
+
 - **High security:** Bundled assets only
 - **Moderate security:** DNSSEC resolvers + monitoring
 - **Low risk / development:** DNSSEC resolvers
@@ -381,6 +389,7 @@ await trustedProviders.reloadAll();
 ### Q: How often do provider IPs change?
 
 **A:** Rarely. Google Workspace IPs are stable for months. Check git history:
+
 ```bash
 git log --oneline src/assets/google-workspace-ips.json
 ```
@@ -402,21 +411,22 @@ git log --oneline src/assets/google-workspace-ips.json
 Check which providers you use:
 
 ```javascript
-trustedProviders.getAllProviders().forEach(p => {
+trustedProviders.getAllProviders().forEach((p) => {
   console.log(p.name);
 });
 ```
 
 Look for:
+
 - Google Workspace
 - Mailgun
 
 ### Step 2: Choose Strategy
 
-| Environment | Strategy |
-|------------|----------|
-| Production | Bundled assets |
-| Staging | DNSSEC resolvers |
+| Environment | Strategy         |
+| ----------- | ---------------- |
+| Production  | Bundled assets   |
+| Staging     | DNSSEC resolvers |
 | Development | DNSSEC resolvers |
 
 ### Step 3: Implement
@@ -426,11 +436,13 @@ Follow Solution 1 (bundled assets) or Solution 2 (DNSSEC resolvers) above.
 ### Step 4: Test
 
 Run full test suite:
+
 ```bash
 npm run test
 ```
 
 Verify IPs are correct:
+
 ```bash
 node -e "
 const tp = require('./src/index');

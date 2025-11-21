@@ -9,7 +9,7 @@ REQUIRED_BINS=('zip' 'jq')
 for REQUIRED_BIN in "${REQUIRED_BINS[@]}"; do
   echo -n "Looking for ${REQUIRED_BIN} ... "
   command -v "${REQUIRED_BIN}" > /dev/null 2>&1
-  if [ $? -ne -0 ]; then
+  if [ $? -ne 0 ]; then
     echo "MISSING"
     exit 1
   else

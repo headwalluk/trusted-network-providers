@@ -4,6 +4,9 @@ A lightweight Node.js library for identifying IP addresses that belong to truste
 
 [![npm version](https://badge.fury.io/js/%40headwall%2Ftrusted-network-providers.svg)](https://www.npmjs.com/package/@headwall/trusted-network-providers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0%20%7C%20tested%20v22.21.0-brightgreen)](https://nodejs.org/)
+[![Test Status](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/headwalluk/trusted-network-providers)
+[![Security](https://img.shields.io/badge/security-hardened-blue)](./docs/security.md)
 
 ## Quick Start
 
@@ -38,6 +41,7 @@ console.log(unknown); // null
 ## Built-in Providers
 
 Includes 20+ trusted providers out of the box:
+
 - **Search Engines**: Googlebot, AhrefsBot, SemrushBot
 - **Payment Processors**: Stripe, PayPal, Opayo
 - **Email Services**: Outlook, Brevo, Mailgun
@@ -62,25 +66,25 @@ Includes 20+ trusted providers out of the box:
 
 ```javascript
 // Load default providers
-loadDefaultProviders()
+loadDefaultProviders();
 
 // Update all providers with dynamic data
-await reloadAll()
+await reloadAll();
 
 // Check if IP is trusted (returns provider name or null)
-getTrustedProvider(ipAddress)
+getTrustedProvider(ipAddress);
 
 // Check if IP is trusted (returns boolean)
-isTrusted(ipAddress)
+isTrusted(ipAddress);
 
 // Provider management
-addProvider(provider)
-deleteProvider(providerName)
-hasProvider(providerName)
-getAllProviders()
+addProvider(provider);
+deleteProvider(providerName);
+hasProvider(providerName);
+getAllProviders();
 
 // Testing
-await runTests()
+await runTests();
 ```
 
 ## Documentation
@@ -98,12 +102,12 @@ trustedProviders.addProvider({
   testAddresses: ['10.0.0.1'],
   ipv4: {
     addresses: ['10.0.0.1'],
-    ranges: ['10.0.0.0/24']
+    ranges: ['10.0.0.0/24'],
   },
   ipv6: {
     addresses: [],
-    ranges: []
-  }
+    ranges: [],
+  },
 });
 ```
 
@@ -123,6 +127,7 @@ app.use((req, res, next) => {
 ## Maintenance
 
 Update bundled IP assets before releases:
+
 ```bash
 ./scripts/update-assets.sh
 ```

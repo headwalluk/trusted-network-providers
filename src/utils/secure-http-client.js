@@ -1,6 +1,6 @@
 /**
  * secure-http-client.js
- * 
+ *
  * Centralized HTTP client with security best practices:
  * - Strict HTTPS certificate validation
  * - Request timeouts
@@ -51,15 +51,14 @@ function verifyChecksum(data, expectedChecksum, url) {
   const actualChecksum = calculateSHA256(data);
   if (actualChecksum !== expectedChecksum) {
     throw new Error(
-      `Checksum verification failed for ${url}. ` +
-      `Expected: ${expectedChecksum}, Got: ${actualChecksum}`
+      `Checksum verification failed for ${url}. ` + `Expected: ${expectedChecksum}, Got: ${actualChecksum}`
     );
   }
 }
 
 /**
  * Fetch JSON data from a URL with security best practices
- * 
+ *
  * @param {string} url - The URL to fetch from (must be HTTPS)
  * @param {object} options - Optional configuration overrides
  * @param {number} options.timeout - Request timeout in milliseconds
@@ -79,7 +78,7 @@ async function fetchJSON(url, options = {}) {
   }
 
   let lastError;
-  
+
   for (let attempt = 0; attempt <= config.retries; attempt++) {
     try {
       const response = await superagent
@@ -121,9 +120,11 @@ async function fetchJSON(url, options = {}) {
       }
 
       // Certificate validation errors should not be retried
-      if (error.code === 'CERT_HAS_EXPIRED' || 
-          error.code === 'CERT_UNTRUSTED' ||
-          error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
+      if (
+        error.code === 'CERT_HAS_EXPIRED' ||
+        error.code === 'CERT_UNTRUSTED' ||
+        error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
+      ) {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
       }
 
@@ -141,7 +142,7 @@ async function fetchJSON(url, options = {}) {
 
 /**
  * Fetch text data from a URL with security best practices
- * 
+ *
  * @param {string} url - The URL to fetch from (must be HTTPS)
  * @param {object} options - Optional configuration overrides
  * @returns {Promise<string>} - The response text
@@ -156,7 +157,7 @@ async function fetchText(url, options = {}) {
   }
 
   let lastError;
-  
+
   for (let attempt = 0; attempt <= config.retries; attempt++) {
     try {
       const response = await superagent
@@ -179,9 +180,11 @@ async function fetchText(url, options = {}) {
       }
 
       // Certificate validation errors should not be retried
-      if (error.code === 'CERT_HAS_EXPIRED' || 
-          error.code === 'CERT_UNTRUSTED' ||
-          error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
+      if (
+        error.code === 'CERT_HAS_EXPIRED' ||
+        error.code === 'CERT_UNTRUSTED' ||
+        error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
+      ) {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
       }
 
@@ -199,7 +202,7 @@ async function fetchText(url, options = {}) {
 
 /**
  * Fetch XML data from a URL with security best practices
- * 
+ *
  * @param {string} url - The URL to fetch from (must be HTTPS)
  * @param {object} options - Optional configuration overrides
  * @returns {Promise<Buffer>} - The response body as a buffer (for XML parsing)
@@ -214,7 +217,7 @@ async function fetchXML(url, options = {}) {
   }
 
   let lastError;
-  
+
   for (let attempt = 0; attempt <= config.retries; attempt++) {
     try {
       const response = await superagent
@@ -239,9 +242,11 @@ async function fetchXML(url, options = {}) {
       }
 
       // Certificate validation errors should not be retried
-      if (error.code === 'CERT_HAS_EXPIRED' || 
-          error.code === 'CERT_UNTRUSTED' ||
-          error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
+      if (
+        error.code === 'CERT_HAS_EXPIRED' ||
+        error.code === 'CERT_UNTRUSTED' ||
+        error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
+      ) {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
       }
 
@@ -263,7 +268,7 @@ async function fetchXML(url, options = {}) {
  * @returns {Promise<void>}
  */
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 module.exports = {

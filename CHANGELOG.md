@@ -1,5 +1,55 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 1.9.0 :: 2025-11-21
+
+### 🔒 Security Enhancements
+
+- **HTTPS Certificate Validation**: All HTTP requests now enforce TLS 1.2+ with strict certificate validation
+- **Checksum Verification**: SHA-256 checksums for all bundled assets (Googlebot, BunnyNet)
+- **Structure Validation**: Runtime validation for API responses (Stripe)
+- **Enhanced update-assets.sh**: Secure wget options, JSON validation, automatic checksum calculation
+- **DNS Security Documentation**: Comprehensive guide for DNSSEC limitations and mitigations
+
+### 🛠️ Code Quality Improvements
+
+- **ESLint Integration**: Full ESLint v9 setup with flat config, 0 warnings
+- **Prettier Formatting**: Consistent code formatting across all files
+- **JSDoc Documentation**: Complete API documentation for all public functions with examples
+- **Code Cleanup**: Removed debug statements, commented code, replaced inefficient array operations
+- **Constants**: Magic strings replaced with named constants (IP_VERSION_V4, IP_VERSION_V6)
+
+### 🐛 Bug Fixes
+
+- **Critical**: Fixed array clearing bug in spf-analyser.js (addresses were not being cleared correctly)
+- **Critical**: Fixed build.sh typo `[ $? -ne -0 ]` → `[ $? -ne 0 ]`
+- **Logic Error**: Fixed ipv4/ipv6 mismatch in spf-analyser.js
+- **Strict Equality**: Replaced all `==` with `===` for type-safe comparisons
+
+### 📚 Documentation
+
+- **New Files**: CONTRIBUTING.md, docs/security.md, docs/dns-security-guide.md, docs/issues.md, docs/implementation.md, docs/requirements.md
+- **Enhanced README**: Added badges (Node.js version, test status, security), improved examples
+- **Security Best Practices**: Comprehensive guide for DNS security and HTTPS validation
+
+### 🔧 Development Tools
+
+- **npm Scripts**: Added `format`, `format:check`, `lint`, `lint:fix`
+- **Updated .gitignore**: Added IDE files, OS-specific files, Prettier cache
+- **Dependencies Updated**: fast-xml-parser 4.x → 5.x, all packages on latest versions
+- **Dev Dependencies**: Added ESLint 9.x and Prettier 3.x
+
+### 📦 Package Improvements
+
+- **Keywords**: Expanded for better npm discoverability
+- **Engines**: Specified Node.js >=18.0.0 requirement
+- **Files**: Optimized package contents
+
+### ⚙️ Internal Changes
+
+- Improved error handling and removed unused variables
+- Optimized array clearing operations (`array.length = 0`)
+- Better Promise patterns with unused parameter handling
+
 ## 1.8.1 :: 2025-08-13
 
 * Updated the ShipHero provider.

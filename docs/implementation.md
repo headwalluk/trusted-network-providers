@@ -3,9 +3,11 @@
 ## Technical Architecture
 
 ### Overview
+
 Trusted Network Providers is a Node.js library that provides in-memory IP address matching against configured trusted provider lists. The architecture emphasizes simplicity, extensibility, and runtime performance.
 
 ### Design Principles
+
 1. **Synchronous Lookups**: IP matching must be fast and non-blocking for request processing
 2. **Asynchronous Updates**: Provider data updates happen out-of-band via promises
 3. **Zero Configuration**: Works with sensible defaults, customizable when needed
@@ -17,6 +19,7 @@ Trusted Network Providers is a Node.js library that provides in-memory IP addres
 ## Technology Stack
 
 ### Runtime Environment
+
 - **Node.js**: LTS versions (v18+, v20+ recommended)
 - **ES Module Support**: Uses CommonJS (`require`/`module.exports`)
 - **Shell Scripts**: Bash for asset management
@@ -24,37 +27,44 @@ Trusted Network Providers is a Node.js library that provides in-memory IP addres
 ### Core Dependencies
 
 #### ipaddr.js (^2.0.1)
+
 **Purpose**: IP address parsing and CIDR range matching  
 **Usage**:
+
 - Parse IPv4 and IPv6 addresses
 - Parse CIDR notation ranges
 - Match IP addresses against CIDR ranges
 - Handle compressed IPv6 notation
 
 **Key Functions Used**:
+
 ```javascript
-ipaddr.parse(address)        // Parse IP string to object
-ipaddr.parseCIDR(range)      // Parse CIDR range
-parsedIp.match(cidr)         // Check if IP matches CIDR
-parsedIp.kind()              // Returns 'ipv4' or 'ipv6'
+ipaddr.parse(address); // Parse IP string to object
+ipaddr.parseCIDR(range); // Parse CIDR range
+parsedIp.match(cidr); // Check if IP matches CIDR
+parsedIp.kind(); // Returns 'ipv4' or 'ipv6'
 ```
 
 #### superagent (^10.1.1)
+
 **Purpose**: HTTP client for fetching provider data  
 **Usage**:
+
 - Fetch JSON data from provider APIs (Googlebot, Stripe, etc.)
 - Handle HTTP errors gracefully
 - Promise-based request handling
 
 **Example**:
+
 ```javascript
 superagent
   .get(url)
   .accept('json')
-  .then(result => result.body)
+  .then((result) => result.body);
 ```
 
 #### fast-xml-parser (^4.2.2)
+
 **Purpose**: XML/HTML parsing for provider data sources  
 **Usage**: Currently included but not actively used in main codebase
 **Status**: May be used by disabled providers or future enhancements
@@ -62,8 +72,10 @@ superagent
 ### Node.js Built-in Modules
 
 #### dns/promises
+
 **Purpose**: DNS TXT record resolution for SPF-based providers  
-**Usage**: 
+**Usage**:
+
 - Resolve SPF records for email service providers
 - Parse `include:` directives
 - Extract IP ranges from `ip4:` and `ip6:` mechanisms
@@ -77,12 +89,14 @@ superagent
 ### Core Module: `src/index.js`
 
 **Responsibilities**:
+
 - Provider registry management
 - IP address lookup logic
 - Test execution framework
 - Diagnostic output control
 
 **State Management**:
+
 ```javascript
 {
   providers: [],              // Array of provider objects
@@ -94,6 +108,7 @@ superagent
 **Key Design Decisions**:
 
 1. **CIDR Caching**: Parsed CIDR ranges are cached in `parsedAddresses` object to avoid re-parsing on every lookup
+
    ```javascript
    if (!parsedAddresses[testRange]) {
      parsedAddresses[testRange] = ipaddr.parseCIDR(testRange);
@@ -113,26 +128,29 @@ superagent
 ### Provider Modules: `src/providers/*.js`
 
 **Standard Provider Structure**:
+
 ```javascript
 module.exports = {
   name: 'Provider Name',
   testAddresses: ['1.2.3.4'],
-  reload: () => Promise,      // Optional
+  reload: () => Promise, // Optional
   ipv4: {
     addresses: [],
-    ranges: []
+    ranges: [],
   },
   ipv6: {
     addresses: [],
-    ranges: []
-  }
+    ranges: [],
+  },
 };
 ```
 
 **Provider Categories**:
 
 #### Static Providers
+
 Hardcoded CIDR ranges that rarely change:
+
 - `cloudflare.js` - CDN IP ranges
 - `private.js` - RFC 1918 private networks
 - `outlook.js` - Microsoft mail servers
@@ -142,7 +160,9 @@ Hardcoded CIDR ranges that rarely change:
 **Maintenance**: Manual updates when provider announces changes
 
 #### JSON Asset Providers
+
 Load from bundled JSON files:
+
 - `googlebot.js` - Loads from `assets/googlebot-ips.json`
 - `bunnynet.js` - Loads from `assets/bunnynet-ip4s.json` and `bunnynet-ip6s.json`
 - `facebookbot.js` - Loads from `assets/facebookbot-ip4s.txt` and `facebookbot-ip6s.txt`
@@ -151,7 +171,9 @@ Load from bundled JSON files:
 **Maintenance**: Update assets via `scripts/update-assets.sh`
 
 #### HTTP Dynamic Providers
+
 Fetch data from external APIs:
+
 - `stripe-api.js` - `https://stripe.com/files/ips/ips_api.json`
 - `stripe-webhooks.js` - `https://stripe.com/files/ips/ips_webhooks.json`
 - `googlebot.js` (reloadFromWeb) - Google's published IP ranges
@@ -160,7 +182,9 @@ Fetch data from external APIs:
 **Disadvantages**: Network dependency, potential for rate limiting or service changes
 
 #### SPF-based Providers
+
 Parse DNS TXT records using SPF protocol:
+
 - `google-workspace.js` - Via `_spf.google.com`
 - `mailgun.js` - Via SPF records
 - Uses `src/spf-analyser.js` helper
@@ -175,6 +199,7 @@ Parse DNS TXT records using SPF protocol:
 **Purpose**: Extract IP ranges from SPF DNS records
 
 **Algorithm**:
+
 1. Resolve TXT records for domain
 2. Find records starting with `v=spf1`
 3. Parse `include:` directives to find netblock domains
@@ -184,18 +209,20 @@ Parse DNS TXT records using SPF protocol:
 7. Update provider object with discovered IPs
 
 **Key Implementation Details**:
+
 - Recursive DNS lookups via `Promise.all()`
 - Error handling for missing/malformed records
 - Supports both individual IPs and CIDR ranges
 - Validates minimum record count before updating
 
 **Usage Pattern**:
+
 ```javascript
 const spfAnalyser = require('./spf-analyser');
 
 reload: () => {
   return spfAnalyser('_spf.google.com', self);
-}
+};
 ```
 
 #### `src/test.js`
@@ -203,6 +230,7 @@ reload: () => {
 **Purpose**: Integration testing and examples
 
 **Features**:
+
 - Enables diagnostic mode
 - Loads default and custom providers
 - Simulates slow reload with timeout
@@ -221,32 +249,34 @@ Output: providerName (string) or null
 
 1. Parse IP address using ipaddr.js
    - On parse error: log and return null
-   
+
 2. Determine IP version (ipv4 or ipv6)
 
 3. For each provider (in order):
    a. Select appropriate pool (ipv4 or ipv6)
-   
+
    b. Check individual addresses:
       - Simple string equality match
       - If match: return provider name
-   
+
    c. Check CIDR ranges:
       - Parse range if not cached
       - Match IP against range
       - If match: return provider name
-   
+
    d. Continue to next provider if no match
 
 4. If no provider matched: return null
 ```
 
 **Performance Characteristics**:
+
 - Best case: O(1) - first provider, first address matches
 - Average case: O(n×m) - n providers, m average addresses per provider
 - Worst case: O(n×(a+r)) - all providers checked, all addresses and ranges
 
 **Optimization Opportunities**:
+
 - Index by first octet for fast filtering
 - Build interval tree for range queries
 - Cache recent lookups (memoization)
@@ -282,7 +312,8 @@ Output: providerName (string) or null
 **Purpose**: Fetch latest IP lists and save to `src/assets/`
 
 **Process**:
-1. **FacebookBot IPs**: 
+
+1. **FacebookBot IPs**:
    - Query WHOIS for AS32934 (Facebook)
    - Extract route entries
    - Separate IPv4 and IPv6 to separate files
@@ -297,11 +328,13 @@ Output: providerName (string) or null
    - Save as separate JSON files
 
 **Usage**: Run manually before version releases
+
 ```bash
 ./scripts/update-assets.sh
 ```
 
-**Error Handling**: 
+**Error Handling**:
+
 - Validates minimum record counts
 - Uses temp files to avoid corrupting existing assets
 - Only replaces files on successful download
@@ -311,6 +344,7 @@ Output: providerName (string) or null
 **Purpose**: Build distribution packages
 
 **Commands**:
+
 - `./scripts/build.sh zip` - Create versioned zip file in `dist/`
 - `./scripts/build.sh clean` - Remove build artifacts and node_modules
 
@@ -323,6 +357,7 @@ Output: providerName (string) or null
 ### CIDR Cache (`parsedAddresses`)
 
 **Implementation**:
+
 ```javascript
 const parsedAddresses = {};
 
@@ -332,6 +367,7 @@ if (!parsedAddresses[testRange]) {
 ```
 
 **Behavior**:
+
 - Lifetime: Application lifetime (never cleared)
 - Growth: One entry per unique CIDR string across all providers
 - Typical size: ~200-500 entries for default providers
@@ -342,6 +378,7 @@ if (!parsedAddresses[testRange]) {
 ### Provider Arrays
 
 **Clearing Pattern**:
+
 ```javascript
 while (self.ipv4.ranges.length > 0) {
   self.ipv4.ranges.pop();
@@ -356,6 +393,7 @@ while (self.ipv4.ranges.length > 0) {
 ## Error Handling Strategy
 
 ### Philosophy
+
 - **Fail gracefully**: Never crash on bad input
 - **Log and continue**: Use `console.error()` for diagnostics
 - **Safe defaults**: Return `null` on uncertainty (deny access by default)
@@ -363,7 +401,7 @@ while (self.ipv4.ranges.length > 0) {
 
 ### Error Scenarios
 
-1. **Invalid IP Address**: 
+1. **Invalid IP Address**:
    - Try-catch around `ipaddr.parse()`
    - Log error, return `null`
 
@@ -389,11 +427,13 @@ while (self.ipv4.ranges.length > 0) {
 ### Diagnostic Mode
 
 Enable verbose logging:
+
 ```javascript
 trustedProviders.isDiagnosticsEnabled = true;
 ```
 
 **Output**:
+
 - Provider additions
 - Reload operations
 - Test results
@@ -403,34 +443,36 @@ trustedProviders.isDiagnosticsEnabled = true;
 Three patterns supported:
 
 #### 1. Static Configuration
+
 ```javascript
 trustedProviders.addProvider({
   name: 'My Network',
   testAddresses: ['10.0.0.1'],
   ipv4: {
     addresses: ['10.0.0.1'],
-    ranges: ['10.0.0.0/24']
+    ranges: ['10.0.0.0/24'],
   },
-  ipv6: { addresses: [], ranges: [] }
+  ipv6: { addresses: [], ranges: [] },
 });
 ```
 
 #### 2. With Reload Function
+
 ```javascript
 const myProvider = {
   name: 'Dynamic Network',
   reload: () => {
-    return fetch('https://api.example.com/ips')
-      .then(data => {
-        myProvider.ipv4.addresses = data.ips;
-      });
+    return fetch('https://api.example.com/ips').then((data) => {
+      myProvider.ipv4.addresses = data.ips;
+    });
   },
   ipv4: { addresses: [], ranges: [] },
-  ipv6: { addresses: [], ranges: [] }
+  ipv6: { addresses: [], ranges: [] },
 };
 ```
 
 #### 3. Using SPF Analyser
+
 ```javascript
 const spfAnalyser = require('./spf-analyser');
 
@@ -439,7 +481,7 @@ module.exports = {
   reload: () => spfAnalyser('spf.example.com', self),
   testAddresses: ['1.2.3.4'],
   ipv4: { addresses: [], ranges: [] },
-  ipv6: { addresses: [], ranges: [] }
+  ipv6: { addresses: [], ranges: [] },
 };
 ```
 
@@ -452,16 +494,18 @@ module.exports = {
 **Implementation**: Custom test runner in `src/test.js`
 
 **Test Data Sources**:
+
 1. Unknown IPs (should return `null`)
 2. Provider `testAddresses` (should return provider name)
 
 **Test Execution**:
+
 ```javascript
-trustedProviders.runTests()
-  .then(() => console.log('Tests complete'));
+trustedProviders.runTests().then(() => console.log('Tests complete'));
 ```
 
 **Output Format**:
+
 - ✅ `192.168.1.1 => Private` (success)
 - ❌ `8.8.8.8 => Googlebot (should be _wild_)` (failure)
 - 🔷 `No tests for Provider Name` (warning)
@@ -490,11 +534,13 @@ trustedProviders.runTests()
 ### Consumer Integration
 
 **Installation**:
+
 ```bash
 npm install @headwall/trusted-network-providers
 ```
 
 **Typical Startup Sequence**:
+
 ```javascript
 const trustedProviders = require('@headwall/trusted-network-providers');
 
@@ -508,6 +554,7 @@ initializeTrustedProviders().catch(console.error);
 ```
 
 **Recommended Update Schedule**:
+
 - Call `reloadAll()` every 24 hours for HTTP/DNS providers
 - Manual asset updates with package version bumps as needed
 - Monitor provider announcements for IP range changes
@@ -549,7 +596,7 @@ initializeTrustedProviders().catch(console.error);
 
 ### Current Security Measures
 
-1. **Input Validation**: 
+1. **Input Validation**:
    - IP parsing with try-catch
    - Malformed IPs rejected gracefully
 
@@ -572,12 +619,14 @@ initializeTrustedProviders().catch(console.error);
 ### Trust Model
 
 **Assumptions**:
+
 - External provider APIs serve correct data
 - DNS responses are authentic
 - Network path is secure (HTTPS)
 - Provider modules are trusted code
 
 **Recommendations**:
+
 - Use on trusted networks
 - Monitor provider sources for changes
 - Regular security audits of dependencies
@@ -590,6 +639,7 @@ initializeTrustedProviders().catch(console.error);
 ### Architecture Evolution
 
 **Potential Improvements**:
+
 1. TypeScript migration for type safety
 2. Async/await refactoring for consistency
 3. Event emitter for reload status
@@ -599,12 +649,14 @@ initializeTrustedProviders().catch(console.error);
 ### Compatibility Commitments
 
 **Maintained**:
+
 - CommonJS exports
 - Node.js LTS support
 - Synchronous lookup API
 - Provider object structure
 
 **May Change**:
+
 - Internal caching strategy
 - Error handling details
 - Diagnostic output format
