@@ -1,8 +1,22 @@
 /**
  * spf-analyser.js
+ * 
+ * Extracts IP addresses from DNS SPF (Sender Policy Framework) records.
+ * 
+ * SECURITY WARNING: This module does NOT perform DNSSEC validation.
+ * DNS responses are not cryptographically verified and could be spoofed
+ * via DNS poisoning attacks. 
+ * 
+ * Mitigations:
+ * - Use DNSSEC-validating DNS resolvers (e.g., 1.1.1.1, 8.8.8.8)
+ * - Run update-assets.sh to fetch SPF data at build time instead of runtime
+ * - Use bundled assets in high-security environments
+ * - Verify DNS records out-of-band when possible
+ * 
+ * For production use, consider disabling runtime DNS lookups and relying
+ * on bundled assets that are updated via the build process.
  */
 
-// const dns = require('node:dns');
 const dns = require('node:dns/promises');
 
 module.exports = (domain, provider) => {
@@ -146,13 +160,13 @@ module.exports = (domain, provider) => {
             provider.ipv4.ranges.pop();
           }
           while (provider.ipv4.addresses.length > 0) {
-            provider.ipv4.ranges.pop();
+            provider.ipv4.addresses.pop();
           }
           while (provider.ipv6.ranges.length > 0) {
             provider.ipv6.ranges.pop();
           }
           while (provider.ipv6.addresses.length > 0) {
-            provider.ipv6.ranges.pop();
+            provider.ipv6.addresses.pop();
           }
 
           config = Object.assign(provider, newAddresses);

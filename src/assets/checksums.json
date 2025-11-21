@@ -1,0 +1,31 @@
+{
+  "comment": "SHA-256 checksums for provider data sources. Updated by update-assets.sh",
+  "providers": {
+    "googlebot": {
+      "url": "https://developers.google.com/static/search/apis/ipranges/googlebot.json",
+      "sha256": "1cc6d5f5326ed3914308f0c2cdc35a4cfaee69d5d853dbe273ac187920315346",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "bunnynet-ipv4": {
+      "url": "https://bunnycdn.com/api/system/edgeserverlist",
+      "sha256": "81ab4404a1df22f440d4ef1f6a541ccc3eca4e5d19daf8d4c53299cf489f72d1",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "bunnynet-ipv6": {
+      "url": "https://bunnycdn.com/api/system/edgeserverlist/IPv6",
+      "sha256": "10087cb54890de1179ce18b5e8a44fc4217ca1abc4415716a39a8ad453fd2f67",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "stripe-api": {
+      "url": "https://stripe.com/files/ips/ips_api.json",
+      "sha256": null,
+      "comment": "Runtime verification - structure validation used instead (data changes frequently)"
+    },
+    "stripe-webhooks": {
+      "url": "https://stripe.com/files/ips/ips_webhooks.json",
+      "sha256": null,
+      "comment": "Runtime verification - structure validation used instead (data changes frequently)"
+    }
+  },
+  "lastUpdated": "2025-11-21T20:06:42Z"
+}

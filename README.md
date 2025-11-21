@@ -87,6 +87,7 @@ await runTests()
 
 - **[Requirements](docs/requirements.md)** - Project requirements and specifications
 - **[Implementation](docs/implementation.md)** - Architecture and technical details
+- **[Security](docs/security.md)** - Security features and best practices
 - **[Issues](docs/issues.md)** - Known issues and improvement opportunities
 
 ## Example: Custom Provider

@@ -2,7 +2,7 @@
  * seobility.js
  */
 
-const superagent = require('superagent');
+const { fetchText } = require('../utils/secure-http-client');
 const ipaddr = require('ipaddr.js');
 
 const self = {
@@ -18,29 +18,27 @@ const self = {
       const addressListUrl = self.sources[addressListType];
 
       requests.push(
-        superagent
-          .get(addressListUrl)
-          .accept('text/plain')
-          .then((result) => {
-            if (!result.text) {
+        fetchText(addressListUrl)
+          .then((text) => {
+            if (!text) {
               console.error(`Failed to fetch ${addressListType} from ${addressListUrl}`);
             } else {
-              while (self[addressListType].addresses.length > 0) {
-                self[addressListType].addresses.pop();
-              }
+              // Clear existing data
+              self[addressListType].addresses.length = 0;
+              self[addressListType].ranges.length = 0;
 
-              while (self[addressListType].ranges.length > 0) {
-                self[addressListType].ranges.pop();
-              }
-
-              records = result.text.split('\n');
+              const records = text.split('\n');
               records.forEach((record) => {
-                if (ipaddr.isValid(record) && !self[addressListType].addresses.includes(record)) {
-                  // console.log( `Add ${addressListType} => ${record}`);
-                  self[addressListType].addresses.push(record);
+                const trimmed = record.trim();
+                if (trimmed && ipaddr.isValid(trimmed) && !self[addressListType].addresses.includes(trimmed)) {
+                  self[addressListType].addresses.push(trimmed);
                 }
               });
             }
+          })
+          .catch((error) => {
+            console.error(`Failed to reload Seobility ${addressListType} IPs: ${error.message}`);
+            throw error;
           }),
       );
     }
