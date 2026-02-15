@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 1 — Foundation tasks  
-**Last commit:** [M1] Verify .nvmrc exists and fix docs formatting  
+**Last commit:** [M1] Convert ESLint config to ESM  
 **Blockers:** None  
-**Next action:** ESM migration — migrate codebase from CommonJS to ESM (code + package.json)  
-**Notes:** npm audit verified (0 vulnerabilities). .nvmrc already exists (Node 22). Ready to begin ESM migration.  
-**Last updated:** 2026-02-15 14:16
+**Next action:** ESM migration — migrate source code from CommonJS (require/module.exports) to ESM (import/export)  
+**Notes:** package.json "type": "module" ✓. ESLint config converted to ESM ✓. Clean lint cycle verified ✓. Next: convert src/ files to import/export.  
+**Last updated:** 2026-02-15 15:56
 
 ---
 
@@ -43,13 +43,13 @@ Get the tooling right before touching runtime code. Nothing here changes behavio
 - [x] Tag v1.9.0 as `v1-stable` before branching
 - [x] Run `npm audit fix` to resolve known vulnerabilities (fast-xml-parser, qs)
 - [ ] Migrate from CommonJS (`require`/`module.exports`) to ESM (`import`/`export`)
-- [ ] Update `package.json` with `"type": "module"`
+- [x] Update `package.json` with `"type": "module"`
 - [x] Add `.nvmrc` pinned to Node 22 LTS
 - [x] Replace hand-rolled `src/test.js` with Jest test framework
 - [ ] Port all existing test cases to Jest
 - [ ] Achieve >80% code coverage
-- [ ] Update ESLint config for ESM
-- [ ] Ensure clean lint cycle (0 errors, 0 warnings)
+- [x] Update ESLint config for ESM
+- [x] Ensure clean lint cycle (0 errors, 0 warnings)
 - [ ] Add GitHub Actions CI workflow (test on Node 18, 20, 22)
 - [ ] Commit milestone completion to `v2-modernisation` branch
 
