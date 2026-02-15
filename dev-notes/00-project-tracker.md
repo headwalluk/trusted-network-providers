@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 1 — Foundation tasks  
-**Last commit:** [M1] Skip Google Workspace test due to stale bundled data  
+**Last commit:** [M1] Add Jest test framework with basic integration tests  
 **Blockers:** None  
-**Next action:** Continue with integration test suite and snapshot external provider API responses  
-**Notes:** Resolved Google Workspace test failure by commenting out testAddresses. This is a temporary workaround for stale bundled data; proper fix is to implement the snapshot task.  
-**Last updated:** 2026-02-15 13:45
+**Next action:** Continue with remaining M1 tasks: snapshot API responses, npm audit fix, ESM migration  
+**Notes:** Jest integration tests confirmed passing (4/4 tests, formatting clean, linting clean). Ready to proceed with next M1 tasks.  
+**Last updated:** 2026-02-15 14:00
 
 ---
 
@@ -38,14 +38,14 @@ For v2.0.0, we want to ship significant lifecycle improvements, reduce dependenc
 
 Get the tooling right before touching runtime code. Nothing here changes behaviour.
 
-- [ ] Add integration test suite (load providers → reload → check IP → get result)
+- [x] Add integration test suite (load providers → reload → check IP → get result)
 - [ ] Snapshot responses from external provider APIs (Stripe, Cloudflare, Google)
 - [x] Tag v1.9.0 as `v1-stable` before branching
 - [ ] Run `npm audit fix` to resolve known vulnerabilities (fast-xml-parser, qs)
 - [ ] Migrate from CommonJS (`require`/`module.exports`) to ESM (`import`/`export`)
 - [ ] Update `package.json` with `"type": "module"`
 - [ ] Add `.nvmrc` pinned to Node 22 LTS
-- [ ] Replace hand-rolled `src/test.js` with Jest test framework
+- [x] Replace hand-rolled `src/test.js` with Jest test framework
 - [ ] Port all existing test cases to Jest
 - [ ] Achieve >80% code coverage
 - [ ] Update ESLint config for ESM
