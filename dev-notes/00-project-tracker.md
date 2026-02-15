@@ -44,7 +44,7 @@ Get the tooling right before touching runtime code. Nothing here changes behavio
 - [x] Run `npm audit fix` to resolve known vulnerabilities (fast-xml-parser, qs)
 - [ ] Migrate from CommonJS (`require`/`module.exports`) to ESM (`import`/`export`)
 - [ ] Update `package.json` with `"type": "module"`
-- [ ] Add `.nvmrc` pinned to Node 22 LTS
+- [x] Add `.nvmrc` pinned to Node 22 LTS
 - [x] Replace hand-rolled `src/test.js` with Jest test framework
 - [ ] Port all existing test cases to Jest
 - [ ] Achieve >80% code coverage
