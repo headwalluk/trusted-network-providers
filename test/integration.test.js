@@ -4,7 +4,7 @@
  * Tests the full workflow: load providers → reload → check IP → get result
  */
 
-const trustedProviders = require('../src/index');
+import trustedProviders from '../src/index.js';
 
 describe('Integration: Provider Lifecycle', () => {
   beforeEach(() => {

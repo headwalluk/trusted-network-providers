@@ -9,7 +9,7 @@
     "url": "git+https://github.com/headwalluk/trusted-network-providers.git"
   },
   "scripts": {
-    "test": "jest",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:old": "node ./src/test.js",
     "build-zip": "./scripts/build.sh zip",
     "clean": "./scripts/build.sh clean",
@@ -27,7 +27,8 @@
     ],
     "testMatch": [
       "**/test/**/*.test.js"
-    ]
+    ],
+    "transform": {}
   },
   "author": "Paul Faulkner",
   "license": "MIT",
