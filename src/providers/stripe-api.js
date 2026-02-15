@@ -2,7 +2,7 @@
  * stripe-api.js
  */
 
-const { fetchJSON } = require('../utils/secure-http-client');
+import { fetchJSON } from '../utils/secure-http-client.js';
 
 const STRIPE_ADDRESSES_URL = 'https://stripe.com/files/ips/ips_api.json';
 
@@ -49,4 +49,4 @@ const self = {
   },
 };
 
-module.exports = self;
+export default self;

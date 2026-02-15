@@ -2,7 +2,7 @@
  * outlook.js
  */
 
-module.exports = {
+export default {
   name: 'MS Outlook',
   ipv4: {
     addresses: [],

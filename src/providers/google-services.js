@@ -2,7 +2,7 @@
  * google-services.js
  */
 
-module.exports = {
+export default {
   name: 'Google Services',
   ipv4: {
     addresses: ['8.8.8.8', '8.8.4.4'],

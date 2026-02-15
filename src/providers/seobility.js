@@ -2,8 +2,8 @@
  * seobility.js
  */
 
-const { fetchText } = require('../utils/secure-http-client');
-const ipaddr = require('ipaddr.js');
+import { fetchText } from '../utils/secure-http-client.js';
+import ipaddr from 'ipaddr.js';
 
 const self = {
   name: 'Seobility',
@@ -56,4 +56,4 @@ const self = {
   },
 };
 
-module.exports = self;
+export default self;

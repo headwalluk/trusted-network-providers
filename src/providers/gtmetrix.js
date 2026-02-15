@@ -2,10 +2,9 @@
  * gtmetrix.js
  */
 
-const ipaddr = require('ipaddr.js');
-
-const { fetchXML } = require('../utils/secure-http-client');
-const { XMLParser } = require('fast-xml-parser');
+import ipaddr from 'ipaddr.js';
+import { fetchXML } from '../utils/secure-http-client.js';
+import { XMLParser } from 'fast-xml-parser';
 
 const GTMETRIX_ADDRESS_LIST_URL = 'https://gtmetrix.com/locations.xml';
 
@@ -66,4 +65,4 @@ const self = {
   },
 };
 
-module.exports = self;
+export default self;

@@ -2,9 +2,14 @@
  * bunnynet.js
  */
 
-const path = require('path');
-const ipaddr = require('ipaddr.js');
-const { verifyAssetChecksum } = require('../utils/checksum-verifier');
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import ipaddr from 'ipaddr.js';
+import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const self = {
   name: 'BunnyNet',
@@ -25,10 +30,13 @@ const self = {
         self.ipv6.addresses.length = 0;
 
         const newIps = [];
-        const sources = ['../assets/bunnynet-ip4s.json', '../assets/bunnynet-ip6s.json'];
+        const sources = [
+          path.join(__dirname, '../assets/bunnynet-ip4s.json'),
+          path.join(__dirname, '../assets/bunnynet-ip6s.json'),
+        ];
 
         sources.forEach((source) => {
-          newIps.push(...require(source));
+          newIps.push(...JSON.parse(readFileSync(source, 'utf8')));
         });
 
         newIps.forEach((address) => {
@@ -58,4 +66,4 @@ const self = {
   },
 };
 
-module.exports = self;
+export default self;

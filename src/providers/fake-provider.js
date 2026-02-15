@@ -2,7 +2,7 @@
  * fake-provider.js
  */
 
-module.exports = {
+export default {
   name: 'Fake Provider',
   testAddresses: ['1.2.3.4'],
   ipv4: {

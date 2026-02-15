@@ -2,36 +2,57 @@
  * index.js
  */
 
-const ipaddr = require('ipaddr.js');
+import ipaddr from 'ipaddr.js';
+import privateProvider from './providers/private.js';
+import googlebotProvider from './providers/googlebot.js';
+import googleWorkspaceProvider from './providers/google-workspace.js';
+import googleServicesProvider from './providers/google-services.js';
+import stripeApiProvider from './providers/stripe-api.js';
+import stripeWebhooksProvider from './providers/stripe-webhooks.js';
+import opayoProvider from './providers/opayo.js';
+import paypalProvider from './providers/paypal.js';
+import outlookProvider from './providers/outlook.js';
+import cloudflareProvider from './providers/cloudflare.js';
+import ezoicProvider from './providers/ezoic.js';
+import shipHeroProvider from './providers/ship-hero.js';
+import bunnynetProvider from './providers/bunnynet.js';
+import semrushProvider from './providers/semrush.js';
+import ahrefsbotProvider from './providers/ahrefsbot.js';
+import facebookbotProvider from './providers/facebookbot.js';
+import brevoProvider from './providers/brevo.js';
+import getTermsProvider from './providers/get-terms.js';
+import labrikaProvider from './providers/labrika.js';
+// import mailgunProvider from './providers/mailgun.js';
+// import gtmetrixProvider from './providers/gtmetrix.js';
+// import seobilityProvider from './providers/seobility.js'; // Unreliable
 
 // Constants for IP address versions
 const IP_VERSION_V4 = 'ipv4';
 const IP_VERSION_V6 = 'ipv6';
 
 const defaultProviders = [
-  require('./providers/private.js'),
-  require('./providers/googlebot.js'),
-  require('./providers/google-workspace.js'),
-  require('./providers/google-services.js'),
-  require('./providers/stripe-api.js'),
-  require('./providers/stripe-webhooks.js'),
-  require('./providers/opayo.js'),
-  require('./providers/paypal.js'),
-  require('./providers/outlook.js'),
-  require('./providers/cloudflare.js'),
-  require('./providers/ezoic.js'),
-  require('./providers/ship-hero.js'),
-  require('./providers/bunnynet.js'),
-  require('./providers/semrush.js'),
-  require('./providers/ahrefsbot.js'),
-  require('./providers/facebookbot.js'),
-  require('./providers/brevo.js'),
-  require('./providers/get-terms.js'),
-  require('./providers/labrika.js'),
-
-  // require('./providers/mailgun.js'),
-  // require('./providers/gtmetrix.js'),
-  // require('./providers/seobility.js'), // Unreliable
+  privateProvider,
+  googlebotProvider,
+  googleWorkspaceProvider,
+  googleServicesProvider,
+  stripeApiProvider,
+  stripeWebhooksProvider,
+  opayoProvider,
+  paypalProvider,
+  outlookProvider,
+  cloudflareProvider,
+  ezoicProvider,
+  shipHeroProvider,
+  bunnynetProvider,
+  semrushProvider,
+  ahrefsbotProvider,
+  facebookbotProvider,
+  brevoProvider,
+  getTermsProvider,
+  labrikaProvider,
+  // mailgunProvider,
+  // gtmetrixProvider,
+  // seobilityProvider, // Unreliable
 ];
 
 const parsedAddresses = {};
@@ -383,4 +404,4 @@ const self = {
   },
 };
 
-module.exports = self;
+export default self;

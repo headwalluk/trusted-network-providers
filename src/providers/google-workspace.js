@@ -10,7 +10,7 @@
  * See: docs/security.md - DNS-Based Providers section
  */
 
-const spfAnalyser = require('../spf-analyser');
+import spfAnalyser from '../spf-analyser.js';
 
 const self = {
   name: 'Google Workspace',
@@ -29,4 +29,4 @@ const self = {
   },
 };
 
-module.exports = self;
+export default self;

@@ -2,7 +2,7 @@
  * paypal.js
  */
 
-module.exports = {
+export default {
   name: 'PayPal',
   ipv4: {
     addresses: [],

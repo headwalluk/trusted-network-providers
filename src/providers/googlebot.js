@@ -2,9 +2,14 @@
  * googlebot.js
  */
 
-const path = require('path');
-const { fetchJSON } = require('../utils/secure-http-client');
-const { verifyAssetChecksum } = require('../utils/checksum-verifier');
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { fetchJSON } from '../utils/secure-http-client.js';
+import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const GOOGLE_ADDRESS_LIST_URL = 'https://developers.google.com/static/search/apis/ipranges/googlebot.json';
 
@@ -22,7 +27,7 @@ const self = {
         self.ipv4.ranges.length = 0;
         self.ipv6.ranges.length = 0;
 
-        const newIps = require('../assets/googlebot-ips.json');
+        const newIps = JSON.parse(readFileSync(assetPath, 'utf8'));
         newIps.prefixes.forEach((range) => {
           if (range.ipv4Prefix) {
             self.ipv4.ranges.push(range.ipv4Prefix);
@@ -76,4 +81,4 @@ const self = {
   },
 };
 
-module.exports = self;
+export default self;

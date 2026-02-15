@@ -2,7 +2,7 @@
  * test.js
  */
 
-const trustedProviders = require('./index');
+import trustedProviders from './index.js';
 
 /**
  * Enable diagnostic outputs.
@@ -18,10 +18,11 @@ trustedProviders.loadDefaultProviders();
  * Add our fake provider. addProvider() should only add one instance,
  * even if we call it multiple times.
  */
-trustedProviders.addProvider(require('./providers/fake-provider.js'));
-trustedProviders.addProvider(require('./providers/fake-provider.js'));
-trustedProviders.addProvider(require('./providers/fake-provider.js'));
-trustedProviders.addProvider(require('./providers/fake-provider.js'));
+import fakeProvider from './providers/fake-provider.js';
+trustedProviders.addProvider(fakeProvider);
+trustedProviders.addProvider(fakeProvider);
+trustedProviders.addProvider(fakeProvider);
+trustedProviders.addProvider(fakeProvider);
 
 /**
  * Add a custom network.

@@ -9,9 +9,9 @@
  * - Error handling
  */
 
-const superagent = require('superagent');
-const https = require('https');
-const crypto = require('crypto');
+import superagent from 'superagent';
+import https from 'node:https';
+import crypto from 'node:crypto';
 
 /**
  * Configuration for secure HTTP requests
@@ -271,11 +271,4 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-module.exports = {
-  fetchJSON,
-  fetchText,
-  fetchXML,
-  calculateSHA256,
-  verifyChecksum,
-  DEFAULT_CONFIG,
-};
+export { fetchJSON, fetchText, fetchXML, calculateSHA256, verifyChecksum, DEFAULT_CONFIG };

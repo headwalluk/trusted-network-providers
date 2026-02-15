@@ -17,9 +17,9 @@
  * on bundled assets that are updated via the build process.
  */
 
-const dns = require('node:dns/promises');
+import dns from 'node:dns/promises';
 
-module.exports = (domain, provider) => {
+export default (domain, provider) => {
   return new Promise((resolve) => {
     dns.resolveTxt(domain).then((records) => {
       const sourceNetblocks = [];

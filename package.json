@@ -2,6 +2,7 @@
   "name": "@headwall/trusted-network-providers",
   "version": "1.9.0",
   "description": "Trusted network hosts and address ranges.",
+  "type": "module",
   "main": "./src/index.js",
   "repository": {
     "type": "git",

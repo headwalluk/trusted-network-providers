@@ -2,7 +2,7 @@
  * ezoic.js
  */
 
-module.exports = {
+export default {
   name: 'Ezoic',
   testAddresses: ['3.225.202.138', '18.157.105.182'],
   ipv4: {

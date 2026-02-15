@@ -2,7 +2,7 @@
  * opayo.js
  */
 
-module.exports = {
+export default {
   name: 'Opayo',
   testAddresses: ['195.170.169.12', '195.170.169.199'],
   ipv4: {

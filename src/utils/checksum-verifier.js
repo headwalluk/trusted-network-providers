@@ -4,9 +4,13 @@
  * Utilities for verifying checksums of bundled assets
  */
 
-const fs = require('fs');
-const path = require('path');
-const { calculateSHA256 } = require('./secure-http-client');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { calculateSHA256 } from './secure-http-client.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let cachedChecksums = null;
 
@@ -96,8 +100,4 @@ function getExpectedChecksum(providerKey) {
   return providerConfig ? providerConfig.sha256 : null;
 }
 
-module.exports = {
-  loadChecksums,
-  verifyAssetChecksum,
-  getExpectedChecksum,
-};
+export { loadChecksums, verifyAssetChecksum, getExpectedChecksum };
