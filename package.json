@@ -8,13 +8,25 @@
     "url": "git+https://github.com/headwalluk/trusted-network-providers.git"
   },
   "scripts": {
-    "test": "node ./src/test.js",
+    "test": "jest",
+    "test:old": "node ./src/test.js",
     "build-zip": "./scripts/build.sh zip",
     "clean": "./scripts/build.sh clean",
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,json,md}\"",
     "lint": "eslint \"src/**/*.js\"",
     "lint:fix": "eslint --fix \"src/**/*.js\""
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/test.js"
+    ],
+    "testMatch": [
+      "**/test/**/*.test.js"
+    ]
   },
   "author": "Paul Faulkner",
   "license": "MIT",
@@ -52,6 +64,7 @@
   ],
   "devDependencies": {
     "eslint": "^9.39.1",
+    "jest": "^30.2.0",
     "prettier": "^3.6.2"
   }
 }
