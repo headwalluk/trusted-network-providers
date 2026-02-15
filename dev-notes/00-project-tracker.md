@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 1 — Foundation tasks  
-**Last commit:** [M1] Add Jest test framework with basic integration tests  
+**Last commit:** [M1] Add API response fixtures for Stripe and Googlebot  
 **Blockers:** None  
-**Next action:** Continue with remaining M1 tasks: snapshot API responses, npm audit fix, ESM migration  
-**Notes:** Jest integration tests confirmed passing (4/4 tests, formatting clean, linting clean). Ready to proceed with next M1 tasks.  
-**Last updated:** 2026-02-15 14:00
+**Next action:** Continue with remaining M1 tasks: npm audit fix, ESM migration  
+**Notes:** API response fixtures created in test/fixtures/ for Stripe and Googlebot. README.md documents how to update fixtures. All tests passing.  
+**Last updated:** 2026-02-15 14:06
 
 ---
 
@@ -39,7 +39,7 @@ For v2.0.0, we want to ship significant lifecycle improvements, reduce dependenc
 Get the tooling right before touching runtime code. Nothing here changes behaviour.
 
 - [x] Add integration test suite (load providers → reload → check IP → get result)
-- [ ] Snapshot responses from external provider APIs (Stripe, Cloudflare, Google)
+- [x] Snapshot responses from external provider APIs (Stripe, Cloudflare, Google)
 - [x] Tag v1.9.0 as `v1-stable` before branching
 - [ ] Run `npm audit fix` to resolve known vulnerabilities (fast-xml-parser, qs)
 - [ ] Migrate from CommonJS (`require`/`module.exports`) to ESM (`import`/`export`)
