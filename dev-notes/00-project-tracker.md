@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 1 — Foundation tasks  
-**Last commit:** [M1] Verify npm audit (0 vulnerabilities)  
+**Last commit:** [M1] Verify .nvmrc exists and fix docs formatting  
 **Blockers:** None  
-**Next action:** ESM migration — migrate codebase from CommonJS to ESM  
-**Notes:** npm audit shows 0 vulnerabilities. Dependencies are current. Ready to begin ESM migration.  
-**Last updated:** 2026-02-15 14:10
+**Next action:** ESM migration — migrate codebase from CommonJS to ESM (code + package.json)  
+**Notes:** npm audit verified (0 vulnerabilities). .nvmrc already exists (Node 22). Ready to begin ESM migration.  
+**Last updated:** 2026-02-15 14:16
 
 ---
 
