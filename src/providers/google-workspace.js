@@ -24,8 +24,8 @@ const self = {
     addresses: [],
     ranges: [],
   },
-  reload: () => {
-    return spfAnalyser('_spf.google.com', self);
+  reload: async () => {
+    return await spfAnalyser('_spf.google.com', self);
   },
 };
 

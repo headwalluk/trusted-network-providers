@@ -25,8 +25,8 @@ const self = {
     ranges: [],
   },
 
-  reload: () => {
-    return spfAnalyser('mailgun.org', self);
+  reload: async () => {
+    return await spfAnalyser('mailgun.org', self);
   },
 };
 
