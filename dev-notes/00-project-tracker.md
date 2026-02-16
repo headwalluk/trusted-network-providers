@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 3 — Modernise Code Patterns
-**Last commit:** [M3] Convert seobility.js reload() to async/await
+**Last commit:** [M3] Refactor spf-analyser.js to async/await, convert mailgun and google-workspace reload() methods
 **Blockers:** None
 **Next action:** Continue converting remaining provider reload() methods to async/await
-**Notes:** M1 complete ✓. M2 complete ✓. Removed superagent dependency (replaced with native fetch). Audited all remaining dependencies: fast-xml-parser (required by gtmetrix) and ipaddr.js (core IP parsing) both retained. 0 vulnerabilities. All 122 tests passing. 80% coverage target deferred to M3b — modules with lowest coverage (secure-http-client.js, spf-analyser.js) were rewritten in M2, coverage will be addressed after M3 code modernisation when codebase has stabilised. Current baseline: 55.52%, 122 tests passing. M3 async/await conversion in progress: bunnynet, facebookbot, googlebot, seobility reload() methods converted and tested ✓. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
-**Last updated:** 2026-02-16 11:50
+**Notes:** M1 complete ✓. M2 complete ✓. Removed superagent dependency (replaced with native fetch). Audited all remaining dependencies: fast-xml-parser (required by gtmetrix) and ipaddr.js (core IP parsing) both retained. 0 vulnerabilities. All 122 tests passing. 80% coverage target deferred to M3b — modules with lowest coverage (secure-http-client.js, spf-analyser.js) were rewritten in M2, coverage will be addressed after M3 code modernisation when codebase has stabilised. Current baseline: 55.52%, 122 tests passing. M3 async/await conversion in progress: bunnynet, facebookbot, googlebot, seobility, mailgun, google-workspace reload() methods converted and tested ✓. spf-analyser.js refactored to async/await ✓. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
+**Last updated:** 2026-02-16 12:10
 
 ---
 
@@ -77,7 +77,7 @@ Strip out unnecessary packages. Use what Node gives us for free.
 Bring the JavaScript up to 2026 standards.
 
 - [ ] Convert all Promise chains and `new Promise()` wrappers to async/await
-- [ ] Refactor `spf-analyser.js` — replace nested promise callbacks with async/await
+- [x] Refactor `spf-analyser.js` — replace nested promise callbacks with async/await
 - [ ] Refactor `reloadAll()` — use `Promise.allSettled()` instead of `Promise.all()`
 - [ ] Refactor `index.js` — replace `forEach` with `for...of` where appropriate
 - [ ] Replace `hasProvider()` bitwise OR pattern with `.some()` or `.find()`
