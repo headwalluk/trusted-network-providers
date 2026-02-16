@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 5 — Performance
-**Last commit:** [M5] Move LRU cache test to test/ directory and fix lint warning
+**Last commit:** [M5] Fix cache invalidation and test isolation issues
 **Blockers:** None
-**Next action:** Add LRU result cache with configurable TTL for IP lookups.
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. M5 in progress: Implemented LRU cache for parsed CIDR ranges (max 5000 entries). All 275 tests passing ✓.
-**Last updated:** 2026-02-16 18:30
+**Next action:** Profile lookup performance before/after with 20+ providers.
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. M5 in progress: Implemented result cache with TTL (TTLCache class), fixed cache invalidation in deleteProvider and reloadAll. All 275 tests passing ✓.
+**Last updated:** 2026-02-16 19:15
 
 ---
 
@@ -135,8 +135,8 @@ Make providers resilient to failures and misuse.
 Lower priority, but worth doing while we're in here.
 
 - [x] Implement LRU cache with max size for parsed CIDR ranges (replace unbounded `parsedAddresses`)
-- [ ] Add LRU result cache with configurable TTL for IP lookups
-- [ ] Invalidate caches on provider reload
+- [x] Add LRU result cache with configurable TTL for IP lookups
+- [x] Invalidate caches on provider reload
 - [ ] Profile lookup performance before/after with 20+ providers
 - [ ] Document performance characteristics
 - [ ] All tests pass
