@@ -1,5 +1,107 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 2.0.0 :: 2026-02-16
+
+### ⚠️ Breaking Changes
+
+- **ES Modules Migration**: Migrated from CommonJS to ES modules (ESM)
+  - Replace `require()` with `import` statements
+  - Use `await` instead of `.then()` for async operations
+  - Requires `"type": "module"` in package.json or `.mjs` file extensions
+  - See [docs/migration-v1-to-v2.md](docs/migration-v1-to-v2.md) for detailed migration guide
+- **Node.js Version Requirement**: Now requires Node.js >= 18.0.0 (tested on v22.21.0)
+
+### 🚀 New Features
+
+#### Lifecycle & Observability
+
+- **Provider State Tracking**: Track provider health with `getProviderStatus(name)`
+  - States: `ready`, `loading`, `error`, `stale`
+  - Includes `lastUpdated` timestamp and `lastError` for each provider
+  - Exported state constants: `PROVIDER_STATE_READY`, `PROVIDER_STATE_LOADING`, `PROVIDER_STATE_ERROR`, `PROVIDER_STATE_STALE`
+- **Lifecycle Events**: Monitor provider operations via EventEmitter
+  - `reload:success` — fired when a provider successfully updates
+  - `reload:error` — fired when a provider fails to update
+  - `stale` — fired when a provider exceeds staleness threshold
+- **Staleness Detection**: Configurable via `setStalenessThreshold(ms)`
+  - Default: 24 hours (86400000ms)
+  - Useful for long-running pm2 services to detect outdated provider data
+- **Configurable Logging**: Replace bare console statements with log levels
+  - Levels: `silent`, `error`, `warn`, `info`, `debug`
+  - Configure via `setLogLevel(level)` and `getLogLevel()`
+  - Default: `info`
+
+#### Performance
+
+- **LRU Cache for CIDR Parsing**: Max 5,000 parsed ranges
+  - Reduces memory footprint vs unbounded `parsedAddresses` map
+  - Automatic eviction of least-recently-used entries
+- **Result Caching with TTL**: Cache IP lookup results
+  - Default TTL: 1 hour (configurable via `setResultCacheTtl(ms)`)
+  - Max 10,000 cached IPs
+  - **192x speedup** for warm cache vs cold cache (30.5ms → 0.16ms for 15 IP lookups)
+  - **1,394x speedup** for repeated lookups of the same IP (2.3ms → 0.0016ms)
+  - Automatic invalidation on `reloadAll()` and `deleteProvider()`
+  - See [dev-notes/05-milestone-5-performance.md](dev-notes/05-milestone-5-performance.md) for detailed profiling
+
+### 🛠️ Code Quality & Modernisation
+
+- **Async/Await Refactoring**: Replaced all Promise chains and `new Promise()` wrappers with async/await
+  - Refactored `spf-analyser.js` — replaced nested promise callbacks
+  - Refactored `reloadAll()` — now uses `Promise.allSettled()` instead of `Promise.all()`
+  - Improved error handling consistency (no swallowed errors)
+- **Modern JavaScript Patterns**:
+  - Replaced `forEach` with `for...of` where appropriate
+  - Replaced `hasProvider()` bitwise OR pattern with `.some()` / `.find()`
+  - Use optional chaining and nullish coalescing operators
+- **Improved Robustness**:
+  - Fixed SPF analyser error handling — added `.catch()` on DNS resolution
+  - Fixed race condition in provider data clearing (atomic swap)
+  - Added input validation: max IPs per provider, max providers, CIDR validation
+- **Test Coverage**: Achieved >80% coverage across all modules
+  - 278 tests passing (up from 122 in v1.9.0)
+  - Added comprehensive tests for refactored modules (secure-http-client, spf-analyser)
+  - Added lifecycle and state tracking tests
+  - Added performance benchmarks
+
+### 📦 Dependencies
+
+- **Removed**: `superagent` — replaced with Node.js native `fetch()`
+  - Reduces package size and supply-chain attack surface
+  - Maintains same timeout, retry, and TLS behaviour
+- **Retained**: `fast-xml-parser` (required by GTmetrix), `ipaddr.js` (core IP parsing)
+- **Audit**: 0 vulnerabilities ✓
+
+### 📚 Documentation
+
+- **New Files**:
+  - [docs/migration-v1-to-v2.md](docs/migration-v1-to-v2.md) — Comprehensive migration guide
+  - [dev-notes/05-milestone-5-performance.md](dev-notes/05-milestone-5-performance.md) — Performance profiling and analysis
+- **Updated Files**:
+  - README.md — Updated for ESM imports, new lifecycle APIs, and events
+  - docs/security.md — Updated security considerations for v2.0
+  - docs/implementation.md — Documented ESM, native fetch, async/await patterns, lifecycle events, LRU caching, input validation
+- **Inline Comments**: Added comprehensive JSDoc comments for complex logic
+  - `getTrustedProvider()` — IP lookup flow
+  - `reloadAll()` — lifecycle event handling
+  - `secure-http-client.js` — retry logic and error handling
+
+### 🔧 Development Tools
+
+- **npm Scripts**: Added `format`, `format:check`, `lint`, `lint:fix`
+- **.nvmrc**: Pinned to Node.js 22 LTS
+- **CI**: GitHub Actions workflow tests on Node.js 18, 20, 22
+- **Test Framework**: Migrated from hand-rolled `src/test.js` to Jest
+
+### ⚙️ Internal Changes
+
+- Replaced `hasProvider()` bitwise OR pattern with `.some()` for readability
+- Optimised array clearing operations (`array.length = 0`)
+- Consistent use of strict equality (`===` vs `==`)
+- Better Promise error handling patterns
+
+---
+
 ## 1.9.0 :: 2025-11-21
 
 ### 🔒 Security Enhancements
