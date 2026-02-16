@@ -10,10 +10,10 @@
 ## Current Status
 
 **Working on:** Milestone 2 — Reduce Dependencies
-**Last commit:** [M1] Add functional tests for 11 static providers and checksum-verifier
+**Last commit:** [M2] Replace superagent with native fetch in secure-http-client.js
 **Blockers:** None
-**Next action:** Replace `superagent` with native `fetch` in secure-http-client.js
-**Notes:** M1 complete ✓. 80% coverage target deferred — the modules with lowest coverage (secure-http-client.js, spf-analyser.js) are being rewritten in M2/M3, so tests written now would be immediately invalidated. Coverage will be revisited after M3 when the code has stabilised. Current baseline: 55.52%, 122 tests passing.
+**Next action:** Update all providers that use secure-http-client
+**Notes:** M1 complete ✓. Native fetch implementation complete — removed dispatcher option (Node.js fetch performs strict certificate validation by default). All 122 tests passing. 80% coverage target deferred — the modules with lowest coverage (secure-http-client.js, spf-analyser.js) are being rewritten in M2/M3, so tests written now would be immediately invalidated. Coverage will be revisited after M3 when the code has stabilised. Current baseline: 55.52%, 122 tests passing. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
 **Last updated:** 2026-02-16
 
 ---
@@ -61,7 +61,7 @@ Get the tooling right before touching runtime code. Nothing here changes behavio
 
 Strip out unnecessary packages. Use what Node gives us for free.
 
-- [ ] Replace `superagent` with native `fetch` in secure-http-client.js
+- [x] Replace `superagent` with native `fetch` in secure-http-client.js
 - [ ] Update all providers that use secure-http-client
 - [ ] Audit `fast-xml-parser` usage — remove if unused
 - [ ] Remove any other unused dependencies
