@@ -30,6 +30,12 @@ import labrikaProvider from './providers/labrika.js';
 const IP_VERSION_V4 = 'ipv4';
 const IP_VERSION_V6 = 'ipv6';
 
+// Constants for provider states
+const PROVIDER_STATE_READY = 'ready';
+const PROVIDER_STATE_LOADING = 'loading';
+const PROVIDER_STATE_ERROR = 'error';
+const PROVIDER_STATE_STALE = 'stale';
+
 const defaultProviders = [
   privateProvider,
   googlebotProvider,
@@ -56,6 +62,13 @@ const defaultProviders = [
 ];
 
 const parsedAddresses = {};
+
+/**
+ * Provider metadata tracking.
+ * Maps provider name → { state, lastUpdated, lastError }
+ * @type {Map<string, { state: string, lastUpdated: number|null, lastError: Error|null }>}
+ */
+const providerMetadata = new Map();
 
 /**
  * @typedef {Object} Provider
@@ -101,6 +114,13 @@ const self = {
       }
 
       self.providers.push(provider);
+
+      // Initialize provider metadata
+      providerMetadata.set(provider.name, {
+        state: PROVIDER_STATE_READY,
+        lastUpdated: null,
+        lastError: null,
+      });
     }
   },
 
@@ -118,6 +138,7 @@ const self = {
       const providerIndex = self.providers.findIndex((testProvider) => testProvider.name === providerName);
       if (providerIndex >= 0) {
         self.providers.splice(providerIndex, 1);
+        providerMetadata.delete(providerName);
       }
     }
   },
@@ -152,6 +173,40 @@ const self = {
     }
 
     return self.providers.some((testProvider) => testProvider.name === providerName);
+  },
+
+  /**
+   * Returns the current status of a provider including its state, last update time, and any errors.
+   *
+   * @param {string} providerName - The name of the provider to check
+   * @returns {{ state: string, lastUpdated: number|null, lastError: Error|null }|null} Provider status object, or null if provider doesn't exist
+   *
+   * @example
+   * const status = trustedProviders.getProviderStatus('Googlebot');
+   * if (status) {
+   *   console.log(`State: ${status.state}`);
+   *   console.log(`Last updated: ${new Date(status.lastUpdated)}`);
+   *   if (status.lastError) {
+   *     console.error(`Error: ${status.lastError.message}`);
+   *   }
+   * }
+   */
+  getProviderStatus: (providerName) => {
+    if (!self.hasProvider(providerName)) {
+      return null;
+    }
+
+    const metadata = providerMetadata.get(providerName);
+    if (!metadata) {
+      return null;
+    }
+
+    // Return a copy to prevent external mutation
+    return {
+      state: metadata.state,
+      lastUpdated: metadata.lastUpdated,
+      lastError: metadata.lastError,
+    };
   },
 
   /**
@@ -212,14 +267,60 @@ const self = {
           console.log(`🔃 Reload: ${provider.name}`);
         }
 
+        // Set provider state to LOADING
+        const metadata = providerMetadata.get(provider.name);
+        if (metadata) {
+          metadata.state = PROVIDER_STATE_LOADING;
+        }
+
         const reloadPromises = provider.reload();
 
         if (Array.isArray(reloadPromises)) {
           for (const promise of reloadPromises) {
-            reloadRequests.push(promise);
+            reloadRequests.push(
+              promise
+                .then(() => {
+                  // Update metadata on success
+                  const meta = providerMetadata.get(provider.name);
+                  if (meta) {
+                    meta.state = PROVIDER_STATE_READY;
+                    meta.lastUpdated = Date.now();
+                    meta.lastError = null;
+                  }
+                })
+                .catch((error) => {
+                  // Update metadata on failure
+                  const meta = providerMetadata.get(provider.name);
+                  if (meta) {
+                    meta.state = PROVIDER_STATE_ERROR;
+                    meta.lastError = error;
+                  }
+                  throw error; // Re-throw to maintain Promise.allSettled behavior
+                })
+            );
           }
         } else {
-          reloadRequests.push(reloadPromises);
+          reloadRequests.push(
+            reloadPromises
+              .then(() => {
+                // Update metadata on success
+                const meta = providerMetadata.get(provider.name);
+                if (meta) {
+                  meta.state = PROVIDER_STATE_READY;
+                  meta.lastUpdated = Date.now();
+                  meta.lastError = null;
+                }
+              })
+              .catch((error) => {
+                // Update metadata on failure
+                const meta = providerMetadata.get(provider.name);
+                if (meta) {
+                  meta.state = PROVIDER_STATE_ERROR;
+                  meta.lastError = error;
+                }
+                throw error; // Re-throw to maintain Promise.allSettled behavior
+              })
+          );
         }
       }
     }
@@ -394,5 +495,8 @@ const self = {
     console.log();
   },
 };
+
+// Export provider state constants for consumers
+export { PROVIDER_STATE_READY, PROVIDER_STATE_LOADING, PROVIDER_STATE_ERROR, PROVIDER_STATE_STALE };
 
 export default self;
