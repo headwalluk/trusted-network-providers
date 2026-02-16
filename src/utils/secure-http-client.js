@@ -9,7 +9,6 @@
  * - Error handling
  */
 
-import superagent from 'superagent';
 import https from 'node:https';
 import crypto from 'node:crypto';
 
@@ -57,6 +56,29 @@ function verifyChecksum(data, expectedChecksum, url) {
 }
 
 /**
+ * Fetch with timeout support using AbortController
+ * @param {string} url - The URL to fetch
+ * @param {object} fetchOptions - Options to pass to fetch
+ * @param {number} timeoutMs - Timeout in milliseconds
+ * @returns {Promise<Response>} - The fetch response
+ */
+async function fetchWithTimeout(url, fetchOptions, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...fetchOptions,
+      signal: controller.signal,
+      dispatcher: httpsAgent,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
  * Fetch JSON data from a URL with security best practices
  *
  * @param {string} url - The URL to fetch from (must be HTTPS)
@@ -81,51 +103,73 @@ async function fetchJSON(url, options = {}) {
 
   for (let attempt = 0; attempt <= config.retries; attempt++) {
     try {
-      const response = await superagent
-        .get(url)
-        .agent(httpsAgent)
-        .accept('json')
-        .timeout({
-          response: config.timeout,
-          deadline: config.timeout + 5000,
-        })
-        .retry(0) // We handle retries manually for better control
-        .buffer(true); // Ensure we can access raw text for checksum
+      const response = await fetchWithTimeout(
+        url,
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+          },
+        },
+        config.timeout
+      );
+
+      // Check HTTP status
+      if (response.status === 404 || response.status === 403 || response.status === 401) {
+        throw new Error(`HTTP ${response.status} error for ${url}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} error for ${url}: ${response.statusText}`);
+      }
+
+      // Get the response text for checksum verification
+      const text = await response.text();
 
       // Validate response
-      if (!response.body) {
+      if (!text) {
         throw new Error('Empty response body received');
+      }
+
+      // Parse JSON
+      let body;
+      try {
+        body = JSON.parse(text);
+      } catch (parseError) {
+        throw new Error(`Failed to parse JSON from ${url}: ${parseError.message}`);
       }
 
       // Checksum verification if provided
       if (config.expectedChecksum) {
-        verifyChecksum(response.text, config.expectedChecksum, url);
+        verifyChecksum(text, config.expectedChecksum, url);
       }
 
       // Structure verification if provided (for data that changes frequently)
       if (config.verifyStructure && typeof config.verifyStructure === 'function') {
-        const isValid = config.verifyStructure(response.body);
+        const isValid = config.verifyStructure(body);
         if (!isValid) {
           throw new Error(`Structure verification failed for ${url}`);
         }
       }
 
-      return response.body;
+      return body;
     } catch (error) {
       lastError = error;
 
       // Don't retry on certain errors
-      if (error.status === 404 || error.status === 403 || error.status === 401) {
-        throw new Error(`HTTP ${error.status} error for ${url}: ${error.message}`);
+      if (error.message.includes('HTTP 404') || error.message.includes('HTTP 403') || error.message.includes('HTTP 401')) {
+        throw error;
       }
 
       // Certificate validation errors should not be retried
-      if (
-        error.code === 'CERT_HAS_EXPIRED' ||
-        error.code === 'CERT_UNTRUSTED' ||
-        error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
-      ) {
+      if (error.code === 'CERT_HAS_EXPIRED' || error.code === 'CERT_UNTRUSTED' || error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
+      }
+
+      // Timeout errors
+      if (error.name === 'AbortError') {
+        lastError = new Error(`Request timeout for ${url} after ${config.timeout}ms`);
+        // Allow retry on timeout
       }
 
       // If this isn't the last attempt, wait before retrying
@@ -160,32 +204,44 @@ async function fetchText(url, options = {}) {
 
   for (let attempt = 0; attempt <= config.retries; attempt++) {
     try {
-      const response = await superagent
-        .get(url)
-        .agent(httpsAgent)
-        .accept('text/plain')
-        .timeout({
-          response: config.timeout,
-          deadline: config.timeout + 5000,
-        })
-        .retry(0);
+      const response = await fetchWithTimeout(
+        url,
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'text/plain',
+          },
+        },
+        config.timeout
+      );
 
-      return response.text;
+      // Check HTTP status
+      if (response.status === 404 || response.status === 403 || response.status === 401) {
+        throw new Error(`HTTP ${response.status} error for ${url}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} error for ${url}: ${response.statusText}`);
+      }
+
+      return await response.text();
     } catch (error) {
       lastError = error;
 
       // Don't retry on certain errors
-      if (error.status === 404 || error.status === 403 || error.status === 401) {
-        throw new Error(`HTTP ${error.status} error for ${url}: ${error.message}`);
+      if (error.message.includes('HTTP 404') || error.message.includes('HTTP 403') || error.message.includes('HTTP 401')) {
+        throw error;
       }
 
       // Certificate validation errors should not be retried
-      if (
-        error.code === 'CERT_HAS_EXPIRED' ||
-        error.code === 'CERT_UNTRUSTED' ||
-        error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
-      ) {
+      if (error.code === 'CERT_HAS_EXPIRED' || error.code === 'CERT_UNTRUSTED' || error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
+      }
+
+      // Timeout errors
+      if (error.name === 'AbortError') {
+        lastError = new Error(`Request timeout for ${url} after ${config.timeout}ms`);
+        // Allow retry on timeout
       }
 
       // If this isn't the last attempt, wait before retrying
@@ -220,34 +276,46 @@ async function fetchXML(url, options = {}) {
 
   for (let attempt = 0; attempt <= config.retries; attempt++) {
     try {
-      const response = await superagent
-        .get(url)
-        .agent(httpsAgent)
-        .accept('xml')
-        .timeout({
-          response: config.timeout,
-          deadline: config.timeout + 5000,
-        })
-        .retry(0)
-        .buffer(true)
-        .parse(superagent.parse['application/xml']);
+      const response = await fetchWithTimeout(
+        url,
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'application/xml',
+          },
+        },
+        config.timeout
+      );
 
-      return response.body;
+      // Check HTTP status
+      if (response.status === 404 || response.status === 403 || response.status === 401) {
+        throw new Error(`HTTP ${response.status} error for ${url}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} error for ${url}: ${response.statusText}`);
+      }
+
+      // Return as buffer for XML parsing
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
     } catch (error) {
       lastError = error;
 
       // Don't retry on certain errors
-      if (error.status === 404 || error.status === 403 || error.status === 401) {
-        throw new Error(`HTTP ${error.status} error for ${url}: ${error.message}`);
+      if (error.message.includes('HTTP 404') || error.message.includes('HTTP 403') || error.message.includes('HTTP 401')) {
+        throw error;
       }
 
       // Certificate validation errors should not be retried
-      if (
-        error.code === 'CERT_HAS_EXPIRED' ||
-        error.code === 'CERT_UNTRUSTED' ||
-        error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
-      ) {
+      if (error.code === 'CERT_HAS_EXPIRED' || error.code === 'CERT_UNTRUSTED' || error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
+      }
+
+      // Timeout errors
+      if (error.name === 'AbortError') {
+        lastError = new Error(`Request timeout for ${url} after ${config.timeout}ms`);
+        // Allow retry on timeout
       }
 
       // If this isn't the last attempt, wait before retrying
