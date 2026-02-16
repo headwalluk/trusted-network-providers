@@ -49,6 +49,7 @@ Milestone 2 focused on reducing external dependencies by replacing third-party H
 GTmetrix provides server location data via XML feed. This parser is necessary to extract IP addresses from the structured XML response. No suitable replacement in Node.js stdlib.
 
 **Usage:**
+
 ```javascript
 import { XMLParser } from 'fast-xml-parser';
 const parser = new XMLParser();
@@ -58,7 +59,8 @@ const gtmetrixData = parser.parse(xmlBody.toString());
 ### ipaddr.js
 
 **Status:** Required  
-**Used by:** 
+**Used by:**
+
 - src/index.js (core IP parsing and CIDR matching)
 - src/providers/seobility.js
 - src/providers/bunnynet.js
@@ -77,6 +79,7 @@ This library provides robust IP address validation, parsing, and CIDR range matc
 ## Testing
 
 All 122 tests pass after dependency changes:
+
 - Unit tests: ✓
 - Integration tests: ✓
 - Provider-specific tests: ✓

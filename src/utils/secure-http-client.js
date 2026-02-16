@@ -150,12 +150,20 @@ async function fetchJSON(url, options = {}) {
       lastError = error;
 
       // Don't retry on certain errors
-      if (error.message.includes('HTTP 404') || error.message.includes('HTTP 403') || error.message.includes('HTTP 401')) {
+      if (
+        error.message.includes('HTTP 404') ||
+        error.message.includes('HTTP 403') ||
+        error.message.includes('HTTP 401')
+      ) {
         throw error;
       }
 
       // Certificate validation errors should not be retried
-      if (error.code === 'CERT_HAS_EXPIRED' || error.code === 'CERT_UNTRUSTED' || error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
+      if (
+        error.code === 'CERT_HAS_EXPIRED' ||
+        error.code === 'CERT_UNTRUSTED' ||
+        error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
+      ) {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
       }
 
@@ -222,12 +230,20 @@ async function fetchText(url, options = {}) {
       lastError = error;
 
       // Don't retry on certain errors
-      if (error.message.includes('HTTP 404') || error.message.includes('HTTP 403') || error.message.includes('HTTP 401')) {
+      if (
+        error.message.includes('HTTP 404') ||
+        error.message.includes('HTTP 403') ||
+        error.message.includes('HTTP 401')
+      ) {
         throw error;
       }
 
       // Certificate validation errors should not be retried
-      if (error.code === 'CERT_HAS_EXPIRED' || error.code === 'CERT_UNTRUSTED' || error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
+      if (
+        error.code === 'CERT_HAS_EXPIRED' ||
+        error.code === 'CERT_UNTRUSTED' ||
+        error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
+      ) {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
       }
 
@@ -296,12 +312,20 @@ async function fetchXML(url, options = {}) {
       lastError = error;
 
       // Don't retry on certain errors
-      if (error.message.includes('HTTP 404') || error.message.includes('HTTP 403') || error.message.includes('HTTP 401')) {
+      if (
+        error.message.includes('HTTP 404') ||
+        error.message.includes('HTTP 403') ||
+        error.message.includes('HTTP 401')
+      ) {
         throw error;
       }
 
       // Certificate validation errors should not be retried
-      if (error.code === 'CERT_HAS_EXPIRED' || error.code === 'CERT_UNTRUSTED' || error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
+      if (
+        error.code === 'CERT_HAS_EXPIRED' ||
+        error.code === 'CERT_UNTRUSTED' ||
+        error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
+      ) {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
       }
 

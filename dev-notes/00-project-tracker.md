@@ -206,8 +206,8 @@ All development happens on a single branch: `v2-modernisation`
 
 ## Log
 
-| Date       | Milestone | Notes                                              |
-| ---------- | --------- | -------------------------------------------------- |
-| 2026-02-14 | —         | Project tracker created. Codebase review complete. |
-| 2026-02-16 | M1        | M1 closed. 80% coverage deferred to post-M3 — low-coverage modules are being rewritten in M2/M3. Added M3b (Test Coverage) milestone. Prioritising dependency reduction and code modernisation. |
+| Date       | Milestone | Notes                                                                                                                                                                                                                                                      |
+| ---------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-02-14 | —         | Project tracker created. Codebase review complete.                                                                                                                                                                                                         |
+| 2026-02-16 | M1        | M1 closed. 80% coverage deferred to post-M3 — low-coverage modules are being rewritten in M2/M3. Added M3b (Test Coverage) milestone. Prioritising dependency reduction and code modernisation.                                                            |
 | 2026-02-16 | M2        | M2 closed. Removed superagent (replaced with native fetch). Audited all dependencies: fast-xml-parser and ipaddr.js both required and retained. 0 vulnerabilities. All 122 tests passing. See dev-notes/02-milestone-2-dependency-audit.md for full audit. |
