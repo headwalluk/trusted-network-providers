@@ -299,4 +299,133 @@ describe('Edge Cases and Error Handling', () => {
       expect(trustedProviders.getTrustedProvider('192.168.1.1')).toBeNull();
     });
   });
+
+  describe('Diagnostics Mode', () => {
+    test('should log diagnostics when isDiagnosticsEnabled is true', async () => {
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Enable diagnostics
+      trustedProviders.isDiagnosticsEnabled = true;
+
+      const diagnosticProvider = {
+        name: 'Diagnostic Test Provider',
+        reload: () => Promise.resolve(),
+        testAddresses: [],
+        ipv4: {
+          addresses: ['203.0.113.99'],
+          ranges: [],
+        },
+        ipv6: {
+          addresses: [],
+          ranges: [],
+        },
+      };
+
+      // addProvider should log when diagnostics enabled
+      trustedProviders.addProvider(diagnosticProvider);
+      expect(consoleLogSpy).toHaveBeenCalledWith('➕ Add provider: Diagnostic Test Provider');
+
+      // reloadAll should log when diagnostics enabled
+      await trustedProviders.reloadAll();
+      expect(consoleLogSpy).toHaveBeenCalledWith('🔃 Reload: Diagnostic Test Provider');
+
+      // Restore
+      trustedProviders.isDiagnosticsEnabled = false;
+      consoleLogSpy.mockRestore();
+    });
+  });
+
+  describe('Error Handling in IP Matching', () => {
+    test('should handle exception during IP matching loop', () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      // Create a provider with a malformed structure that will cause an exception
+      const badProvider = {
+        name: 'Bad Provider',
+        reload: () => Promise.resolve(),
+        testAddresses: [],
+        ipv4: {
+          addresses: null, // This will cause an exception when iterating
+          ranges: [],
+        },
+        ipv6: {
+          addresses: [],
+          ranges: [],
+        },
+      };
+
+      trustedProviders.addProvider(badProvider);
+
+      // This should trigger the catch block in getTrustedProvider
+      const result = trustedProviders.getTrustedProvider('192.0.2.1');
+
+      // Should have logged the error
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('ERROR: Failed to find trusted source'));
+
+      // Should return null even though an error occurred
+      expect(result).toBeNull();
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe('Manual Testing Function', () => {
+    test('should execute runTests() without throwing', async () => {
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      const testProvider = {
+        name: 'Test Provider for runTests',
+        reload: () => Promise.resolve(),
+        testAddresses: ['192.0.2.100', '198.51.100.200'],
+        ipv4: {
+          addresses: ['192.0.2.100'],
+          ranges: ['198.51.100.0/24'],
+        },
+        ipv6: {
+          addresses: [],
+          ranges: [],
+        },
+      };
+
+      trustedProviders.addProvider(testProvider);
+      await trustedProviders.reloadAll();
+
+      // runTests() should not throw
+      expect(() => trustedProviders.runTests()).not.toThrow();
+
+      // Should have logged test results
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Finished tests'));
+
+      consoleLogSpy.mockRestore();
+    });
+
+    test('runTests() should handle provider with no testAddresses', async () => {
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      const noTestProvider = {
+        name: 'Provider Without Tests',
+        reload: () => Promise.resolve(),
+        // testAddresses is undefined (not an array)
+        ipv4: {
+          addresses: ['203.0.113.1'],
+          ranges: [],
+        },
+        ipv6: {
+          addresses: [],
+          ranges: [],
+        },
+      };
+
+      trustedProviders.addProvider(noTestProvider);
+      await trustedProviders.reloadAll();
+
+      // runTests() should handle missing testAddresses
+      expect(() => trustedProviders.runTests()).not.toThrow();
+
+      // Should have logged "No tests for Provider Without Tests"
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('No tests for Provider Without Tests'));
+
+      consoleLogSpy.mockRestore();
+    });
+  });
 });
