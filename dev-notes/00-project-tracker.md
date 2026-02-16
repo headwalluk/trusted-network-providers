@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 1 — Foundation tasks  
-**Last commit:** [M1] Mark test porting complete  
+**Last commit:** [M1] Add comprehensive structure tests for 13 static providers  
 **Blockers:** None  
-**Next action:** Improve test coverage from 50.72% to >80%. Focus on: provider files (ahrefsbot, brevo, cloudflare, etc.), spf-analyser.js (39.68%), secure-http-client.js (22.38%), checksum-verifier.js (48.71%)  
-**Notes:** ESM migration complete ✓. GitHub Actions CI workflow added ✓. Test porting complete ✓. All tests passing (35 tests). Testing sprint verified: npm test ✓, format ✓, lint ✓. Current coverage: 50.72% (need >80%). Main coverage gaps: 17 provider files at 0%, plus spf-analyser, secure-http-client, and checksum-verifier. Ready for next coding sprint to improve coverage.  
-**Last updated:** 2026-02-16 08:45
+**Next action:** Continue improving test coverage from 51.2% to >80%. Structure tests added for 13 static providers (validates exports but doesn't exercise runtime). Need functional/runtime tests for: static provider reload/load functions, spf-analyser.js (39.68%), secure-http-client.js (22.38%), checksum-verifier.js (48.71%)  
+**Notes:** ESM migration complete ✓. GitHub Actions CI workflow added ✓. Test porting complete ✓. All tests passing (77 tests). Structure tests added for ahrefsbot, brevo, cloudflare, ezoic, labrika, mailgun, opayo, outlook, paypal, private, semrush, ship-hero, seobility ✓. Testing sprint verified: npm test ✓, format ✓, lint ✓. Current coverage: 51.2% (need >80%). Next: add functional tests that actually invoke provider code.  
+**Last updated:** 2026-02-16 09:10
 
 ---
 
