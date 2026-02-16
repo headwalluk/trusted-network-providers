@@ -4,6 +4,7 @@
 
 import { EventEmitter } from 'node:events';
 import ipaddr from 'ipaddr.js';
+import { LRUCache } from './lru-cache.js';
 import logger from './utils/logger.js';
 import privateProvider from './providers/private.js';
 import googlebotProvider from './providers/googlebot.js';
@@ -41,6 +42,7 @@ const PROVIDER_STATE_STALE = 'stale';
 // Input validation limits
 const MAX_PROVIDERS = 100; // Maximum number of providers that can be registered
 const MAX_IPS_PER_PROVIDER = 10000; // Maximum combined IPs and ranges per provider
+const MAX_PARSED_ADDRESSES = 5000; // Maximum parsed CIDR ranges to cache (LRU)
 
 const defaultProviders = [
   privateProvider,
@@ -67,7 +69,7 @@ const defaultProviders = [
   // seobilityProvider, // Unreliable
 ];
 
-let parsedAddresses = {};
+let parsedAddresses = new LRUCache(MAX_PARSED_ADDRESSES);
 
 /**
  * Provider metadata tracking.
@@ -595,10 +597,9 @@ const self = {
 
     const results = await Promise.allSettled(reloadRequests);
 
-    // Atomically clear the CIDR cache after all reloads complete
+    // Clear the LRU CIDR cache after all reloads complete
     // This prevents stale cached parses from being used with updated provider ranges
-    // Assignment is atomic - any concurrent lookups see either the old cache or the new empty one
-    parsedAddresses = {};
+    parsedAddresses.clear();
 
     return results;
   },
@@ -672,11 +673,11 @@ const self = {
             for (let rangeIndex = 0; rangeIndex < rangeCount; ++rangeIndex) {
               const testRange = testPool.ranges[rangeIndex];
 
-              if (!parsedAddresses[testRange]) {
-                parsedAddresses[testRange] = ipaddr.parseCIDR(testRange);
+              if (!parsedAddresses.has(testRange)) {
+                parsedAddresses.set(testRange, ipaddr.parseCIDR(testRange));
               }
 
-              if (parsedIp.match(parsedAddresses[testRange])) {
+              if (parsedIp.match(parsedAddresses.get(testRange))) {
                 trustedSource = provider.name;
                 break;
               }
