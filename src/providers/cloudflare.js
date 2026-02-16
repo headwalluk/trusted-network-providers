@@ -2,7 +2,7 @@
  * cloudflare.js
  */
 
-module.exports = {
+export default {
   name: 'Cloudflare',
   testAddresses: ['104.18.36.98', '104.18.57.171', '104.20.22.42', '104.27.181.130', '104.27.185.30'],
   ipv4: {

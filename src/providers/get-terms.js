@@ -2,7 +2,7 @@
  * get-terms.js
  */
 
-module.exports = {
+export default {
   name: 'GetTerms',
   testAddresses: ['170.64.182.39'],
   ipv4: {

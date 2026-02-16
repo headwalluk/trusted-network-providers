@@ -2,7 +2,7 @@
  * semrush.js
  */
 
-module.exports = {
+export default {
   name: 'SemrushBot',
   testAddresses: ['85.208.98.53'],
   ipv4: {

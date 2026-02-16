@@ -223,6 +223,7 @@ Inconsistent coding patterns make maintenance difficult.
 - [ ] Create utility function for array clearing (now using array.length = 0 directly)
 
 **ESLint Fixes Applied:**
+
 - Replaced all `==` with `===` for strict equality
 - Removed unused variables (`IP_VERSION_ALL`, `resolvedNetblocks`, `error` catch parameters)
 - Renamed unused `reject` parameters to indicate intentional omission

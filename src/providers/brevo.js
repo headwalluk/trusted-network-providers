@@ -4,7 +4,7 @@
  * REF: https://help.brevo.com/hc/en-us/articles/208848409--Brevo-IP-ranges-improve-the-deliverability-of-B2B-emails
  */
 
-module.exports = {
+export default {
   name: 'Brevo',
   testAddresses: ['1.179.112.12', '212.146.244.34'],
   ipv4: {

@@ -1,27 +1,47 @@
 {
   "name": "@headwall/trusted-network-providers",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "description": "Trusted network hosts and address ranges.",
+  "type": "module",
   "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "trusted-lookup": "./bin/lookup.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/headwalluk/trusted-network-providers.git"
   },
   "scripts": {
-    "test": "node ./src/test.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+
     "build-zip": "./scripts/build.sh zip",
     "clean": "./scripts/build.sh clean",
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,json,md}\"",
     "lint": "eslint \"src/**/*.js\"",
-    "lint:fix": "eslint --fix \"src/**/*.js\""
+    "lint:fix": "eslint --fix \"src/**/*.js\"",
+    "lookup": "node bin/lookup.js"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/test.js"
+    ],
+    "testMatch": [
+      "**/test/**/*.test.js"
+    ],
+    "transform": {}
   },
   "author": "Paul Faulkner",
   "license": "MIT",
   "dependencies": {
     "fast-xml-parser": "^5.3.2",
-    "ipaddr.js": "^2.0.1",
-    "superagent": "^10.1.1"
+    "ipaddr.js": "^2.0.1"
   },
   "keywords": [
     "network",
@@ -44,14 +64,15 @@
     "node": ">=18.0.0"
   },
   "files": [
+    "bin/",
     "src/",
-    "scripts/",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
   ],
   "devDependencies": {
     "eslint": "^9.39.1",
+    "jest": "^30.2.0",
     "prettier": "^3.6.2"
   }
 }

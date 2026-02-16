@@ -2,7 +2,7 @@
  * ahrefsbot.js
  */
 
-module.exports = {
+export default {
   name: 'AhrefsBot',
   testAddresses: ['54.36.148.225'],
   ipv4: {

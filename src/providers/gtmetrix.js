@@ -2,10 +2,10 @@
  * gtmetrix.js
  */
 
-const ipaddr = require('ipaddr.js');
-
-const { fetchXML } = require('../utils/secure-http-client');
-const { XMLParser } = require('fast-xml-parser');
+import ipaddr from 'ipaddr.js';
+import { fetchXML } from '../utils/secure-http-client.js';
+import { XMLParser } from 'fast-xml-parser';
+import logger from '../utils/logger.js';
 
 const GTMETRIX_ADDRESS_LIST_URL = 'https://gtmetrix.com/locations.xml';
 
@@ -43,14 +43,14 @@ const self = {
               self.ipv6.addresses.push(parsedIp.toString());
             }
           } catch (error) {
-            console.error(`Failed to parse GTmetrix IP address: ${error.message}`);
+            logger.error(`Failed to parse GTmetrix IP address: ${error.message}`);
           }
         });
       } else {
         throw new Error('Invalid response format from GTmetrix');
       }
     } catch (error) {
-      console.error(`Failed to reload GTmetrix IPs: ${error.message}`);
+      logger.error(`Failed to reload GTmetrix IPs: ${error.message}`);
       throw error;
     }
   },
@@ -66,4 +66,4 @@ const self = {
   },
 };
 
-module.exports = self;
+export default self;

@@ -2,7 +2,7 @@
  * private.js
  */
 
-module.exports = {
+export default {
   name: 'Private',
   testAddresses: ['127.0.0.1', '192.168.0.20', '192.168.100.20', '10.1.2.3'],
   ipv4: {

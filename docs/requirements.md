@@ -159,7 +159,7 @@ reloadAll(): Promise<void>
 
 ```javascript
 runTests(): Promise<void>
-isDiagnosticsEnabled: boolean
+setLogLevel('debug') // Enable verbose output
 ```
 
 ### FR-7: IPv4 and IPv6 Support

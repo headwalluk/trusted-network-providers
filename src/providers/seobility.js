@@ -2,8 +2,9 @@
  * seobility.js
  */
 
-const { fetchText } = require('../utils/secure-http-client');
-const ipaddr = require('ipaddr.js');
+import { fetchText } from '../utils/secure-http-client.js';
+import ipaddr from 'ipaddr.js';
+import logger from '../utils/logger.js';
 
 const self = {
   name: 'Seobility',
@@ -11,39 +12,40 @@ const self = {
     ipv4: 'https://www.seobility.net/static/ip_lists/bots/ipv4.txt',
     ipv6: 'https://www.seobility.net/static/ip_lists/bots/ipv6.txt',
   },
-  reload: () => {
+  reload: async () => {
     const requests = [];
 
-    for (const addressListType in self.sources) {
-      const addressListUrl = self.sources[addressListType];
+    for (const [addressListType, addressListUrl] of Object.entries(self.sources)) {
 
-      requests.push(
-        fetchText(addressListUrl)
-          .then((text) => {
-            if (!text) {
-              console.error(`Failed to fetch ${addressListType} from ${addressListUrl}`);
-            } else {
-              // Clear existing data
-              self[addressListType].addresses.length = 0;
-              self[addressListType].ranges.length = 0;
+      const request = (async () => {
+        try {
+          const text = await fetchText(addressListUrl);
 
-              const records = text.split('\n');
-              records.forEach((record) => {
-                const trimmed = record.trim();
-                if (trimmed && ipaddr.isValid(trimmed) && !self[addressListType].addresses.includes(trimmed)) {
-                  self[addressListType].addresses.push(trimmed);
-                }
-              });
-            }
-          })
-          .catch((error) => {
-            console.error(`Failed to reload Seobility ${addressListType} IPs: ${error.message}`);
-            throw error;
-          })
-      );
+          if (!text) {
+            logger.error(`Failed to fetch ${addressListType} from ${addressListUrl}`);
+          } else {
+            // Clear existing data
+            self[addressListType].addresses.length = 0;
+            self[addressListType].ranges.length = 0;
+
+            const records = text.split('\n');
+            records.forEach((record) => {
+              const trimmed = record.trim();
+              if (trimmed && ipaddr.isValid(trimmed) && !self[addressListType].addresses.includes(trimmed)) {
+                self[addressListType].addresses.push(trimmed);
+              }
+            });
+          }
+        } catch (error) {
+          logger.error(`Failed to reload Seobility ${addressListType} IPs: ${error.message}`);
+          throw error;
+        }
+      })();
+
+      requests.push(request);
     }
 
-    return requests;
+    await Promise.all(requests);
   },
   testAddresses: ['159.69.152.187', '2a01:4f8:1c1c:4064::1'],
   ipv4: {
@@ -56,4 +58,4 @@ const self = {
   },
 };
 
-module.exports = self;
+export default self;

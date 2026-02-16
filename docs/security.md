@@ -21,18 +21,21 @@ The library implements multiple layers of security for external data sources:
 All HTTP requests use the centralized `secure-http-client.js` module which enforces:
 
 - **HTTPS-only**: Non-HTTPS URLs are rejected immediately
-- **TLS 1.2+**: Minimum TLS version enforced
-- **Certificate Validation**: `rejectUnauthorized: true` for all connections
+- **Strict Certificate Validation**: Native Node.js fetch (v18+) validates certificates by default
+- **Modern TLS**: Fetch uses the system's TLS stack with modern cipher suites
 - **Certificate Errors**: Expired, untrusted, or self-signed certificates are rejected
 
-### Configuration
+### v2.0 Migration Note
 
-```javascript
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: true, // Reject invalid certificates
-  minVersion: 'TLSv1.2', // Minimum TLS version
-});
-```
+**Prior to v2.0** (using superagent):
+- Required explicit `https.Agent` configuration
+- Manual TLS version and certificate validation settings
+
+**v2.0+ (using native fetch)**:
+- No configuration needed — strict certificate validation is enabled by default
+- Fetch inherits TLS settings from Node.js runtime
+- Simplified codebase with fewer dependencies
+- See Milestone 2 notes for migration details
 
 ### Error Handling
 
@@ -41,6 +44,11 @@ Certificate validation errors are detected and reported:
 ```
 SSL certificate validation failed for https://example.com: CERT_HAS_EXPIRED
 ```
+
+Certificate errors that abort requests without retry:
+- `CERT_HAS_EXPIRED` - Certificate has expired
+- `CERT_UNTRUSTED` - Certificate chain not trusted
+- `DEPTH_ZERO_SELF_SIGNED_CERT` - Self-signed certificate
 
 ---
 
@@ -262,16 +270,156 @@ const badProvider = {
 
 ---
 
+## Input Validation & Resource Limits
+
+### Overview
+
+v2.0 introduces input validation and resource limits to prevent denial-of-service attacks and unbounded memory growth.
+
+### Provider Limits
+
+**Maximum Providers**: 100
+
+Prevents registration of excessive providers that could exhaust memory or slow down lookups.
+
+```javascript
+const MAX_PROVIDERS = 100;
+
+// Enforced during provider registration
+if (currentProviderCount >= MAX_PROVIDERS) {
+  throw new Error(`Maximum provider limit reached (${MAX_PROVIDERS}). Cannot add provider: ${provider.name}`);
+}
+```
+
+**Maximum IPs Per Provider**: 10,000
+
+Limits the total number of IP addresses and CIDR ranges per provider (combined IPv4 and IPv6).
+
+```javascript
+const MAX_IPS_PER_PROVIDER = 10000;
+
+const totalIps = 
+  (provider.ipv4?.addresses?.length || 0) +
+  (provider.ipv4?.ranges?.length || 0) +
+  (provider.ipv6?.addresses?.length || 0) +
+  (provider.ipv6?.ranges?.length || 0);
+
+if (totalIps > MAX_IPS_PER_PROVIDER) {
+  throw new Error(
+    `Provider "${provider.name}" exceeds maximum IP limit (${MAX_IPS_PER_PROVIDER}). Total IPs: ${totalIps}`
+  );
+}
+```
+
+### CIDR Validation
+
+All CIDR ranges are validated before accepting provider data:
+
+```javascript
+import ipaddr from 'ipaddr.js';
+
+if (provider.ipv4?.ranges) {
+  for (const range of provider.ipv4.ranges) {
+    if (!ipaddr.isValidCIDR(range)) {
+      throw new Error(`Invalid IPv4 CIDR range in provider "${provider.name}": ${range}`);
+    }
+  }
+}
+
+if (provider.ipv6?.ranges) {
+  for (const range of provider.ipv6.ranges) {
+    if (!ipaddr.isValidCIDR(range)) {
+      throw new Error(`Invalid IPv6 CIDR range in provider "${provider.name}": ${range}`);
+    }
+  }
+}
+```
+
+### Cache Limits (Memory Protection)
+
+**Parsed Address Cache**: 5,000 entries (LRU)
+
+Caches parsed CIDR ranges to avoid re-parsing. Least Recently Used (LRU) eviction prevents unbounded growth.
+
+```javascript
+const MAX_PARSED_ADDRESSES = 5000;
+const parsedAddresses = new LRUCache(MAX_PARSED_ADDRESSES);
+```
+
+**Result Cache**: 10,000 entries (LRU + TTL)
+
+Caches IP lookup results with Time-To-Live (TTL) expiration. Default TTL: 1 hour.
+
+```javascript
+const MAX_CACHED_RESULTS = 10000;
+const DEFAULT_RESULT_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+const resultCache = new TTLCache(MAX_CACHED_RESULTS, resultCacheTtlMs);
+```
+
+### Security Benefits
+
+1. **DoS Protection**: Limits prevent malicious providers from consuming excessive memory or CPU
+2. **Resource Predictability**: Maximum memory usage is bounded and predictable
+3. **Validation**: Invalid CIDR ranges are rejected early, preventing runtime errors
+4. **Cache Poisoning Mitigation**: Cache size limits reduce the impact of cache poisoning attacks
+
+### Attack Scenarios Mitigated
+
+**Scenario 1: Malicious Provider Registration**
+
+An attacker attempts to register a provider with 1 million IP addresses to exhaust memory.
+
+```javascript
+// This will be rejected:
+const maliciousProvider = {
+  name: 'evil',
+  ipv4: {
+    ranges: Array(1000000).fill('0.0.0.0/0'),
+  },
+};
+
+// Throws: Provider "evil" exceeds maximum IP limit (10000). Total IPs: 1000000
+```
+
+**Scenario 2: Invalid CIDR Exploitation**
+
+An attacker provides malformed CIDR ranges to crash the parser.
+
+```javascript
+// This will be rejected:
+const badProvider = {
+  name: 'bad',
+  ipv4: {
+    ranges: ['256.256.256.256/99', 'not-an-ip'],
+  },
+};
+
+// Throws: Invalid IPv4 CIDR range in provider "bad": 256.256.256.256/99
+```
+
+**Scenario 3: Cache Exhaustion**
+
+An attacker floods the system with unique IPs to fill the cache.
+
+```javascript
+// Only the 10,000 most recent lookups are cached
+// Older entries are evicted automatically (LRU)
+// Impact: Limited to MAX_CACHED_RESULTS memory usage
+```
+
+---
+
 ## Threat Model
 
 ### Threats Addressed
 
 1. ✅ **Man-in-the-Middle Attacks**
-   - Mitigated by HTTPS certificate validation
-   - TLS 1.2+ encryption enforced
+   - Mitigated by HTTPS certificate validation (native fetch strict mode)
+   - Modern TLS encryption enforced by Node.js runtime
 
 2. ✅ **File Corruption**
-   - Detected by checksum verification
+   - Detected by SHA-256 checksum verification
    - Logged as warnings
 
 3. ✅ **Data Tampering**
@@ -280,11 +428,22 @@ const badProvider = {
 
 4. ✅ **Malformed Data**
    - Structure validation catches format errors
+   - CIDR validation rejects invalid ranges
    - Type checking for all IP addresses
 
 5. ✅ **Hanging Requests**
    - 30-second timeout prevents resource exhaustion
-   - Retry logic handles transient failures
+   - Retry logic with exponential backoff handles transient failures
+
+6. ✅ **Denial-of-Service via Oversized Provider Data** (v2.0+)
+   - Maximum 100 providers can be registered
+   - Maximum 10,000 IPs per provider enforced
+   - Invalid data rejected at registration time
+
+7. ✅ **Memory Exhaustion** (v2.0+)
+   - LRU cache limits for parsed addresses (5,000 entries)
+   - TTL + LRU cache limits for IP lookups (10,000 entries)
+   - Predictable, bounded memory usage
 
 ### Threats NOT Addressed
 
@@ -727,44 +886,54 @@ verifyAssetChecksum(assetPath, 'googlebot', true); // strict=true
 
 With `strict=true`, checksum mismatches throw errors and stop execution.
 
-### Disable Certificate Validation (NOT RECOMMENDED)
+### Disable Certificate Validation (NOT AVAILABLE in v2.0+)
 
-For testing only:
+**Prior to v2.0**: The superagent-based client supported a `strictSSL: false` option.
 
-```javascript
-const data = await fetchJSON(url, {
-  strictSSL: false, // DANGER: Disables certificate validation
-});
+**v2.0+**: Native fetch does not support disabling certificate validation via fetch options. This is a security feature — certificate validation cannot be accidentally disabled.
+
+For local testing with self-signed certificates, use Node.js environment variables (not recommended for production):
+
+```bash
+# Development/testing only — bypasses certificate validation globally
+NODE_TLS_REJECT_UNAUTHORIZED=0 node your-script.js
 ```
 
-⚠️ **Never use in production!**
+⚠️ **Never use in production!** This affects all HTTPS connections, not just this library.
 
 ---
 
 ## Future Enhancements
 
-Potential security improvements:
+Potential security improvements for future versions:
 
 1. **DNSSEC Validation**
-   - Validate DNS responses with DNSSEC
-   - Requires DNSSEC-aware DNS library
+   - Validate DNS responses with DNSSEC for SPF-based providers
+   - Requires DNSSEC-aware DNS library or DoH integration
 
 2. **Provider Signatures**
-   - Support for signed data from providers
-   - Public key verification
+   - Support for cryptographically signed data from providers
+   - Public key verification for provider API responses
 
 3. **Fallback to Bundled Assets**
-   - If remote fetch fails validation, use bundled version
-   - Configuration option for strict mode
+   - If remote fetch fails validation, automatically use bundled version
+   - Configuration option for strict mode (fail-closed vs. fail-open)
 
 4. **Air-Gapped Mode**
-   - Disable all external fetches
+   - Disable all external fetches at initialization
    - Use only bundled assets
+   - Useful for high-security deployments
 
-5. **Security Monitoring**
-   - Export security events
-   - Integration with logging frameworks
-   - Metrics for checksum failures
+5. **Enhanced Security Monitoring**
+   - Export security events (checksum failures, validation errors)
+   - Integration with structured logging frameworks
+   - Prometheus-compatible metrics for checksum/validation failures
+
+**Implemented in v2.0**:
+- ✅ Input validation and resource limits
+- ✅ Memory exhaustion protection via LRU caches
+- ✅ CIDR validation at registration time
+- ✅ Native fetch with strict certificate validation
 
 ---
 
@@ -777,5 +946,5 @@ Potential security improvements:
 
 ---
 
-**Last Updated:** 2025-11-21  
-**Version:** 1.0
+**Last Updated:** 2026-02-16  
+**Version:** 2.0
