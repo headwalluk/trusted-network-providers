@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 4a — Lifecycle & State Management (Observability)
-**Last commit:** [M3b] Milestone complete
+**Last commit:** [M4a] Mark tasks complete
 **Blockers:** None
-**Next action:** Begin M4a: Add provider state tracking (ready/loading/error/stale), lastUpdated timestamps, and lastError fields.
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓: Added comprehensive test suite for googlebot provider (18 tests) ✓. Added comprehensive test suite for spf-analyser.js (21 tests) ✓. Added comprehensive test suite for secure-http-client.js (35 tests covering SSL cert errors, 500 errors, timeouts, retries, redirects, network errors — 96.87% coverage) ✓. Added comprehensive edge case tests for index.js (4 tests covering diagnostics mode, error handling, runTests function) — index.js coverage improved from 73.95% to 98.95% ✓. All 200 tests passing ✓. Testing sprint verified: npm test (200/200), format check (clean), lint (clean) ✓. Coverage target >80% achieved across all modules ✓. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
-**Last updated:** 2026-02-16 15:30
+**Next action:** Continue M4a: Add EventEmitter for provider lifecycle events (reload, error, stale).
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a partial: Added provider state tracking (ready/loading/error/stale) ✓. Added lastUpdated timestamps ✓. Added lastError fields ✓. Added getProviderStatus() API ✓. Updated reloadAll() to track state transitions and metadata ✓. All 200 tests passing ✓. Testing sprint verified: npm test (200/200), format check (clean), lint (clean) ✓. Next: EventEmitter for lifecycle events, staleness threshold, logging abstraction, lifecycle tests.
+**Last updated:** 2026-02-16 16:00
 
 ---
 
@@ -106,12 +106,12 @@ Now that the code is modernised, write durable tests against the stable codebase
 
 Make providers observable for long-running pm2 apps.
 
-- [ ] Add provider state tracking (ready / loading / error / stale)
-- [ ] Add `lastUpdated` timestamp per provider
-- [ ] Add `lastError` field per provider
+- [x] Add provider state tracking (ready / loading / error / stale)
+- [x] Add `lastUpdated` timestamp per provider
+- [x] Add `lastError` field per provider
 - [ ] Add EventEmitter for provider lifecycle events (reload, error, stale)
 - [ ] Add configurable staleness threshold (e.g., mark stale after 24h without update)
-- [ ] Add `getProviderStatus(name)` API
+- [x] Add `getProviderStatus(name)` API
 - [ ] Add configurable logging abstraction (replace bare console.log/error)
 - [ ] All tests pass, including new lifecycle tests
 - [ ] Commit milestone completion to `v2-modernisation` branch
