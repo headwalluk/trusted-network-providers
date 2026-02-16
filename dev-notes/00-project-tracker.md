@@ -9,12 +9,12 @@
 
 ## Current Status
 
-**Working on:** Milestone 4a — Lifecycle & State Management (Observability)
-**Last commit:** [M4a] Mark staleness threshold task complete
+**Working on:** Milestone 4b — Lifecycle & State Management (Robustness)
+**Last commit:** [M4a] Mark logging abstraction task complete
 **Blockers:** None
-**Next action:** Continue M4a: Add configurable logging abstraction (replace bare console.log/error).
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a partial: Added provider state tracking (ready/loading/error/stale) ✓. Added lastUpdated timestamps ✓. Added lastError fields ✓. Added getProviderStatus() API ✓. Updated reloadAll() to track state transitions and metadata ✓. Added EventEmitter with on/once/off methods ✓. Emits reload:start, reload:success, and error events ✓. Added comprehensive lifecycle event tests (11 new tests) ✓. Added configurable staleness threshold with setStalenessThreshold(), getStalenessThreshold(), checkStaleness() methods ✓. Emits 'stale' event when providers exceed threshold ✓. All 218 tests passing ✓. Next: logging abstraction.
-**Last updated:** 2026-02-16 16:40
+**Next action:** Start M4b: Fix SPF analyser error handling.
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. Added configurable logging abstraction (logger.js module with LOG_LEVELS, setLevel/getLevel/resetLevel APIs) ✓. Replaced all console.* calls across all source files ✓. Added comprehensive logger unit and integration tests ✓. All 239 tests passing ✓. Moving to M4b: robustness improvements.
+**Last updated:** 2026-02-16 17:00
 
 ---
 
@@ -112,9 +112,9 @@ Make providers observable for long-running pm2 apps.
 - [x] Add EventEmitter for provider lifecycle events (reload, error, stale)
 - [x] Add configurable staleness threshold (e.g., mark stale after 24h without update)
 - [x] Add `getProviderStatus(name)` API
-- [ ] Add configurable logging abstraction (replace bare console.log/error)
+- [x] Add configurable logging abstraction (replace bare console.log/error)
 - [x] All tests pass, including new lifecycle tests
-- [ ] Commit milestone completion to `v2-modernisation` branch
+- [x] Commit milestone completion to `v2-modernisation` branch
 
 ---
 
