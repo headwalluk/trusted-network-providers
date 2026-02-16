@@ -166,11 +166,11 @@ const self = {
    * await trustedProviders.reloadAll();
    */
   loadDefaultProviders: () => {
-    defaultProviders.forEach((defaultProvider) => {
+    for (const defaultProvider of defaultProviders) {
       if (!self.hasProvider(defaultProvider.name)) {
         self.addProvider(defaultProvider);
       }
-    });
+    }
   },
 
   /**
@@ -178,7 +178,10 @@ const self = {
    * This fetches fresh IP ranges from external sources (APIs, DNS, bundled assets).
    * Should be called periodically (e.g., daily) to keep provider data current.
    *
-   * @returns {Promise<void[]>} Promise that resolves when all providers have reloaded
+   * Uses Promise.allSettled() to ensure all providers are attempted, even if some fail.
+   * Failed reloads are logged but don't prevent other providers from updating.
+   *
+   * @returns {Promise<PromiseSettledResult<void>[]>} Promise that resolves with results for all providers
    *
    * @example
    * // Initial load
@@ -188,17 +191,22 @@ const self = {
    * // Periodic update (once per day)
    * setInterval(async () => {
    *   try {
-   *     await trustedProviders.reloadAll();
-   *     console.log('Provider data updated');
+   *     const results = await trustedProviders.reloadAll();
+   *     const failed = results.filter(r => r.status === 'rejected');
+   *     if (failed.length > 0) {
+   *       console.error(`Failed to reload ${failed.length} provider(s)`);
+   *     } else {
+   *       console.log('All provider data updated');
+   *     }
    *   } catch (error) {
    *     console.error('Failed to reload providers:', error);
    *   }
    * }, 24 * 60 * 60 * 1000);
    */
-  reloadAll: () => {
+  reloadAll: async () => {
     const reloadRequests = [];
 
-    self.providers.forEach((provider) => {
+    for (const provider of self.providers) {
       if (typeof provider.reload === 'function') {
         if (self.isDiagnosticsEnabled) {
           console.log(`🔃 Reload: ${provider.name}`);
@@ -207,18 +215,16 @@ const self = {
         const reloadPromises = provider.reload();
 
         if (Array.isArray(reloadPromises)) {
-          // console.log( `Array of promises: ${provider.name}`);
-          reloadPromises.forEach((promise) => {
+          for (const promise of reloadPromises) {
             reloadRequests.push(promise);
-          });
+          }
         } else {
-          // console.log( `Single promise: ${provider.name}`);
           reloadRequests.push(reloadPromises);
         }
       }
-    });
+    }
 
-    return Promise.all(reloadRequests);
+    return Promise.allSettled(reloadRequests);
   },
 
   /**
@@ -343,60 +349,48 @@ const self = {
    * await trustedProviders.reloadAll();
    * await trustedProviders.runTests();
    */
-  runTests: () => {
-    return new Promise((resolve) => {
-      const tests = [
-        { ip: '192.42.116.182', provider: null },
-        { ip: '123.123.123.123', provider: null },
-      ];
+  runTests: async () => {
+    const tests = [
+      { ip: '192.42.116.182', provider: null },
+      { ip: '123.123.123.123', provider: null },
+    ];
 
-      let failedProviderIndex = 0;
-      self.getAllProviders().forEach((testProvider) => {
-        if (!Array.isArray(testProvider.testAddresses)) {
-          if (failedProviderIndex === 0) {
-            console.log();
-          }
+    let failedProviderIndex = 0;
+    for (const testProvider of self.getAllProviders()) {
+      if (!Array.isArray(testProvider.testAddresses)) {
+        if (failedProviderIndex === 0) {
+          console.log();
+        }
 
-          console.log(`🔷 No tests for ${testProvider.name}`);
-          ++failedProviderIndex;
-        } else {
-          testProvider.testAddresses.forEach((testAddress) => {
-            tests.push({
-              ip: testAddress,
-              provider: testProvider.name,
-            });
+        console.log(`🔷 No tests for ${testProvider.name}`);
+        ++failedProviderIndex;
+      } else {
+        for (const testAddress of testProvider.testAddresses) {
+          tests.push({
+            ip: testAddress,
+            provider: testProvider.name,
           });
         }
-      });
+      }
+    }
 
-      console.log();
+    console.log();
 
-      tests.forEach((test) => {
-        let testProviderName = test.provider;
-        if (!testProviderName) {
-          testProviderName = '_wild_';
-        }
+    for (const test of tests) {
+      let testProviderName = test.provider ?? '_wild_';
+      const provider = self.getTrustedProvider(test.ip);
+      let foundProviderName = provider ?? '_wild_';
 
-        const provider = self.getTrustedProvider(test.ip);
+      if (provider !== test.provider) {
+        console.log(`❌${test.ip} => ${foundProviderName} (should be ${testProviderName})`);
+      } else {
+        console.log(`✅${test.ip} => ${foundProviderName}`);
+      }
+    }
 
-        let foundProviderName = provider;
-        if (!foundProviderName) {
-          foundProviderName = '_wild_';
-        }
-
-        if (provider !== test.provider) {
-          console.log(`❌${test.ip} => ${foundProviderName} (should be ${testProviderName})`);
-        } else {
-          console.log(`✅${test.ip} => ${foundProviderName}`);
-        }
-      });
-
-      console.log();
-      console.log('🏁 Finished tests');
-      console.log();
-
-      resolve();
-    });
+    console.log();
+    console.log('🏁 Finished tests');
+    console.log();
   },
 };
 
