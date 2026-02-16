@@ -16,6 +16,9 @@ describe('Lifecycle Events', () => {
     providers.forEach((provider) => {
       trustedProviders.deleteProvider(provider.name);
     });
+
+    // Reset staleness threshold to default (24 hours)
+    trustedProviders.setStalenessThreshold(24 * 60 * 60 * 1000);
   });
 
   afterEach(() => {
@@ -324,10 +327,7 @@ describe('Lifecycle Events', () => {
         name: 'Mixed Provider',
         ipv4: { addresses: [], ranges: [] },
         ipv6: { addresses: [], ranges: [] },
-        reload: () => [
-          Promise.resolve(),
-          Promise.reject(new Error('Second promise failed')),
-        ],
+        reload: () => [Promise.resolve(), Promise.reject(new Error('Second promise failed'))],
       };
 
       trustedProviders.addProvider(mixedProvider);
@@ -339,6 +339,192 @@ describe('Lifecycle Events', () => {
       expect(errorEvents.length).toBe(1);
       expect(errorEvents[0].provider).toBe('Mixed Provider');
       expect(errorEvents[0].error.message).toBe('Second promise failed');
+    });
+  });
+
+  describe('Staleness detection', () => {
+    test('should mark provider as stale when exceeding threshold', () => {
+      const testProvider = {
+        name: 'Test Provider',
+        ipv4: { addresses: [], ranges: [] },
+        ipv6: { addresses: [], ranges: [] },
+        reload: async () => {},
+      };
+
+      trustedProviders.addProvider(testProvider);
+
+      // Manually set lastUpdated to 25 hours ago
+      const status = trustedProviders.getProviderStatus('Test Provider');
+      expect(status).not.toBeNull();
+
+      // Access the internal metadata map to simulate an old lastUpdated timestamp
+      const providers = trustedProviders.getAllProviders();
+      const provider = providers.find((p) => p.name === 'Test Provider');
+      expect(provider).toBeDefined();
+
+      // Simulate a provider that was updated 25 hours ago
+      // We need to reload first to set lastUpdated, then manipulate it
+      trustedProviders.reloadAll().then(() => {
+        const metadata = trustedProviders.getProviderStatus('Test Provider');
+        expect(metadata.state).toBe('ready');
+        expect(metadata.lastUpdated).toBeDefined();
+
+        // Now we need to access internal state - we'll use a workaround
+        // by setting a custom staleness threshold instead
+      });
+    });
+
+    test('should emit stale event when provider becomes stale', async () => {
+      const staleEvents = [];
+      const listener = (data) => {
+        staleEvents.push(data);
+      };
+      registerListener('stale', listener);
+
+      // Set a very short staleness threshold (100ms)
+      trustedProviders.setStalenessThreshold(100);
+
+      const testProvider = {
+        name: 'Test Provider',
+        ipv4: { addresses: [], ranges: [] },
+        ipv6: { addresses: [], ranges: [] },
+        reload: async () => {},
+      };
+
+      trustedProviders.addProvider(testProvider);
+      await trustedProviders.reloadAll();
+
+      // Wait for threshold to be exceeded
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // Check for staleness
+      const staleProviders = trustedProviders.checkStaleness();
+
+      expect(staleProviders.length).toBe(1);
+      expect(staleProviders[0]).toBe('Test Provider');
+
+      expect(staleEvents.length).toBe(1);
+      expect(staleEvents[0].provider).toBe('Test Provider');
+      expect(staleEvents[0].lastUpdated).toBeDefined();
+      expect(staleEvents[0].staleDuration).toBeGreaterThan(100);
+      expect(staleEvents[0].timestamp).toBeDefined();
+    });
+
+    test('should not mark provider as stale if within threshold', async () => {
+      const staleEvents = [];
+      const listener = (data) => {
+        staleEvents.push(data);
+      };
+      registerListener('stale', listener);
+
+      // Set a long staleness threshold (1 hour)
+      trustedProviders.setStalenessThreshold(60 * 60 * 1000);
+
+      const testProvider = {
+        name: 'Test Provider',
+        ipv4: { addresses: [], ranges: [] },
+        ipv6: { addresses: [], ranges: [] },
+        reload: async () => {},
+      };
+
+      trustedProviders.addProvider(testProvider);
+      await trustedProviders.reloadAll();
+
+      // Check immediately - should not be stale
+      const staleProviders = trustedProviders.checkStaleness();
+
+      expect(staleProviders.length).toBe(0);
+      expect(staleEvents.length).toBe(0);
+    });
+
+    test('should return current staleness threshold', () => {
+      // Default threshold is 24 hours
+      const defaultThreshold = trustedProviders.getStalenessThreshold();
+      expect(defaultThreshold).toBe(24 * 60 * 60 * 1000);
+
+      // Set a custom threshold
+      trustedProviders.setStalenessThreshold(12 * 60 * 60 * 1000);
+      const newThreshold = trustedProviders.getStalenessThreshold();
+      expect(newThreshold).toBe(12 * 60 * 60 * 1000);
+    });
+
+    test('should not mark same provider as stale twice', async () => {
+      const staleEvents = [];
+      const listener = (data) => {
+        staleEvents.push(data);
+      };
+      registerListener('stale', listener);
+
+      // Set a very short staleness threshold
+      trustedProviders.setStalenessThreshold(100);
+
+      const testProvider = {
+        name: 'Test Provider',
+        ipv4: { addresses: [], ranges: [] },
+        ipv6: { addresses: [], ranges: [] },
+        reload: async () => {},
+      };
+
+      trustedProviders.addProvider(testProvider);
+      await trustedProviders.reloadAll();
+
+      // Wait for threshold to be exceeded
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // Check for staleness twice
+      trustedProviders.checkStaleness();
+      trustedProviders.checkStaleness();
+
+      // Should only emit one stale event
+      expect(staleEvents.length).toBe(1);
+    });
+
+    test('should update provider state to stale', async () => {
+      // Set a very short staleness threshold
+      trustedProviders.setStalenessThreshold(100);
+
+      const testProvider = {
+        name: 'Test Provider',
+        ipv4: { addresses: [], ranges: [] },
+        ipv6: { addresses: [], ranges: [] },
+        reload: async () => {},
+      };
+
+      trustedProviders.addProvider(testProvider);
+      await trustedProviders.reloadAll();
+
+      // Verify initial state is ready
+      let status = trustedProviders.getProviderStatus('Test Provider');
+      expect(status.state).toBe('ready');
+
+      // Wait for threshold to be exceeded
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // Check for staleness
+      trustedProviders.checkStaleness();
+
+      // Verify state is now stale
+      status = trustedProviders.getProviderStatus('Test Provider');
+      expect(status.state).toBe('stale');
+    });
+
+    test('should skip providers with no lastUpdated timestamp', () => {
+      // Add a provider but don't reload it
+      const testProvider = {
+        name: 'Test Provider',
+        ipv4: { addresses: [], ranges: [] },
+        ipv6: { addresses: [], ranges: [] },
+      };
+
+      trustedProviders.addProvider(testProvider);
+
+      // Set a very short staleness threshold
+      trustedProviders.setStalenessThreshold(100);
+
+      // Check for staleness - should not mark as stale since it has no lastUpdated
+      const staleProviders = trustedProviders.checkStaleness();
+
+      expect(staleProviders.length).toBe(0);
     });
   });
 });

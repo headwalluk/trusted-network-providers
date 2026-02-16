@@ -79,6 +79,14 @@ const providerMetadata = new Map();
 const events = new EventEmitter();
 
 /**
+ * Configurable staleness threshold in milliseconds.
+ * Providers that haven't been updated within this duration are marked as stale.
+ * Default: 24 hours (86400000 ms)
+ * @type {number}
+ */
+let stalenessThresholdMs = 24 * 60 * 60 * 1000;
+
+/**
  * @typedef {Object} Provider
  * @property {string} name - The display name of the provider
  * @property {string[]} [testAddresses] - Sample IP addresses for testing
@@ -190,7 +198,7 @@ const self = {
    * - 'reload:start': Emitted when a provider begins reloading. Payload: { provider: string }
    * - 'reload:success': Emitted when a provider successfully reloads. Payload: { provider: string, timestamp: number }
    * - 'error': Emitted when a provider fails to reload. Payload: { provider: string, error: Error, timestamp: number }
-   * - 'stale': Emitted when a provider becomes stale (not yet implemented)
+   * - 'stale': Emitted when a provider becomes stale. Payload: { provider: string, lastUpdated: number, staleDuration: number, timestamp: number }
    *
    * @param {string} event - The event name to listen for
    * @param {Function} listener - The callback function to invoke when the event is emitted
@@ -203,6 +211,10 @@ const self = {
    *
    * trustedProviders.on('error', ({ provider, error }) => {
    *   console.error(`Provider ${provider} failed to reload: ${error.message}`);
+   * });
+   *
+   * trustedProviders.on('stale', ({ provider, staleDuration }) => {
+   *   console.warn(`Provider ${provider} is stale (${Math.floor(staleDuration / 3600000)}h old)`);
    * });
    */
   on: (event, listener) => {
@@ -278,6 +290,86 @@ const self = {
       lastUpdated: metadata.lastUpdated,
       lastError: metadata.lastError,
     };
+  },
+
+  /**
+   * Sets the staleness threshold in milliseconds.
+   * Providers that haven't been updated within this duration will be marked as stale.
+   *
+   * @param {number} thresholdMs - The staleness threshold in milliseconds
+   * @returns {void}
+   *
+   * @example
+   * // Set staleness threshold to 12 hours
+   * trustedProviders.setStalenessThreshold(12 * 60 * 60 * 1000);
+   */
+  setStalenessThreshold: (thresholdMs) => {
+    if (typeof thresholdMs === 'number' && thresholdMs > 0) {
+      stalenessThresholdMs = thresholdMs;
+    }
+  },
+
+  /**
+   * Gets the current staleness threshold in milliseconds.
+   *
+   * @returns {number} The current staleness threshold in milliseconds
+   *
+   * @example
+   * const threshold = trustedProviders.getStalenessThreshold();
+   * console.log(`Providers become stale after ${threshold / (60 * 60 * 1000)} hours`);
+   */
+  getStalenessThreshold: () => {
+    return stalenessThresholdMs;
+  },
+
+  /**
+   * Checks all providers for staleness and updates their state if they exceed the staleness threshold.
+   * Emits a 'stale' event for each provider that transitions to the stale state.
+   * Should be called periodically (e.g., hourly) in long-running applications.
+   *
+   * @returns {string[]} Array of provider names that were marked as stale
+   *
+   * @example
+   * // Check for stale providers every hour
+   * setInterval(() => {
+   *   const staleProviders = trustedProviders.checkStaleness();
+   *   if (staleProviders.length > 0) {
+   *     console.log(`Marked ${staleProviders.length} provider(s) as stale:`, staleProviders);
+   *   }
+   * }, 60 * 60 * 1000);
+   */
+  checkStaleness: () => {
+    const now = Date.now();
+    const staleProviders = [];
+
+    for (const [providerName, metadata] of providerMetadata.entries()) {
+      // Skip providers that haven't been updated yet or are already stale
+      if (!metadata.lastUpdated || metadata.state === PROVIDER_STATE_STALE) {
+        continue;
+      }
+
+      // Check if the provider exceeds the staleness threshold
+      const timeSinceUpdate = now - metadata.lastUpdated;
+      if (timeSinceUpdate > stalenessThresholdMs) {
+        // Mark as stale
+        metadata.state = PROVIDER_STATE_STALE;
+        staleProviders.push(providerName);
+
+        // Emit stale event
+        events.emit('stale', {
+          provider: providerName,
+          lastUpdated: metadata.lastUpdated,
+          staleDuration: timeSinceUpdate,
+          timestamp: now,
+        });
+
+        if (self.isDiagnosticsEnabled) {
+          console.log(`⚠️  Provider ${providerName} marked as stale (${Math.floor(timeSinceUpdate / (60 * 60 * 1000))}h since update)`);
+        }
+      }
+    }
+
+    return staleProviders;
   },
 
   /**
