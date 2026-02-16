@@ -2,6 +2,7 @@
  * index.js
  */
 
+import { EventEmitter } from 'node:events';
 import ipaddr from 'ipaddr.js';
 import privateProvider from './providers/private.js';
 import googlebotProvider from './providers/googlebot.js';
@@ -69,6 +70,13 @@ const parsedAddresses = {};
  * @type {Map<string, { state: string, lastUpdated: number|null, lastError: Error|null }>}
  */
 const providerMetadata = new Map();
+
+/**
+ * Event emitter for provider lifecycle events.
+ * Consumers can listen to events like 'reload', 'error', and 'stale'.
+ * @type {EventEmitter}
+ */
+const events = new EventEmitter();
 
 /**
  * @typedef {Object} Provider
@@ -176,6 +184,69 @@ const self = {
   },
 
   /**
+   * Registers an event listener for provider lifecycle events.
+   *
+   * Supported events:
+   * - 'reload:start': Emitted when a provider begins reloading. Payload: { provider: string }
+   * - 'reload:success': Emitted when a provider successfully reloads. Payload: { provider: string, timestamp: number }
+   * - 'error': Emitted when a provider fails to reload. Payload: { provider: string, error: Error, timestamp: number }
+   * - 'stale': Emitted when a provider becomes stale (not yet implemented)
+   *
+   * @param {string} event - The event name to listen for
+   * @param {Function} listener - The callback function to invoke when the event is emitted
+   * @returns {EventEmitter} The event emitter (for chaining)
+   *
+   * @example
+   * trustedProviders.on('reload:success', ({ provider, timestamp }) => {
+   *   console.log(`Provider ${provider} reloaded successfully at ${new Date(timestamp)}`);
+   * });
+   *
+   * trustedProviders.on('error', ({ provider, error }) => {
+   *   console.error(`Provider ${provider} failed to reload: ${error.message}`);
+   * });
+   */
+  on: (event, listener) => {
+    return events.on(event, listener);
+  },
+
+  /**
+   * Registers a one-time event listener for provider lifecycle events.
+   * The listener will be invoked once and then automatically removed.
+   *
+   * @param {string} event - The event name to listen for
+   * @param {Function} listener - The callback function to invoke when the event is emitted
+   * @returns {EventEmitter} The event emitter (for chaining)
+   *
+   * @example
+   * trustedProviders.once('reload:success', ({ provider }) => {
+   *   console.log(`First reload complete: ${provider}`);
+   * });
+   */
+  once: (event, listener) => {
+    return events.once(event, listener);
+  },
+
+  /**
+   * Removes an event listener.
+   *
+   * @param {string} event - The event name
+   * @param {Function} listener - The callback function to remove
+   * @returns {EventEmitter} The event emitter (for chaining)
+   *
+   * @example
+   * const handleError = ({ provider, error }) => {
+   *   console.error(`Error in ${provider}: ${error.message}`);
+   * };
+   *
+   * trustedProviders.on('error', handleError);
+   * // ... later ...
+   * trustedProviders.off('error', handleError);
+   */
+  off: (event, listener) => {
+    return events.off(event, listener);
+  },
+
+  /**
    * Returns the current status of a provider including its state, last update time, and any errors.
    *
    * @param {string} providerName - The name of the provider to check
@@ -273,6 +344,9 @@ const self = {
           metadata.state = PROVIDER_STATE_LOADING;
         }
 
+        // Emit reload:start event
+        events.emit('reload:start', { provider: provider.name });
+
         const reloadPromises = provider.reload();
 
         if (Array.isArray(reloadPromises)) {
@@ -287,6 +361,8 @@ const self = {
                     meta.lastUpdated = Date.now();
                     meta.lastError = null;
                   }
+                  // Emit reload:success event
+                  events.emit('reload:success', { provider: provider.name, timestamp: Date.now() });
                 })
                 .catch((error) => {
                   // Update metadata on failure
@@ -295,6 +371,8 @@ const self = {
                     meta.state = PROVIDER_STATE_ERROR;
                     meta.lastError = error;
                   }
+                  // Emit error event
+                  events.emit('error', { provider: provider.name, error, timestamp: Date.now() });
                   throw error; // Re-throw to maintain Promise.allSettled behavior
                 })
             );
@@ -310,6 +388,8 @@ const self = {
                   meta.lastUpdated = Date.now();
                   meta.lastError = null;
                 }
+                // Emit reload:success event
+                events.emit('reload:success', { provider: provider.name, timestamp: Date.now() });
               })
               .catch((error) => {
                 // Update metadata on failure
@@ -318,6 +398,8 @@ const self = {
                   meta.state = PROVIDER_STATE_ERROR;
                   meta.lastError = error;
                 }
+                // Emit error event
+                events.emit('error', { provider: provider.name, error, timestamp: Date.now() });
                 throw error; // Re-throw to maintain Promise.allSettled behavior
               })
           );
