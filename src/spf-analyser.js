@@ -58,7 +58,20 @@ export default async (domain, provider) => {
     }
 
     const lookups = sourceNetblocks.map((sourceNetblock) => dns.resolveTxt(sourceNetblock));
-    const lookupResults = await Promise.all(lookups);
+    const lookupResults = await Promise.allSettled(lookups);
+
+    // Log and filter out failed DNS lookups
+    const successfulResults = [];
+    for (let i = 0; i < lookupResults.length; i++) {
+      const result = lookupResults[i];
+      if (result.status === 'fulfilled') {
+        successfulResults.push(result.value);
+      } else {
+        logger.error(
+          `Failed to resolve SPF include ${sourceNetblocks[i]} for ${provider.name}: ${result.reason.message}`
+        );
+      }
+    }
 
     const newAddresses = {
       ipv4: {
@@ -73,7 +86,7 @@ export default async (domain, provider) => {
 
     const spfRecords = [];
 
-    for (const lookupResult of lookupResults) {
+    for (const lookupResult of successfulResults) {
       if (Array.isArray(lookupResult)) {
         for (const subRecord of lookupResult) {
           let txtRecord = '';

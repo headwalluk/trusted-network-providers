@@ -268,7 +268,7 @@ describe('spfAnalyser', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should throw when include resolution fails', async () => {
+    it('should log error when include resolution fails but continue gracefully', async () => {
       // Main domain resolves successfully
       mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
@@ -277,9 +277,18 @@ describe('spfAnalyser', () => {
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow('DNS timeout');
+      // Should NOT throw - should complete gracefully with empty results
+      await spfAnalyser('example.com', mockProvider);
 
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to analyse SPF records for test-provider: DNS timeout');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Failed to resolve SPF include _spf.example.com for test-provider: DNS timeout'
+      );
+
+      // Provider should have empty results (no successful DNS lookups)
+      expect(mockProvider.ipv4.addresses).toEqual([]);
+      expect(mockProvider.ipv4.ranges).toEqual([]);
+      expect(mockProvider.ipv6.addresses).toEqual([]);
+      expect(mockProvider.ipv6.ranges).toEqual([]);
 
       consoleSpy.mockRestore();
     });
@@ -295,7 +304,16 @@ describe('spfAnalyser', () => {
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow('Include resolution failed');
+      // Should NOT throw - should continue with partial results
+      await spfAnalyser('example.com', mockProvider);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Failed to resolve SPF include _spf2.example.com for test-provider: Include resolution failed'
+      );
+
+      // Should have results from the successful include only
+      expect(mockProvider.ipv4.addresses).toEqual(['192.0.2.1']);
+      expect(mockProvider.ipv4.ranges).toEqual([]);
 
       consoleSpy.mockRestore();
     });
