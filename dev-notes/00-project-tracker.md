@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 4a — Lifecycle & State Management (Observability)
-**Last commit:** [M4a] Mark tasks complete
+**Last commit:** [M4a] Mark EventEmitter tasks complete
 **Blockers:** None
-**Next action:** Continue M4a: Add EventEmitter for provider lifecycle events (reload, error, stale).
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a partial: Added provider state tracking (ready/loading/error/stale) ✓. Added lastUpdated timestamps ✓. Added lastError fields ✓. Added getProviderStatus() API ✓. Updated reloadAll() to track state transitions and metadata ✓. All 200 tests passing ✓. Testing sprint verified: npm test (200/200), format check (clean), lint (clean) ✓. Next: EventEmitter for lifecycle events, staleness threshold, logging abstraction, lifecycle tests.
-**Last updated:** 2026-02-16 16:00
+**Next action:** Continue M4a: Add configurable staleness threshold (e.g., mark stale after 24h without update).
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a partial: Added provider state tracking (ready/loading/error/stale) ✓. Added lastUpdated timestamps ✓. Added lastError fields ✓. Added getProviderStatus() API ✓. Updated reloadAll() to track state transitions and metadata ✓. Added EventEmitter with on/once/off methods ✓. Emits reload:start, reload:success, and error events ✓. Added comprehensive lifecycle event tests (11 new tests) ✓. All 211 tests passing ✓. Next: staleness threshold, logging abstraction.
+**Last updated:** 2026-02-16 16:20
 
 ---
 
@@ -109,11 +109,11 @@ Make providers observable for long-running pm2 apps.
 - [x] Add provider state tracking (ready / loading / error / stale)
 - [x] Add `lastUpdated` timestamp per provider
 - [x] Add `lastError` field per provider
-- [ ] Add EventEmitter for provider lifecycle events (reload, error, stale)
+- [x] Add EventEmitter for provider lifecycle events (reload, error, stale)
 - [ ] Add configurable staleness threshold (e.g., mark stale after 24h without update)
 - [x] Add `getProviderStatus(name)` API
 - [ ] Add configurable logging abstraction (replace bare console.log/error)
-- [ ] All tests pass, including new lifecycle tests
+- [x] All tests pass, including new lifecycle tests
 - [ ] Commit milestone completion to `v2-modernisation` branch
 
 ---
