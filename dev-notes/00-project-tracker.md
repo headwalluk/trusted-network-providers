@@ -3,17 +3,17 @@
 **Status:** In Progress
 **Current Version:** 1.9.0
 **Target Version:** 2.0.0
-**Current Phase:** Milestone 2 — Reduce Dependencies
+**Current Phase:** Milestone 3 — Modernise Code Patterns
 **Last Updated:** 16 February 2026
-**Progress:** 12% (1 of 8 milestones complete)
+**Progress:** 25% (2 of 8 milestones complete)
 
 ## Current Status
 
-**Working on:** Milestone 2 — Reduce Dependencies
-**Last commit:** [M2] Replace superagent with native fetch in secure-http-client.js
+**Working on:** Milestone 3 — Modernise Code Patterns
+**Last commit:** [M2] Complete Milestone 2 — dependency audit and dev-notes
 **Blockers:** None
-**Next action:** Update all providers that use secure-http-client
-**Notes:** M1 complete ✓. Native fetch implementation complete — removed dispatcher option (Node.js fetch performs strict certificate validation by default). All 122 tests passing. 80% coverage target deferred — the modules with lowest coverage (secure-http-client.js, spf-analyser.js) are being rewritten in M2/M3, so tests written now would be immediately invalidated. Coverage will be revisited after M3 when the code has stabilised. Current baseline: 55.52%, 122 tests passing. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
+**Next action:** Convert all Promise chains and `new Promise()` wrappers to async/await
+**Notes:** M1 complete ✓. M2 complete ✓. Removed superagent dependency (replaced with native fetch). Audited all remaining dependencies: fast-xml-parser (required by gtmetrix) and ipaddr.js (core IP parsing) both retained. 0 vulnerabilities. All 122 tests passing. 80% coverage target deferred to M3b — modules with lowest coverage (secure-http-client.js, spf-analyser.js) were rewritten in M2, coverage will be addressed after M3 code modernisation when codebase has stabilised. Current baseline: 55.52%, 122 tests passing. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
 **Last updated:** 2026-02-16
 
 ---
@@ -62,13 +62,13 @@ Get the tooling right before touching runtime code. Nothing here changes behavio
 Strip out unnecessary packages. Use what Node gives us for free.
 
 - [x] Replace `superagent` with native `fetch` in secure-http-client.js
-- [ ] Update all providers that use secure-http-client
-- [ ] Audit `fast-xml-parser` usage — remove if unused
-- [ ] Remove any other unused dependencies
-- [ ] Run `npm audit` — target 0 vulnerabilities
-- [ ] Verify all tests pass after dependency changes
-- [ ] Update dev-notes with dependency decisions
-- [ ] Commit milestone completion to `v2-modernisation` branch
+- [x] Update all providers that use secure-http-client
+- [x] Audit `fast-xml-parser` usage — keep (required by gtmetrix)
+- [x] Remove any other unused dependencies — none found (only fast-xml-parser and ipaddr.js, both required)
+- [x] Run `npm audit` — 0 vulnerabilities ✓
+- [x] Verify all tests pass after dependency changes — 122/122 passing ✓
+- [x] Update dev-notes with dependency decisions
+- [x] Commit milestone completion to `v2-modernisation` branch
 
 ---
 
@@ -210,3 +210,4 @@ All development happens on a single branch: `v2-modernisation`
 | ---------- | --------- | -------------------------------------------------- |
 | 2026-02-14 | —         | Project tracker created. Codebase review complete. |
 | 2026-02-16 | M1        | M1 closed. 80% coverage deferred to post-M3 — low-coverage modules are being rewritten in M2/M3. Added M3b (Test Coverage) milestone. Prioritising dependency reduction and code modernisation. |
+| 2026-02-16 | M2        | M2 closed. Removed superagent (replaced with native fetch). Audited all dependencies: fast-xml-parser and ipaddr.js both required and retained. 0 vulnerabilities. All 122 tests passing. See dev-notes/02-milestone-2-dependency-audit.md for full audit. |
