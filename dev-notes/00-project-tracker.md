@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 4a — Lifecycle & State Management (Observability)
-**Last commit:** [M4a] Mark EventEmitter tasks complete
+**Last commit:** [M4a] Mark staleness threshold task complete
 **Blockers:** None
-**Next action:** Continue M4a: Add configurable staleness threshold (e.g., mark stale after 24h without update).
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a partial: Added provider state tracking (ready/loading/error/stale) ✓. Added lastUpdated timestamps ✓. Added lastError fields ✓. Added getProviderStatus() API ✓. Updated reloadAll() to track state transitions and metadata ✓. Added EventEmitter with on/once/off methods ✓. Emits reload:start, reload:success, and error events ✓. Added comprehensive lifecycle event tests (11 new tests) ✓. All 211 tests passing ✓. Next: staleness threshold, logging abstraction.
-**Last updated:** 2026-02-16 16:20
+**Next action:** Continue M4a: Add configurable logging abstraction (replace bare console.log/error).
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a partial: Added provider state tracking (ready/loading/error/stale) ✓. Added lastUpdated timestamps ✓. Added lastError fields ✓. Added getProviderStatus() API ✓. Updated reloadAll() to track state transitions and metadata ✓. Added EventEmitter with on/once/off methods ✓. Emits reload:start, reload:success, and error events ✓. Added comprehensive lifecycle event tests (11 new tests) ✓. Added configurable staleness threshold with setStalenessThreshold(), getStalenessThreshold(), checkStaleness() methods ✓. Emits 'stale' event when providers exceed threshold ✓. All 218 tests passing ✓. Next: logging abstraction.
+**Last updated:** 2026-02-16 16:40
 
 ---
 
@@ -110,7 +110,7 @@ Make providers observable for long-running pm2 apps.
 - [x] Add `lastUpdated` timestamp per provider
 - [x] Add `lastError` field per provider
 - [x] Add EventEmitter for provider lifecycle events (reload, error, stale)
-- [ ] Add configurable staleness threshold (e.g., mark stale after 24h without update)
+- [x] Add configurable staleness threshold (e.g., mark stale after 24h without update)
 - [x] Add `getProviderStatus(name)` API
 - [ ] Add configurable logging abstraction (replace bare console.log/error)
 - [x] All tests pass, including new lifecycle tests
