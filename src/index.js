@@ -232,7 +232,7 @@ const self = {
       if (providerIndex >= 0) {
         self.providers.splice(providerIndex, 1);
         providerMetadata.delete(providerName);
-        
+
         // Clear caches to prevent stale results
         parsedAddresses.clear();
         resultCache.clear();
@@ -684,13 +684,14 @@ const self = {
    * });
    */
   getTrustedProvider: (ipAddress) => {
-    // Check result cache first
+    // Check result cache first (hot path for repeated lookups)
     if (resultCache.has(ipAddress)) {
       return resultCache.get(ipAddress);
     }
 
     let trustedSource = null;
 
+    // Parse the IP address string into an ipaddr.js object
     let parsedIp = null;
     try {
       parsedIp = ipaddr.parse(ipAddress);
@@ -701,24 +702,28 @@ const self = {
     }
 
     if (parsedIp) {
-      const ipAddressVersion = parsedIp.kind();
+      const ipAddressVersion = parsedIp.kind(); // 'ipv4' or 'ipv6'
 
+      // Linear search through providers in registration order
+      // First match wins, so provider order matters if ranges overlap
       const providerCount = self.providers.length;
       let providerIndex = 0;
       while (providerIndex < providerCount) {
         const provider = self.providers[providerIndex];
 
+        // Select the appropriate test pool (ipv4 or ipv6) based on the IP version
         let testPool = null;
         if (ipAddressVersion === IP_VERSION_V4) {
           testPool = provider.ipv4;
         } else if (ipAddressVersion === IP_VERSION_V6) {
           testPool = provider.ipv6;
         } else {
-          // ...
+          // Unknown IP version (should never happen with ipaddr.js)
         }
 
         try {
           if (testPool) {
+            // Step 1: Check exact address matches (fast string comparison)
             const addressCount = testPool.addresses.length;
             for (let addressIndex = 0; addressIndex < addressCount; ++addressIndex) {
               if (testPool.addresses[addressIndex] === ipAddress) {
@@ -727,14 +732,17 @@ const self = {
               }
             }
 
+            // Step 2: Check CIDR range matches (slower, requires CIDR parsing)
             const rangeCount = testPool.ranges.length;
             for (let rangeIndex = 0; rangeIndex < rangeCount; ++rangeIndex) {
               const testRange = testPool.ranges[rangeIndex];
 
+              // Cache parsed CIDR ranges (LRU) to avoid re-parsing on every lookup
               if (!parsedAddresses.has(testRange)) {
                 parsedAddresses.set(testRange, ipaddr.parseCIDR(testRange));
               }
 
+              // Check if the IP falls within this CIDR range
               if (parsedIp.match(parsedAddresses.get(testRange))) {
                 trustedSource = provider.name;
                 break;
@@ -746,6 +754,7 @@ const self = {
           logger.error(error);
         }
 
+        // Exit early if we found a match
         if (trustedSource) {
           break;
         } else {
@@ -754,7 +763,7 @@ const self = {
       }
     }
 
-    // Cache the result (including null for negative lookups)
+    // Cache the result (including null for negative lookups) with TTL
     resultCache.set(ipAddress, trustedSource);
 
     return trustedSource;
