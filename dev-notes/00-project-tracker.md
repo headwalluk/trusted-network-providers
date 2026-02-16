@@ -12,9 +12,9 @@
 **Working on:** Milestone 1 — Foundation tasks  
 **Last commit:** [M1] Add GitHub Actions CI workflow  
 **Blockers:** None  
-**Next action:** Improve test coverage — add tests for uncovered providers and utilities (currently 50.72%, target >80%)  
-**Notes:** ESM migration complete ✓. GitHub Actions CI workflow added ✓ (tests on Node 18, 20, 22). Current coverage: 50.72%. Main gaps: provider files (ahrefsbot, brevo, cloudflare, etc.), spf-analyser.js (39.68%), secure-http-client.js (22.38%).  
-**Last updated:** 2026-02-16 08:33
+**Next action:** Port all existing test cases to Jest, then improve test coverage (currently 50.72%, target >80%)  
+**Notes:** ESM migration complete ✓. GitHub Actions CI workflow added and tested ✓ (Node 18, 20, 22 all passing). All tests passing (35 tests). Current coverage: 50.72%. Main gaps: provider files (ahrefsbot, brevo, cloudflare, etc.), spf-analyser.js (39.68%), secure-http-client.js (22.38%).  
+**Last updated:** 2026-02-16 08:35
 
 ---
 
