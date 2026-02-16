@@ -5,6 +5,15 @@
 import trustedProviders from './index.js';
 
 /**
+ * Sleep utility for simulating delays
+ * @param {number} ms - Milliseconds to sleep
+ * @returns {Promise<void>}
+ */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * Enable diagnostic outputs.
  */
 trustedProviders.isDiagnosticsEnabled = true;
@@ -29,11 +38,9 @@ trustedProviders.addProvider(fakeProvider);
  */
 trustedProviders.addProvider({
   name: 'My Custom Network',
-  reload: () => {
-    return new Promise((resolve) => {
-      // Simulate a slow update of the addresses/ranges.
-      setTimeout(resolve, 3000);
-    });
+  reload: async () => {
+    // Simulate a slow update of the addresses/ranges.
+    await sleep(3000);
   },
   testAddresses: ['12.12.12.34'],
   ipv4: {
@@ -50,11 +57,8 @@ if (trustedProviders.isDiagnosticsEnabled) {
   console.log();
 }
 
-trustedProviders
-  .reloadAll()
-  .then(() => {
-    return trustedProviders.runTests();
-  })
-  .then(() => {
-    console.log('Finished all');
-  });
+(async () => {
+  await trustedProviders.reloadAll();
+  await trustedProviders.runTests();
+  console.log('Finished all');
+})();
