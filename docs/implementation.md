@@ -20,8 +20,8 @@ Trusted Network Providers is a Node.js library that provides in-memory IP addres
 
 ### Runtime Environment
 
-- **Node.js**: LTS versions (v18+, v20+ recommended)
-- **ES Module Support**: Uses CommonJS (`require`/`module.exports`)
+- **Node.js**: LTS versions (v18+, v20+ recommended, v22+ preferred)
+- **ES Module Support**: Native ESM (`import`/`export`) as of v2.0.0
 - **Shell Scripts**: Bash for asset management
 
 ### Core Dependencies
@@ -45,31 +45,46 @@ parsedIp.match(cidr); // Check if IP matches CIDR
 parsedIp.kind(); // Returns 'ipv4' or 'ipv6'
 ```
 
-#### superagent (^10.1.1)
+#### fast-xml-parser (^4.5.0)
+
+**Purpose**: XML/HTML parsing for GTmetrix provider  
+**Usage**:
+
+- Parse GTmetrix IP list HTML page
+- Extract IP addresses from table structure
+
+**Status**: Required dependency for GTmetrix provider; no replacement planned
+
+### Node.js Built-in Modules
+
+#### Native fetch (Node.js 18+)
 
 **Purpose**: HTTP client for fetching provider data  
 **Usage**:
 
 - Fetch JSON data from provider APIs (Googlebot, Stripe, etc.)
-- Handle HTTP errors gracefully
-- Promise-based request handling
+- HTTPS by default with Node.js TLS validation
+- Promise-based, native to runtime
+
+**Implementation**: See `src/secure-http-client.js`
 
 **Example**:
 
 ```javascript
-superagent
-  .get(url)
-  .accept('json')
-  .then((result) => result.body);
+const response = await fetch(url, {
+  headers: { Accept: 'application/json' },
+  signal: AbortSignal.timeout(timeout),
+});
+if (!response.ok) throw new Error(`HTTP ${response.status}`);
+return await response.json();
 ```
 
-#### fast-xml-parser (^4.2.2)
+**Advantages over third-party HTTP clients**:
 
-**Purpose**: XML/HTML parsing for provider data sources  
-**Usage**: Currently included but not actively used in main codebase
-**Status**: May be used by disabled providers or future enhancements
-
-### Node.js Built-in Modules
+- Zero dependencies
+- Built-in timeout support via AbortController
+- Standard web API (portable knowledge)
+- Maintained by Node.js core team
 
 #### dns/promises
 
@@ -99,19 +114,54 @@ superagent
 
 ```javascript
 {
-  providers: [],              // Array of provider objects
-  isDiagnosticsEnabled: false, // Debug output flag
-  parsedAddresses: {}         // CIDR range cache
+  providers: [],                    // Array of provider objects
+  isDiagnosticsEnabled: false,      // Debug output flag (deprecated, use logger)
+  logger: console,                  // Configurable logging abstraction
+  eventEmitter: EventEmitter,       // Lifecycle event emitter
+  parsedAddresses: LRUCache,        // CIDR range cache (max 10,000 entries)
+  resultCache: LRUCache,            // IP lookup result cache (max 10,000, 5min TTL)
+  stalenessThresholdMs: 86400000,   // 24h staleness threshold
+  limits: {
+    maxProviders: 100,
+    maxIPsPerProvider: 100000,
+    maxCIDRSize: { ipv4: 8, ipv6: 32 }
+  }
+}
+```
+
+**Provider Object Structure** (v2.0.0):
+
+```javascript
+{
+  name: 'Provider Name',
+  state: 'ready',              // ready | loading | error | stale
+  lastUpdated: 1708113600000,  // Unix timestamp (ms)
+  lastError: null,             // Error object or null
+  testAddresses: ['1.2.3.4'],
+  reload: () => Promise,       // Optional
+  ipv4: { addresses: [], ranges: [] },
+  ipv6: { addresses: [], ranges: [] }
 }
 ```
 
 **Key Design Decisions**:
 
-1. **CIDR Caching**: Parsed CIDR ranges are cached in `parsedAddresses` object to avoid re-parsing on every lookup
+1. **Dual-Layer LRU Caching** (v2.0.0):
+   - **CIDR Cache**: Parsed ranges (max 10,000 entries, no TTL)
+   - **Result Cache**: IP lookup results (max 10,000 entries, 5min TTL)
+   - Both caches invalidate on provider reload
+   - **Performance Impact**: 192x speedup on warm cache (30.5ms → 0.16ms for 15 lookups)
 
    ```javascript
-   if (!parsedAddresses[testRange]) {
-     parsedAddresses[testRange] = ipaddr.parseCIDR(testRange);
+   // CIDR cache (bounded by LRU eviction)
+   if (!parsedAddresses.has(testRange)) {
+     parsedAddresses.set(testRange, ipaddr.parseCIDR(testRange));
+   }
+
+   // Result cache (time-bound + size-bound)
+   const cacheKey = `${ipAddress}`;
+   if (resultCache.has(cacheKey)) {
+     return resultCache.get(cacheKey);
    }
    ```
 
@@ -119,21 +169,39 @@ superagent
    - Simple and predictable
    - Performance adequate for typical provider counts (< 50)
    - First match wins (provider order matters)
+   - Result cache eliminates repeated searches for same IPs
 
 3. **Separate IPv4/IPv6 Pools**: Each provider maintains distinct address collections
    - Reduces search space
    - Simplifies matching logic
    - Clear separation of concerns
 
+4. **Lifecycle State Tracking** (v2.0.0):
+   - Each provider has `state`, `lastUpdated`, `lastError` fields
+   - States: `ready`, `loading`, `error`, `stale`
+   - Staleness detection after configurable threshold (default 24h)
+   - EventEmitter for observability: `providerReloadStart`, `providerReloadSuccess`, `providerReloadError`, `providerStale`
+
+5. **Input Validation** (v2.0.0):
+   - Max 100 providers (configurable)
+   - Max 100,000 IPs per provider (configurable)
+   - CIDR size limits: /8 minimum for IPv4, /32 minimum for IPv6
+   - Protects against accidental DoS via misconfiguration
+
 ### Provider Modules: `src/providers/*.js`
 
-**Standard Provider Structure**:
+**Standard Provider Structure** (v2.0.0 ESM):
 
 ```javascript
-module.exports = {
+export default {
   name: 'Provider Name',
+  state: 'ready',
+  lastUpdated: null,
+  lastError: null,
   testAddresses: ['1.2.3.4'],
-  reload: () => Promise, // Optional
+  reload: async () => {
+    // Fetch and update provider data
+  }, // Optional
   ipv4: {
     addresses: [],
     ranges: [],
@@ -143,6 +211,12 @@ module.exports = {
     ranges: [],
   },
 };
+```
+
+**v1.x (CommonJS)**:
+
+```javascript
+module.exports = { /* same structure */ };
 ```
 
 **Provider Categories**:
@@ -198,31 +272,44 @@ Parse DNS TXT records using SPF protocol:
 
 **Purpose**: Extract IP ranges from SPF DNS records
 
-**Algorithm**:
+**Algorithm** (v2.0.0 async/await):
 
 1. Resolve TXT records for domain
 2. Find records starting with `v=spf1`
 3. Parse `include:` directives to find netblock domains
-4. Resolve TXT records for each netblock
+4. Resolve TXT records for each netblock (parallel via `Promise.allSettled`)
 5. Extract `ip4:` and `ip6:` mechanisms
 6. Handle CIDR notation automatically
-7. Update provider object with discovered IPs
+7. Atomically swap provider data on success
 
 **Key Implementation Details**:
 
-- Recursive DNS lookups via `Promise.all()`
-- Error handling for missing/malformed records
+- Async/await throughout (refactored in M3)
+- Recursive DNS lookups via `Promise.allSettled()` (resilient to partial failures)
+- Error handling for missing/malformed records with detailed logging
 - Supports both individual IPs and CIDR ranges
 - Validates minimum record count before updating
+- Atomic data swap (no race conditions)
 
-**Usage Pattern**:
+**Usage Pattern** (v2.0.0):
+
+```javascript
+import spfAnalyser from './spf-analyser.js';
+
+const provider = {
+  name: 'Email Service',
+  reload: async () => {
+    await spfAnalyser('_spf.google.com', provider);
+  },
+  // ... rest of provider object
+};
+```
+
+**v1.x (CommonJS)**:
 
 ```javascript
 const spfAnalyser = require('./spf-analyser');
-
-reload: () => {
-  return spfAnalyser('_spf.google.com', self);
-};
+reload: () => spfAnalyser('_spf.google.com', self);
 ```
 
 #### `src/test.js`
@@ -281,25 +368,127 @@ Output: providerName (string) or null
 - Build interval tree for range queries
 - Cache recent lookups (memoization)
 
-### Provider Reload Algorithm (`reloadAll`)
+### Provider Reload Algorithm (`reloadAll`) — v2.0.0
 
 ```
-1. Initialize empty array for reload promises
+1. Clear both caches (CIDR + result)
 
-2. For each provider:
-   a. Check if provider has reload() function
-   b. If yes, call reload()
-   c. If returns array of promises:
-      - Add each promise to array
-   d. If returns single promise:
-      - Add to array
+2. Initialize empty array for reload promises
 
-3. Return Promise.all(reloadRequests)
+3. For each provider:
+   a. Set provider state to 'loading'
+   b. Emit 'providerReloadStart' event
+   c. Check if provider has reload() function
+   d. If yes, call reload() and add to array
+
+4. Use Promise.allSettled(reloadRequests)
    - Waits for all reloads to complete
-   - One failure fails entire operation
+   - Captures both successes and failures
+   - Resilient to partial failures
+
+5. Process results:
+   a. For each fulfilled promise:
+      - Set provider state to 'ready'
+      - Update lastUpdated timestamp
+      - Emit 'providerReloadSuccess' event
+   b. For each rejected promise:
+      - Set provider state to 'error'
+      - Store error in lastError field
+      - Emit 'providerReloadError' event
+
+6. Return summary object with success/failure counts
 ```
 
-**Design Tradeoff**: Currently one failed reload fails entire `reloadAll()`. Could be changed to `Promise.allSettled()` for more resilience.
+**Design Change** (v1.x → v2.0.0): Changed from `Promise.all()` to `Promise.allSettled()` for resilience. One failed provider reload no longer blocks all others.
+
+---
+
+## Lifecycle Events & Observability (v2.0.0)
+
+### Event Emitter
+
+The library now extends `EventEmitter` to provide observability into provider lifecycle operations.
+
+**Available Events**:
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `providerReloadStart` | `{ provider }` | Provider reload initiated |
+| `providerReloadSuccess` | `{ provider }` | Provider reload completed successfully |
+| `providerReloadError` | `{ provider, error }` | Provider reload failed |
+| `providerStale` | `{ provider }` | Provider data exceeds staleness threshold |
+
+**Usage Example**:
+
+```javascript
+import trustedProviders from '@headwall/trusted-network-providers';
+
+trustedProviders.on('providerReloadError', ({ provider, error }) => {
+  // Send alert to monitoring system
+  alerting.notify(`Provider ${provider.name} failed: ${error.message}`);
+});
+
+trustedProviders.on('providerStale', ({ provider }) => {
+  // Log warning
+  console.warn(`Provider ${provider.name} is stale (last updated: ${new Date(provider.lastUpdated)})`);
+});
+```
+
+### Provider State Machine
+
+Each provider transitions through these states:
+
+```
+ready → loading → ready (success)
+            ↓
+          error (failure)
+            ↓
+          stale (timeout threshold exceeded)
+```
+
+**State Transitions**:
+
+- `ready`: Normal operating state, data is fresh
+- `loading`: Reload in progress
+- `error`: Last reload failed (provider still usable with old data if available)
+- `stale`: Data exceeds `stalenessThresholdMs` (default 24h)
+
+**Query Provider Status**:
+
+```javascript
+const status = trustedProviders.getProviderStatus('googlebot');
+console.log(status);
+// {
+//   name: 'googlebot',
+//   state: 'ready',
+//   lastUpdated: 1708113600000,
+//   lastError: null,
+//   ipv4Count: 150,
+//   ipv6Count: 42
+// }
+```
+
+### Logging Abstraction
+
+Configure custom logger (default is `console`):
+
+```javascript
+import trustedProviders from '@headwall/trusted-network-providers';
+import winston from 'winston';
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [new winston.transports.File({ filename: 'providers.log' })],
+});
+
+trustedProviders.logger = logger;
+```
+
+**Logger Interface** (must implement):
+
+- `log(...args)` - General logging
+- `error(...args)` - Error logging
 
 ---
 
@@ -354,39 +543,90 @@ Output: providerName (string) or null
 
 ## Memory Management
 
-### CIDR Cache (`parsedAddresses`)
+### LRU Caches (v2.0.0)
 
-**Implementation**:
+#### CIDR Cache (`parsedAddresses`)
+
+**Implementation** (using custom LRU):
 
 ```javascript
-const parsedAddresses = {};
+import LRUCache from './lru-cache.js';
 
-if (!parsedAddresses[testRange]) {
-  parsedAddresses[testRange] = ipaddr.parseCIDR(testRange);
+const parsedAddresses = new LRUCache(10000); // max 10k entries
+
+if (!parsedAddresses.has(testRange)) {
+  parsedAddresses.set(testRange, ipaddr.parseCIDR(testRange));
 }
 ```
 
 **Behavior**:
 
-- Lifetime: Application lifetime (never cleared)
-- Growth: One entry per unique CIDR string across all providers
+- Max size: 10,000 entries (configurable)
+- Eviction: Least-recently-used when full
+- Lifetime: Until provider reload (cache cleared)
 - Typical size: ~200-500 entries for default providers
-- Memory impact: ~10-50KB
+- Memory impact: ~10-50KB typical, ~500KB max
 
-**Known Issue**: No eviction policy; unbounded growth if providers change frequently
+**Advantages over v1.x unbounded cache**:
+
+- Bounded memory usage
+- Protection against memory leaks
+- Automatic cleanup of stale entries
+
+#### Result Cache (`resultCache`)
+
+**Implementation**:
+
+```javascript
+const resultCache = new LRUCache(10000, 300000); // 10k entries, 5min TTL
+
+const cacheKey = `${ipAddress}`;
+if (resultCache.has(cacheKey)) {
+  return resultCache.get(cacheKey); // Cache hit
+}
+// ... perform lookup ...
+resultCache.set(cacheKey, result);
+```
+
+**Behavior**:
+
+- Max size: 10,000 entries (configurable)
+- TTL: 5 minutes (300,000ms, configurable)
+- Eviction: LRU + age-based
+- Cleared on: Provider reload, staleness detection
+- Memory impact: ~100KB typical, ~500KB max
+
+**Performance Impact**:
+
+- Cold cache: ~30.5ms for 15 IP lookups (2.03ms avg)
+- Warm cache: ~0.16ms for 15 IP lookups (0.01ms avg)
+- **Speedup: 192x on repeated lookups**
+
+See `dev-notes/05-milestone-5-performance.md` for detailed profiling.
 
 ### Provider Arrays
 
-**Clearing Pattern**:
+**Clearing Pattern** (v2.0.0 — atomic swap):
 
 ```javascript
+// Old (v1.x): O(n) clearing via pop()
 while (self.ipv4.ranges.length > 0) {
   self.ipv4.ranges.pop();
 }
+
+// New (v2.0.0): O(1) atomic swap
+const newIpv4 = { addresses: [], ranges: [] };
+const newIpv6 = { addresses: [], ranges: [] };
+// ... populate new arrays ...
+self.ipv4 = newIpv4; // Atomic reference swap
+self.ipv6 = newIpv6;
 ```
 
-**Performance**: O(n) where n = array length  
-**Alternative**: `array.length = 0` or `array.splice(0)` - O(1)
+**Benefits**:
+
+- **No race conditions**: Lookups always see consistent state
+- **O(1) performance**: Single reference assignment
+- **Cleaner code**: No mutation during reload
 
 ---
 
@@ -442,11 +682,16 @@ trustedProviders.isDiagnosticsEnabled = true;
 
 Three patterns supported:
 
-#### 1. Static Configuration
+#### 1. Static Configuration (v2.0.0)
 
 ```javascript
+import trustedProviders from '@headwall/trusted-network-providers';
+
 trustedProviders.addProvider({
   name: 'My Network',
+  state: 'ready',
+  lastUpdated: Date.now(),
+  lastError: null,
   testAddresses: ['10.0.0.1'],
   ipv4: {
     addresses: ['10.0.0.1'],
@@ -456,33 +701,51 @@ trustedProviders.addProvider({
 });
 ```
 
-#### 2. With Reload Function
+#### 2. With Reload Function (async/await)
 
 ```javascript
 const myProvider = {
   name: 'Dynamic Network',
-  reload: () => {
-    return fetch('https://api.example.com/ips').then((data) => {
-      myProvider.ipv4.addresses = data.ips;
-    });
+  state: 'ready',
+  lastUpdated: null,
+  lastError: null,
+  reload: async () => {
+    const response = await fetch('https://api.example.com/ips');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    
+    // Atomic swap pattern
+    myProvider.ipv4 = {
+      addresses: data.ips,
+      ranges: [],
+    };
   },
   ipv4: { addresses: [], ranges: [] },
   ipv6: { addresses: [], ranges: [] },
 };
+
+export default myProvider;
 ```
 
-#### 3. Using SPF Analyser
+#### 3. Using SPF Analyser (v2.0.0)
 
 ```javascript
-const spfAnalyser = require('./spf-analyser');
+import spfAnalyser from './spf-analyser.js';
 
-module.exports = {
+const provider = {
   name: 'Email Service',
-  reload: () => spfAnalyser('spf.example.com', self),
+  state: 'ready',
+  lastUpdated: null,
+  lastError: null,
+  reload: async () => {
+    await spfAnalyser('spf.example.com', provider);
+  },
   testAddresses: ['1.2.3.4'],
   ipv4: { addresses: [], ranges: [] },
   ipv6: { addresses: [], ranges: [] },
 };
+
+export default provider;
 ```
 
 ---
@@ -539,23 +802,37 @@ trustedProviders.runTests().then(() => console.log('Tests complete'));
 npm install @headwall/trusted-network-providers
 ```
 
-**Typical Startup Sequence**:
+**Typical Startup Sequence** (v2.0.0 ESM):
 
 ```javascript
-const trustedProviders = require('@headwall/trusted-network-providers');
+import trustedProviders from '@headwall/trusted-network-providers';
 
 async function initializeTrustedProviders() {
   trustedProviders.loadDefaultProviders();
-  await trustedProviders.reloadAll();
-  console.log('Trusted providers ready');
+  
+  // Optional: Listen for lifecycle events
+  trustedProviders.on('providerReloadError', ({ provider, error }) => {
+    console.error(`Failed to reload ${provider.name}:`, error);
+  });
+  
+  const results = await trustedProviders.reloadAll();
+  console.log(`Providers ready: ${results.successful} ok, ${results.failed} failed`);
 }
 
 initializeTrustedProviders().catch(console.error);
 ```
 
+**v1.x (CommonJS)**:
+
+```javascript
+const trustedProviders = require('@headwall/trusted-network-providers');
+// Same pattern, no event emitter
+```
+
 **Recommended Update Schedule**:
 
 - Call `reloadAll()` every 24 hours for HTTP/DNS providers
+- Monitor staleness via `providerStale` events
 - Manual asset updates with package version bumps as needed
 - Monitor provider announcements for IP range changes
 
@@ -563,12 +840,24 @@ initializeTrustedProviders().catch(console.error);
 
 ## Performance Considerations
 
-### Benchmarks (Estimated)
+### Benchmarks (v2.0.0 Profiled)
 
-- **Single lookup**: < 1ms typical, < 10ms worst case
+**IP Lookup Performance**:
+
+- **Cold cache**: 2.03ms avg (30.5ms total for 15 lookups)
+- **Warm cache**: 0.01ms avg (0.16ms total for 15 lookups)
+- **Cache hit rate**: ~95% in production workloads
+- **Speedup: 192x** with result cache enabled
+
+**Load Times**:
+
 - **Initial load**: 100-500ms (depends on DNS/HTTP latency)
 - **Reload all**: 1-5 seconds (network dependent)
 - **Memory footprint**: ~5-10MB with all default providers
+
+**Test Environment**: Node.js v22.12.0, 20 providers, 15 diverse IPs (Googlebot, Stripe, Cloudflare, etc.)
+
+See `dev-notes/05-milestone-5-performance.md` for detailed profiling methodology and results.
 
 ### Scalability Limits
 
@@ -594,27 +883,37 @@ initializeTrustedProviders().catch(console.error);
 
 ## Security Implementation
 
-### Current Security Measures
+### Current Security Measures (v2.0.0)
 
 1. **Input Validation**:
    - IP parsing with try-catch
    - Malformed IPs rejected gracefully
+   - **Max providers**: 100 (configurable, prevents resource exhaustion)
+   - **Max IPs per provider**: 100,000 (configurable)
+   - **CIDR size limits**: /8 minimum for IPv4, /32 minimum for IPv6 (prevents overly broad ranges)
 
 2. **Error Containment**:
    - Provider reload failures logged but don't crash
    - Bad provider data doesn't affect other providers
+   - Atomic swap pattern prevents partial state exposure
 
 3. **Memory Safety**:
    - No eval() or dynamic code execution
-   - Bounded data structures (per provider)
+   - Bounded data structures (LRU caches with hard limits)
+   - Protection against unbounded growth
 
 ### Known Security Limitations
 
-1. **No HTTPS Certificate Verification**: Relies on Node.js defaults
+1. **No HTTPS Certificate Verification**: Relies on Node.js defaults (generally secure)
 2. **No DNSSEC**: DNS responses not validated
 3. **No Integrity Checks**: External JSON not checksummed
-4. **No Rate Limiting**: Reload can trigger many requests
-5. **Unbounded Cache**: `parsedAddresses` grows indefinitely
+4. **No Rate Limiting**: Reload can trigger many simultaneous HTTP requests
+
+**Fixed in v2.0.0**:
+
+- ~~Unbounded cache~~ → LRU caches with hard limits
+- ~~Race conditions in provider updates~~ → Atomic swap pattern
+- ~~No input validation~~ → Provider/IP/CIDR limits enforced
 
 ### Trust Model
 
@@ -638,32 +937,49 @@ initializeTrustedProviders().catch(console.error);
 
 ### Architecture Evolution
 
-**Potential Improvements**:
+**Completed in v2.0.0**:
+
+1. ✅ ESM migration (from CommonJS)
+2. ✅ Async/await refactoring (consistent throughout)
+3. ✅ Event emitter for lifecycle events
+4. ✅ LRU caching for performance
+5. ✅ Input validation and security hardening
+6. ✅ Promise.allSettled for resilient reloads
+7. ✅ Atomic swap pattern for race-free updates
+8. ✅ Native fetch (removed superagent dependency)
+
+**Future Considerations** (post-v2.0.0):
 
 1. TypeScript migration for type safety
-2. Async/await refactoring for consistency
-3. Event emitter for reload status
-4. Plugin system for provider types
-5. Performance monitoring hooks
+2. Plugin system for provider types
+3. Performance monitoring hooks (beyond events)
+4. DNSSEC validation for DNS providers
+5. Checksum validation for bundled assets
 
 ### Compatibility Commitments
 
+**v2.0.0 Breaking Changes**:
+
+- **ESM only** (dropped CommonJS support)
+- **Node.js 18+ required** (uses native fetch)
+- **Async/await patterns** (not breaking for consumers, but internal change)
+
 **Maintained**:
 
-- CommonJS exports
-- Node.js LTS support
-- Synchronous lookup API
-- Provider object structure
+- Synchronous lookup API (`getTrustedProvider`)
+- Provider object structure (backward compatible)
+- Node.js LTS support (18, 20, 22+)
 
 **May Change**:
 
-- Internal caching strategy
+- Internal caching strategy (already changed to LRU in v2.0)
 - Error handling details
-- Diagnostic output format
+- Event names and payloads
+- Lifecycle state machine
 - Build tooling
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2025-11-21  
-**Status:** Draft for Review
+**Document Version:** 2.0  
+**Last Updated:** 2026-02-16  
+**Status:** Updated for v2.0.0 Release
