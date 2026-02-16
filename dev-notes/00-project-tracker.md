@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 6 — Documentation & Release
-**Last commit:** [M5] Mark tasks complete
+**Last commit:** [M6] Mark README task complete
 **Blockers:** None
-**Next action:** Update README for v2.0.0 (ESM imports, new APIs, lifecycle events)
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. M5 complete ✓. Performance profiling shows 192x speedup with result cache (cold: 30.5ms, warm: 0.16ms for 15 IP lookups). See dev-notes/05-milestone-5-performance.md for full analysis. All 278 tests passing ✓.
-**Last updated:** 2026-02-16 19:10
+**Next action:** Write migration guide (v1.x → v2.x)
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. M5 complete ✓. README updated for v2.0.0 ✓. Performance profiling shows 192x speedup with result cache (cold: 30.5ms, warm: 0.16ms for 15 IP lookups). See dev-notes/05-milestone-5-performance.md for full analysis. All 278 tests passing ✓.
+**Last updated:** 2026-02-16 19:30
 
 ---
 
@@ -148,7 +148,7 @@ Lower priority, but worth doing while we're in here.
 
 Polish and ship.
 
-- [ ] Update README for v2.0.0 (ESM imports, new APIs, lifecycle events)
+- [x] Update README for v2.0.0 (ESM imports, new APIs, lifecycle events)
 - [ ] Write migration guide (v1.x → v2.x)
 - [ ] Update docs/security.md
 - [ ] Update docs/implementation.md
