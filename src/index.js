@@ -95,7 +95,7 @@ const self = {
    * });
    */
   addProvider: (provider) => {
-    if (provider && typeof provider.name !== 'undefined' && !self.hasProvider(provider.name)) {
+    if (provider && provider.name && !self.hasProvider(provider.name)) {
       if (self.isDiagnosticsEnabled) {
         console.log(`➕ Add provider: ${provider.name}`);
       }
@@ -147,15 +147,11 @@ const self = {
    * }
    */
   hasProvider: (providerName) => {
-    let isFound = false;
-
-    if (providerName) {
-      self.providers.forEach((testProvider) => {
-        isFound |= testProvider.name === providerName;
-      });
+    if (!providerName) {
+      return false;
     }
 
-    return isFound;
+    return self.providers.some((testProvider) => testProvider.name === providerName);
   },
 
   /**

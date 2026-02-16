@@ -5,6 +5,7 @@
  * These tests verify that each provider's test IPs are correctly identified after loading and reloading.
  */
 
+import { jest } from '@jest/globals';
 import trustedProviders from '../src/index.js';
 import fakeProvider from '../src/providers/fake-provider.js';
 

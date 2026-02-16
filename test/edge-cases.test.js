@@ -4,6 +4,7 @@
  * Tests for invalid inputs, error conditions, and edge cases
  */
 
+import { jest } from '@jest/globals';
 import trustedProviders from '../src/index.js';
 
 describe('Edge Cases and Error Handling', () => {
