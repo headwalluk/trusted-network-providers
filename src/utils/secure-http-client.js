@@ -149,7 +149,11 @@ async function fetchJSON(url, options = {}) {
     } catch (error) {
       lastError = error;
 
-      // Don't retry on certain errors
+      // Don't retry on certain errors (permanent failures)
+      // HTTP 4xx errors indicate client errors that won't be fixed by retrying
+      // - 404 Not Found: The endpoint doesn't exist
+      // - 403 Forbidden: Access denied (auth/permissions issue)
+      // - 401 Unauthorized: Missing or invalid credentials
       if (
         error.message.includes('HTTP 404') ||
         error.message.includes('HTTP 403') ||
@@ -159,6 +163,8 @@ async function fetchJSON(url, options = {}) {
       }
 
       // Certificate validation errors should not be retried
+      // These indicate a security issue (expired cert, self-signed cert, etc.)
+      // that won't be resolved by retrying
       if (
         error.code === 'CERT_HAS_EXPIRED' ||
         error.code === 'CERT_UNTRUSTED' ||
@@ -167,13 +173,18 @@ async function fetchJSON(url, options = {}) {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
       }
 
-      // Timeout errors
+      // Timeout errors (transient failures)
+      // These can be caused by network congestion or slow servers
+      // Retry makes sense here because the next attempt might succeed
       if (error.name === 'AbortError') {
         lastError = new Error(`Request timeout for ${url} after ${config.timeout}ms`);
-        // Allow retry on timeout
+        // Allow retry on timeout (fall through to retry logic below)
       }
 
       // If this isn't the last attempt, wait before retrying
+      // Exponential backoff: 1s, 2s, 3s... (linear, not exponential in this implementation)
+      // This gives the server time to recover from transient issues
+      // and reduces load if the server is overloaded
       if (attempt < config.retries) {
         await sleep(config.retryDelay * (attempt + 1)); // Exponential backoff
         continue;
@@ -229,7 +240,7 @@ async function fetchText(url, options = {}) {
     } catch (error) {
       lastError = error;
 
-      // Don't retry on certain errors
+      // Don't retry on certain errors (permanent failures)
       if (
         error.message.includes('HTTP 404') ||
         error.message.includes('HTTP 403') ||
@@ -247,13 +258,13 @@ async function fetchText(url, options = {}) {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
       }
 
-      // Timeout errors
+      // Timeout errors (transient failures - retry makes sense)
       if (error.name === 'AbortError') {
         lastError = new Error(`Request timeout for ${url} after ${config.timeout}ms`);
         // Allow retry on timeout
       }
 
-      // If this isn't the last attempt, wait before retrying
+      // Exponential backoff before retry (reduces load on overloaded servers)
       if (attempt < config.retries) {
         await sleep(config.retryDelay * (attempt + 1));
         continue;
@@ -311,7 +322,7 @@ async function fetchXML(url, options = {}) {
     } catch (error) {
       lastError = error;
 
-      // Don't retry on certain errors
+      // Don't retry on certain errors (permanent failures)
       if (
         error.message.includes('HTTP 404') ||
         error.message.includes('HTTP 403') ||
@@ -329,13 +340,13 @@ async function fetchXML(url, options = {}) {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
       }
 
-      // Timeout errors
+      // Timeout errors (transient failures - retry makes sense)
       if (error.name === 'AbortError') {
         lastError = new Error(`Request timeout for ${url} after ${config.timeout}ms`);
         // Allow retry on timeout
       }
 
-      // If this isn't the last attempt, wait before retrying
+      // Exponential backoff before retry (reduces load on overloaded servers)
       if (attempt < config.retries) {
         await sleep(config.retryDelay * (attempt + 1));
         continue;

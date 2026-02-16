@@ -575,46 +575,56 @@ const self = {
           logger.debug(`🔃 Reload: ${provider.name}`);
         }
 
-        // Set provider state to LOADING
+        // Set provider state to LOADING before starting the reload
+        // This allows consumers to detect when a provider is updating
         const metadata = providerMetadata.get(provider.name);
         if (metadata) {
           metadata.state = PROVIDER_STATE_LOADING;
         }
 
-        // Emit reload:start event
+        // Emit reload:start event for monitoring/observability
         events.emit('reload:start', { provider: provider.name });
 
         const reloadPromises = provider.reload();
 
+        // Some providers return multiple promises (e.g., multiple API endpoints)
+        // Others return a single promise. We handle both cases.
         if (Array.isArray(reloadPromises)) {
+          // Multiple reload tasks (e.g., fetching from different endpoints)
+          // Each promise is wrapped with state management callbacks
           for (const promise of reloadPromises) {
             reloadRequests.push(
               promise
                 .then(() => {
                   // Update metadata on success
+                  // All provider reloads must succeed for the state to become READY
                   const meta = providerMetadata.get(provider.name);
                   if (meta) {
                     meta.state = PROVIDER_STATE_READY;
                     meta.lastUpdated = Date.now();
                     meta.lastError = null;
                   }
-                  // Emit reload:success event
+                  // Emit reload:success event for monitoring
                   events.emit('reload:success', { provider: provider.name, timestamp: Date.now() });
                 })
                 .catch((error) => {
                   // Update metadata on failure
+                  // The provider enters ERROR state, but other providers continue loading
                   const meta = providerMetadata.get(provider.name);
                   if (meta) {
                     meta.state = PROVIDER_STATE_ERROR;
                     meta.lastError = error;
                   }
-                  // Emit error event
+                  // Emit error event for monitoring
                   events.emit('error', { provider: provider.name, error, timestamp: Date.now() });
-                  throw error; // Re-throw to maintain Promise.allSettled behavior
+                  // Re-throw to maintain Promise.allSettled behavior
+                  // This ensures the result array shows which providers failed
+                  throw error;
                 })
             );
           }
         } else {
+          // Single reload task (most common case)
           reloadRequests.push(
             reloadPromises
               .then(() => {
@@ -644,10 +654,15 @@ const self = {
       }
     }
 
+    // Use Promise.allSettled (not Promise.all) to ensure all providers are attempted
+    // even if some fail. This is critical for resilience — we want partial success.
+    // If we used Promise.all, a single provider failure would abort the entire reload.
     const results = await Promise.allSettled(reloadRequests);
 
-    // Clear caches after all reloads complete
+    // Clear both caches after all reloads complete (success or failure)
     // This prevents stale data from being used with updated provider ranges
+    // The result cache (IP lookups) must be invalidated because provider ranges changed
+    // The parsed address cache (CIDR ranges) must be invalidated because ranges may have been added/removed
     parsedAddresses.clear();
     resultCache.clear();
 
@@ -685,6 +700,7 @@ const self = {
    */
   getTrustedProvider: (ipAddress) => {
     // Check result cache first (hot path for repeated lookups)
+    // This cache has TTL expiry, so stale results are automatically invalidated
     if (resultCache.has(ipAddress)) {
       return resultCache.get(ipAddress);
     }
@@ -692,6 +708,7 @@ const self = {
     let trustedSource = null;
 
     // Parse the IP address string into an ipaddr.js object
+    // This validates the IP format and provides methods for CIDR matching
     let parsedIp = null;
     try {
       parsedIp = ipaddr.parse(ipAddress);
@@ -706,12 +723,14 @@ const self = {
 
       // Linear search through providers in registration order
       // First match wins, so provider order matters if ranges overlap
+      // This allows prioritizing more specific providers before catch-all ones
       const providerCount = self.providers.length;
       let providerIndex = 0;
       while (providerIndex < providerCount) {
         const provider = self.providers[providerIndex];
 
         // Select the appropriate test pool (ipv4 or ipv6) based on the IP version
+        // This prevents testing IPv4 addresses against IPv6 ranges and vice versa
         let testPool = null;
         if (ipAddressVersion === IP_VERSION_V4) {
           testPool = provider.ipv4;
@@ -724,6 +743,8 @@ const self = {
         try {
           if (testPool) {
             // Step 1: Check exact address matches (fast string comparison)
+            // This is significantly faster than CIDR parsing, so we check these first
+            // Example: "1.2.3.4" === "1.2.3.4" (simple string equality)
             const addressCount = testPool.addresses.length;
             for (let addressIndex = 0; addressIndex < addressCount; ++addressIndex) {
               if (testPool.addresses[addressIndex] === ipAddress) {
@@ -733,16 +754,21 @@ const self = {
             }
 
             // Step 2: Check CIDR range matches (slower, requires CIDR parsing)
+            // Only run this if we didn't find an exact match above
+            // Example: Check if "1.2.3.4" falls within "1.2.3.0/24"
             const rangeCount = testPool.ranges.length;
             for (let rangeIndex = 0; rangeIndex < rangeCount; ++rangeIndex) {
               const testRange = testPool.ranges[rangeIndex];
 
               // Cache parsed CIDR ranges (LRU) to avoid re-parsing on every lookup
+              // Parsing "1.2.3.0/24" into a range object is expensive, so we only do it once
+              // The LRU cache automatically evicts old entries when full (5000 max)
               if (!parsedAddresses.has(testRange)) {
                 parsedAddresses.set(testRange, ipaddr.parseCIDR(testRange));
               }
 
-              // Check if the IP falls within this CIDR range
+              // Check if the IP falls within this CIDR range using ipaddr.js's match() method
+              // This performs bitwise comparison of the IP against the range's network/mask
               if (parsedIp.match(parsedAddresses.get(testRange))) {
                 trustedSource = provider.name;
                 break;
@@ -754,7 +780,8 @@ const self = {
           logger.error(error);
         }
 
-        // Exit early if we found a match
+        // Exit early if we found a match (no need to check remaining providers)
+        // This is important for performance when dealing with 20+ providers
         if (trustedSource) {
           break;
         } else {
@@ -764,6 +791,8 @@ const self = {
     }
 
     // Cache the result (including null for negative lookups) with TTL
+    // Negative caching prevents repeated expensive lookups for unknown IPs
+    // This is especially important during high-volume attacks from untrusted sources
     resultCache.set(ipAddress, trustedSource);
 
     return trustedSource;
