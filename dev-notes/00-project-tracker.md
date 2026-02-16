@@ -9,12 +9,12 @@
 
 ## Current Status
 
-**Working on:** Milestone 6 — Documentation & Release
-**Last commit:** [M6] Mark CHANGELOG task complete
+**Working on:** Milestone 6 — Documentation & Release (READY FOR PAUL)
+**Last commit:** [M6] Mark final lint+test verification complete
 **Blockers:** None
-**Next action:** Final clean lint cycle + full test suite
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. M5 complete ✓. README updated for v2.0.0 ✓. Migration guide (v1.x → v2.x) complete ✓. Security documentation updated for v2.0 ✓. Implementation documentation updated for v2.0 (ESM, native fetch, async/await, lifecycle events, LRU caching, input validation) ✓. Inline code comments added for getTrustedProvider(), reloadAll(), and secure-http-client retry logic ✓. CHANGELOG.md updated for v2.0.0 release ✓. Performance profiling shows 192x speedup with result cache (cold: 30.5ms, warm: 0.16ms for 15 IP lookups). See dev-notes/05-milestone-5-performance.md for full analysis. All 278 tests passing ✓.
-**Last updated:** 2026-02-16 20:50
+**Next action:** Ready for Paul to tag and publish v2.0.0
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. M5 complete ✓. README updated for v2.0.0 ✓. Migration guide (v1.x → v2.x) complete ✓. Security documentation updated for v2.0 ✓. Implementation documentation updated for v2.0 (ESM, native fetch, async/await, lifecycle events, LRU caching, input validation) ✓. Inline code comments added for getTrustedProvider(), reloadAll(), and secure-http-client retry logic ✓. CHANGELOG.md updated for v2.0.0 release ✓. Final verification: 278 tests passing ✓, 0 lint errors ✓. Performance profiling shows 192x speedup with result cache (cold: 30.5ms, warm: 0.16ms for 15 IP lookups). See dev-notes/05-milestone-5-performance.md for full analysis. Branch ready for review and publication.
+**Last updated:** 2026-02-16 20:55
 
 ---
 
@@ -154,8 +154,8 @@ Polish and ship.
 - [x] Update docs/implementation.md
 - [x] Add inline code comments for complex logic
 - [x] Update CHANGELOG.md
-- [ ] Final clean lint cycle + full test suite
-- [ ] Tag and publish v2.0.0
+- [x] Final clean lint cycle + full test suite — all 278 tests passing ✓, 0 lint errors ✓
+- [ ] Tag and publish v2.0.0 — ready for Paul to review and publish
 - [ ] Commit milestone completion to `v2-modernisation` branch
 
 ---
