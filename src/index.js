@@ -259,8 +259,9 @@ const self = {
     let parsedIp = null;
     try {
       parsedIp = ipaddr.parse(ipAddress);
-    } catch {
+    } catch (error) {
       console.error(`Failed to parse IP: ${ipAddress}`);
+      console.error(error);
       parsedIp = null;
     }
 
