@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 3b — Test Coverage
-**Last commit:** [M3b] Add comprehensive test suite for googlebot provider
+**Last commit:** [M3b] Add comprehensive test suite for spf-analyser
 **Blockers:** None
-**Next action:** Continue M3b coverage work — add tests for secure-http-client.js (native fetch), spf-analyser.js (async/await), or index.js edge cases.
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b in progress: Added comprehensive test suite for googlebot provider (18 tests covering reload(), reloadFromWeb(), error handling, structure validation, and data integrity) ✓. All 168 tests passing (was 150, now 168 after adding googlebot tests) ✓. Testing sprint verified: npm test (168/168), format check (clean), lint (clean) ✓. Current baseline: 55.52% coverage, target >80%. Focus areas: secure-http-client.js (22.38%), spf-analyser.js (39.68%), and index.js edge cases. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
-**Last updated:** 2026-02-16 14:20
+**Next action:** Continue M3b coverage work — add tests for secure-http-client.js (native fetch) or index.js edge cases.
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b in progress: Added comprehensive test suite for googlebot provider (18 tests) ✓. Added comprehensive test suite for spf-analyser.js (21 tests covering DNS mocking, IPv4/IPv6 extraction, CIDR ranges, include directives, error handling, and edge cases) ✓. All 189 tests passing (was 168, now 189 after adding spf-analyser tests) ✓. Testing sprint verified: npm test (189/189), format check (clean), lint (clean) ✓. Current baseline: coverage improving, target >80%. Focus areas: secure-http-client.js and index.js edge cases. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
+**Last updated:** 2026-02-16 14:45
 
 ---
 
@@ -95,7 +95,7 @@ Now that the code is modernised, write durable tests against the stable codebase
 
 - [ ] Achieve >80% code coverage across all modules
 - [ ] Add tests for refactored secure-http-client.js (native fetch)
-- [ ] Add tests for refactored spf-analyser.js (async/await)
+- [x] Add tests for refactored spf-analyser.js (async/await)
 - [ ] Add tests for index.js uncovered edge cases
 - [ ] All tests pass
 - [ ] Commit milestone completion to `v2-modernisation` branch
