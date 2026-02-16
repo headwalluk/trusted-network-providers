@@ -19,6 +19,11 @@ describe('Logger API (index.js)', () => {
 
     // Reset to default level
     trustedProviders.setLogLevel('error');
+    
+    // Clear providers to ensure test isolation
+    while (trustedProviders.getAllProviders().length > 0) {
+      trustedProviders.deleteProvider(trustedProviders.getAllProviders()[0].name);
+    }
   });
 
   afterEach(() => {
@@ -98,7 +103,7 @@ describe('Logger API (index.js)', () => {
     trustedProviders.setLogLevel('silent');
 
     // This should try to parse an invalid IP, but not log anything
-    const result = trustedProviders.getTrustedProvider('invalid-ip');
+    const result = trustedProviders.getTrustedProvider('invalid-ip-silent-test');
 
     expect(result).toBeNull();
     expect(console.error).not.toHaveBeenCalled();
@@ -108,7 +113,7 @@ describe('Logger API (index.js)', () => {
     trustedProviders.setLogLevel('error');
 
     // This should try to parse an invalid IP and log the error
-    const result = trustedProviders.getTrustedProvider('invalid-ip');
+    const result = trustedProviders.getTrustedProvider('invalid-ip-error-test');
 
     expect(result).toBeNull();
     expect(console.error).toHaveBeenCalled();

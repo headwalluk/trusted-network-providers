@@ -218,6 +218,7 @@ const self = {
 
   /**
    * Removes a provider from the trusted network list by name.
+   * Clears all caches to prevent stale results from the deleted provider.
    *
    * @param {string} providerName - The name of the provider to remove
    * @returns {void}
@@ -231,6 +232,10 @@ const self = {
       if (providerIndex >= 0) {
         self.providers.splice(providerIndex, 1);
         providerMetadata.delete(providerName);
+        
+        // Clear caches to prevent stale results
+        parsedAddresses.clear();
+        resultCache.clear();
       }
     }
   },
