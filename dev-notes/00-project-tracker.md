@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 1 — Foundation tasks  
-**Last commit:** [M1] Add GitHub Actions CI workflow  
+**Last commit:** [M1] Mark test porting complete  
 **Blockers:** None  
-**Next action:** Port all existing test cases to Jest, then improve test coverage (currently 50.72%, target >80%)  
-**Notes:** ESM migration complete ✓. GitHub Actions CI workflow added and tested ✓ (Node 18, 20, 22 all passing). All tests passing (35 tests). Current coverage: 50.72%. Main gaps: provider files (ahrefsbot, brevo, cloudflare, etc.), spf-analyser.js (39.68%), secure-http-client.js (22.38%).  
-**Last updated:** 2026-02-16 08:35
+**Next action:** Improve test coverage from 50.72% to >80%. Focus on: provider files (ahrefsbot, brevo, cloudflare, etc.), spf-analyser.js (39.68%), secure-http-client.js (22.38%), checksum-verifier.js (48.71%)  
+**Notes:** ESM migration complete ✓. GitHub Actions CI workflow added ✓. Test porting complete ✓. All tests passing (35 tests). Current coverage: 50.72% (need >80%). Main coverage gaps: 17 provider files at 0%, plus spf-analyser, secure-http-client, and checksum-verifier.  
+**Last updated:** 2026-02-16 08:42
 
 ---
 
@@ -46,7 +46,7 @@ Get the tooling right before touching runtime code. Nothing here changes behavio
 - [x] Update `package.json` with `"type": "module"`
 - [x] Add `.nvmrc` pinned to Node 22 LTS
 - [x] Replace hand-rolled `src/test.js` with Jest test framework
-- [ ] Port all existing test cases to Jest
+- [x] Port all existing test cases to Jest
 - [ ] Achieve >80% code coverage
 - [x] Update ESLint config for ESM
 - [x] Ensure clean lint cycle (0 errors, 0 warnings)
