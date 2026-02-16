@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 1 — Foundation tasks  
-**Last commit:** [M1] Mark ESM migration complete  
+**Last commit:** [M1] Add GitHub Actions CI workflow  
 **Blockers:** None  
 **Next action:** Improve test coverage — add tests for uncovered providers and utilities (currently 50.72%, target >80%)  
-**Notes:** ESM migration complete ✓ (all src/ files already using import/export). Current coverage: 50.72%. Main gaps: provider files (ahrefsbot, brevo, cloudflare, etc.), spf-analyser.js (39.68%), secure-http-client.js (22.38%).  
-**Last updated:** 2026-02-16 08:32
+**Notes:** ESM migration complete ✓. GitHub Actions CI workflow added ✓ (tests on Node 18, 20, 22). Current coverage: 50.72%. Main gaps: provider files (ahrefsbot, brevo, cloudflare, etc.), spf-analyser.js (39.68%), secure-http-client.js (22.38%).  
+**Last updated:** 2026-02-16 08:33
 
 ---
 
@@ -50,7 +50,7 @@ Get the tooling right before touching runtime code. Nothing here changes behavio
 - [ ] Achieve >80% code coverage
 - [x] Update ESLint config for ESM
 - [x] Ensure clean lint cycle (0 errors, 0 warnings)
-- [ ] Add GitHub Actions CI workflow (test on Node 18, 20, 22)
+- [x] Add GitHub Actions CI workflow (test on Node 18, 20, 22)
 - [ ] Commit milestone completion to `v2-modernisation` branch
 
 ---
