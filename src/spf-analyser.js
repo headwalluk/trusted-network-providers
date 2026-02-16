@@ -134,9 +134,8 @@ export default async (domain, provider) => {
           } else {
             newAddresses.ipv4.addresses.push(possibleAddress);
           }
-        }
-        // Parse IPv6 addresses and ranges (e.g., "ip6:2001:4860:4000::/36")
-        else if (components[0] === 'ip6') {
+        } else if (components[0] === 'ip6') {
+          // Parse IPv6 addresses and ranges (e.g., "ip6:2001:4860:4000::/36")
           // IPv6 uses colon notation, so we can't split on ':' — use substring instead
           const possibleAddress = field.substring(4); // Skip "ip6:"
           if (possibleAddress.indexOf('/') > 0) {
