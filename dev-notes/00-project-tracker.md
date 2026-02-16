@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 5 — Performance
-**Last commit:** [M4b] Add input validation (max IPs, max providers, CIDR)
+**Last commit:** [M5] Move LRU cache test to test/ directory and fix lint warning
 **Blockers:** None
-**Next action:** Implement LRU cache with max size for parsed CIDR ranges.
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. Added input validation to prevent unbounded growth and malformed inputs. All 257 tests passing ✓. Moving to M5: performance improvements.
-**Last updated:** 2026-02-16 18:10
+**Next action:** Add LRU result cache with configurable TTL for IP lookups.
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. M5 in progress: Implemented LRU cache for parsed CIDR ranges (max 5000 entries). All 275 tests passing ✓.
+**Last updated:** 2026-02-16 18:30
 
 ---
 
@@ -134,7 +134,7 @@ Make providers resilient to failures and misuse.
 
 Lower priority, but worth doing while we're in here.
 
-- [ ] Implement LRU cache with max size for parsed CIDR ranges (replace unbounded `parsedAddresses`)
+- [x] Implement LRU cache with max size for parsed CIDR ranges (replace unbounded `parsedAddresses`)
 - [ ] Add LRU result cache with configurable TTL for IP lookups
 - [ ] Invalidate caches on provider reload
 - [ ] Profile lookup performance before/after with 20+ providers
