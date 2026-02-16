@@ -1,6 +1,6 @@
 /**
  * Tests for secure-http-client.js
- * 
+ *
  * Covers the native fetch implementation with:
  * - HTTPS enforcement
  * - Timeout handling
@@ -53,9 +53,7 @@ describe('verifyChecksum', () => {
   it('should throw for mismatched checksum', () => {
     const data = 'test data';
     const wrongChecksum = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-    expect(() => verifyChecksum(data, wrongChecksum, 'https://example.com')).toThrow(
-      /Checksum verification failed/
-    );
+    expect(() => verifyChecksum(data, wrongChecksum, 'https://example.com')).toThrow(/Checksum verification failed/);
   });
 });
 
@@ -122,17 +120,13 @@ describe('fetchJSON', () => {
   it('should throw on empty response body', async () => {
     global.fetch.mockResolvedValue(createMockResponse(''));
 
-    await expect(fetchJSON('https://example.com/empty.json')).rejects.toThrow(
-      /Empty response body received/
-    );
+    await expect(fetchJSON('https://example.com/empty.json')).rejects.toThrow(/Empty response body received/);
   });
 
   it('should throw on invalid JSON', async () => {
     global.fetch.mockResolvedValue(createMockResponse('not valid json'));
 
-    await expect(fetchJSON('https://example.com/invalid.json')).rejects.toThrow(
-      /Failed to parse JSON/
-    );
+    await expect(fetchJSON('https://example.com/invalid.json')).rejects.toThrow(/Failed to parse JSON/);
   });
 
   it('should verify checksum when provided', async () => {
@@ -236,6 +230,17 @@ describe('fetchJSON', () => {
 
     expect(global.fetch).toHaveBeenCalledTimes(2); // Initial + 1 retry
   });
+
+  it('should handle SSL certificate errors without retry', async () => {
+    const certError = new Error('Self-signed certificate');
+    certError.code = 'DEPTH_ZERO_SELF_SIGNED_CERT';
+    global.fetch.mockRejectedValue(certError);
+
+    await expect(fetchJSON('https://example.com/self-signed.json')).rejects.toThrow(
+      /SSL certificate validation failed/
+    );
+    expect(global.fetch).toHaveBeenCalledTimes(1); // No retries
+  });
 });
 
 describe('fetchText', () => {
@@ -260,9 +265,7 @@ describe('fetchText', () => {
   });
 
   it('should reject HTTP URLs', async () => {
-    await expect(fetchText('http://example.com/data.txt')).rejects.toThrow(
-      /Insecure URL rejected/
-    );
+    await expect(fetchText('http://example.com/data.txt')).rejects.toThrow(/Insecure URL rejected/);
   });
 
   it('should handle 404 errors without retry', async () => {
@@ -272,12 +275,44 @@ describe('fetchText', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it('should retry on network errors', async () => {
+  it('should handle 500 errors with retry', async () => {
     global.fetch
-      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce(createMockResponse('Server Error', 500))
       .mockResolvedValueOnce(createMockResponse('success'));
 
     const result = await fetchText('https://example.com/retry.txt');
+
+    expect(result).toBe('success');
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('should retry on network errors', async () => {
+    global.fetch.mockRejectedValueOnce(new Error('Network error')).mockResolvedValueOnce(createMockResponse('success'));
+
+    const result = await fetchText('https://example.com/retry.txt');
+
+    expect(result).toBe('success');
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('should handle SSL certificate errors without retry', async () => {
+    const certError = new Error('Certificate has expired');
+    certError.code = 'CERT_HAS_EXPIRED';
+    global.fetch.mockRejectedValue(certError);
+
+    await expect(fetchText('https://example.com/expired-cert.txt')).rejects.toThrow(
+      /SSL certificate validation failed/
+    );
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle timeout with retry', async () => {
+    const abortError = new Error('Aborted');
+    abortError.name = 'AbortError';
+
+    global.fetch.mockRejectedValueOnce(abortError).mockResolvedValueOnce(createMockResponse('success'));
+
+    const result = await fetchText('https://example.com/slow.txt', { retryDelay: 10 });
 
     expect(result).toBe('success');
     expect(global.fetch).toHaveBeenCalledTimes(2);
@@ -307,9 +342,7 @@ describe('fetchXML', () => {
   });
 
   it('should reject HTTP URLs', async () => {
-    await expect(fetchXML('http://example.com/data.xml')).rejects.toThrow(
-      /Insecure URL rejected/
-    );
+    await expect(fetchXML('http://example.com/data.xml')).rejects.toThrow(/Insecure URL rejected/);
   });
 
   it('should handle 404 errors without retry', async () => {
@@ -319,13 +352,49 @@ describe('fetchXML', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it('should retry on network errors', async () => {
+  it('should handle 500 errors with retry', async () => {
     const mockXML = '<root><data>value</data></root>';
     global.fetch
-      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce(createMockResponse('Server Error', 500))
       .mockResolvedValueOnce(createMockResponse(mockXML));
 
     const result = await fetchXML('https://example.com/retry.xml');
+
+    expect(Buffer.isBuffer(result)).toBe(true);
+    expect(result.toString()).toBe(mockXML);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('should retry on network errors', async () => {
+    const mockXML = '<root><data>value</data></root>';
+    global.fetch.mockRejectedValueOnce(new Error('Network error')).mockResolvedValueOnce(createMockResponse(mockXML));
+
+    const result = await fetchXML('https://example.com/retry.xml');
+
+    expect(Buffer.isBuffer(result)).toBe(true);
+    expect(result.toString()).toBe(mockXML);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('should handle SSL certificate errors without retry', async () => {
+    const certError = new Error('Certificate untrusted');
+    certError.code = 'CERT_UNTRUSTED';
+    global.fetch.mockRejectedValue(certError);
+
+    await expect(fetchXML('https://example.com/untrusted-cert.xml')).rejects.toThrow(
+      /SSL certificate validation failed/
+    );
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle timeout with retry', async () => {
+    const abortError = new Error('Aborted');
+    abortError.name = 'AbortError';
+    const mockXML = '<root><data>value</data></root>';
+
+    global.fetch.mockRejectedValueOnce(abortError).mockResolvedValueOnce(createMockResponse(mockXML));
+
+    const result = await fetchXML('https://example.com/slow.xml', { retryDelay: 10 });
 
     expect(Buffer.isBuffer(result)).toBe(true);
     expect(result.toString()).toBe(mockXML);
