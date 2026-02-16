@@ -5,6 +5,7 @@
 import { EventEmitter } from 'node:events';
 import ipaddr from 'ipaddr.js';
 import { LRUCache } from './lru-cache.js';
+import { TTLCache } from './ttl-cache.js';
 import logger from './utils/logger.js';
 import privateProvider from './providers/private.js';
 import googlebotProvider from './providers/googlebot.js';
@@ -43,6 +44,8 @@ const PROVIDER_STATE_STALE = 'stale';
 const MAX_PROVIDERS = 100; // Maximum number of providers that can be registered
 const MAX_IPS_PER_PROVIDER = 10000; // Maximum combined IPs and ranges per provider
 const MAX_PARSED_ADDRESSES = 5000; // Maximum parsed CIDR ranges to cache (LRU)
+const MAX_CACHED_RESULTS = 10000; // Maximum IP lookup results to cache (TTL + LRU)
+const DEFAULT_RESULT_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour default TTL for IP lookup results
 
 const defaultProviders = [
   privateProvider,
@@ -70,6 +73,14 @@ const defaultProviders = [
 ];
 
 const parsedAddresses = new LRUCache(MAX_PARSED_ADDRESSES);
+
+/**
+ * Result cache for IP lookups with TTL.
+ * Caches the result (provider name or null) for each IP address.
+ * @type {TTLCache}
+ */
+let resultCacheTtlMs = DEFAULT_RESULT_CACHE_TTL_MS;
+let resultCache = new TTLCache(MAX_CACHED_RESULTS, resultCacheTtlMs);
 
 /**
  * Provider metadata tracking.
@@ -388,6 +399,39 @@ const self = {
   },
 
   /**
+   * Sets the TTL (time-to-live) for IP lookup result caching in milliseconds.
+   * Cached results older than this duration will be re-evaluated.
+   * Changing the TTL recreates the cache (clearing all existing entries).
+   *
+   * @param {number} ttlMs - The cache TTL in milliseconds
+   * @returns {void}
+   *
+   * @example
+   * // Cache IP lookups for 30 minutes
+   * trustedProviders.setResultCacheTTL(30 * 60 * 1000);
+   */
+  setResultCacheTTL: (ttlMs) => {
+    if (typeof ttlMs === 'number' && ttlMs > 0) {
+      resultCacheTtlMs = ttlMs;
+      // Recreate cache with new TTL (clears existing entries)
+      resultCache = new TTLCache(MAX_CACHED_RESULTS, resultCacheTtlMs);
+    }
+  },
+
+  /**
+   * Gets the current TTL for IP lookup result caching in milliseconds.
+   *
+   * @returns {number} The current result cache TTL in milliseconds
+   *
+   * @example
+   * const ttl = trustedProviders.getResultCacheTTL();
+   * console.log(`Results are cached for ${ttl / (60 * 1000)} minutes`);
+   */
+  getResultCacheTTL: () => {
+    return resultCacheTtlMs;
+  },
+
+  /**
    * Checks all providers for staleness and updates their state if they exceed the staleness threshold.
    * Emits a 'stale' event for each provider that transitions to the stale state.
    * Should be called periodically (e.g., hourly) in long-running applications.
@@ -597,9 +641,10 @@ const self = {
 
     const results = await Promise.allSettled(reloadRequests);
 
-    // Clear the LRU CIDR cache after all reloads complete
-    // This prevents stale cached parses from being used with updated provider ranges
+    // Clear caches after all reloads complete
+    // This prevents stale data from being used with updated provider ranges
     parsedAddresses.clear();
+    resultCache.clear();
 
     return results;
   },
@@ -610,6 +655,9 @@ const self = {
    *
    * This function performs a linear search through providers in registration order.
    * First match wins, so provider order matters if ranges overlap.
+   *
+   * Results are cached with a configurable TTL to improve performance for repeated lookups.
+   * The cache is automatically cleared when providers are reloaded.
    *
    * @param {string} ipAddress - The IP address to check (IPv4 or IPv6)
    * @returns {string|null} The name of the trusted provider, or null if not found
@@ -631,6 +679,11 @@ const self = {
    * });
    */
   getTrustedProvider: (ipAddress) => {
+    // Check result cache first
+    if (resultCache.has(ipAddress)) {
+      return resultCache.get(ipAddress);
+    }
+
     let trustedSource = null;
 
     let parsedIp = null;
@@ -695,6 +748,9 @@ const self = {
         }
       }
     }
+
+    // Cache the result (including null for negative lookups)
+    resultCache.set(ipAddress, trustedSource);
 
     return trustedSource;
   },
