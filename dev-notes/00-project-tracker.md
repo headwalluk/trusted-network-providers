@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 3 — Modernise Code Patterns
-**Last commit:** [M3] Refactor index.js: Promise.allSettled, async/await, for...of loops, nullish coalescing
+**Last commit:** [M3] Convert test.js Promise chains to async/await, replace new Promise wrapper with async function
 **Blockers:** None
-**Next action:** Continue M3 tasks: replace hasProvider() bitwise OR pattern, ensure consistent error handling, clean lint cycle
-**Notes:** M1 complete ✓. M2 complete ✓. Removed superagent dependency (replaced with native fetch). Audited all remaining dependencies: fast-xml-parser (required by gtmetrix) and ipaddr.js (core IP parsing) both retained. 0 vulnerabilities. All 122 tests passing. 80% coverage target deferred to M3b — modules with lowest coverage (secure-http-client.js, spf-analyser.js) were rewritten in M2, coverage will be addressed after M3 code modernisation when codebase has stabilised. Current baseline: 55.52%, 122 tests passing. M3 progress: spf-analyser.js refactored to async/await ✓. Provider reload() methods (bunnynet, facebookbot, googlebot, seobility, mailgun, google-workspace) converted to async/await ✓. index.js refactored: reloadAll() using Promise.allSettled ✓, runTests() to async/await ✓, forEach loops converted to for...of ✓, nullish coalescing operator applied ✓. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
-**Last updated:** 2026-02-16 12:30
+**Next action:** Continue M3 tasks: replace hasProvider() bitwise OR pattern, ensure consistent error handling, then commit milestone completion
+**Notes:** M1 complete ✓. M2 complete ✓. Removed superagent dependency (replaced with native fetch). Audited all remaining dependencies: fast-xml-parser (required by gtmetrix) and ipaddr.js (core IP parsing) both retained. 0 vulnerabilities. All 122 tests passing. 80% coverage target deferred to M3b — modules with lowest coverage (secure-http-client.js, spf-analyser.js) were rewritten in M2, coverage will be addressed after M3 code modernisation when codebase has stabilised. Current baseline: 55.52%, 122 tests passing. M3 progress: All Promise chains and new Promise() wrappers converted to async/await ✓ (spf-analyser.js, provider reload() methods, index.js reloadAll(), runTests(), test.js). forEach loops converted to for...of ✓. Nullish coalescing operator applied ✓. Clean lint cycle achieved ✓. All 122 tests passing ✓. Remaining: hasProvider() bitwise OR pattern, consistent error handling. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
+**Last updated:** 2026-02-16 13:00
 
 ---
 
@@ -76,15 +76,15 @@ Strip out unnecessary packages. Use what Node gives us for free.
 
 Bring the JavaScript up to 2026 standards.
 
-- [ ] Convert all Promise chains and `new Promise()` wrappers to async/await
+- [x] Convert all Promise chains and `new Promise()` wrappers to async/await
 - [x] Refactor `spf-analyser.js` — replace nested promise callbacks with async/await
 - [x] Refactor `reloadAll()` — use `Promise.allSettled()` instead of `Promise.all()`
 - [x] Refactor `index.js` — replace `forEach` with `for...of` where appropriate
 - [ ] Replace `hasProvider()` bitwise OR pattern with `.some()` or `.find()`
 - [x] Use optional chaining and nullish coalescing where appropriate
 - [ ] Ensure consistent error handling (no swallowed errors)
-- [ ] Clean lint cycle after all changes
-- [ ] All tests pass
+- [x] Clean lint cycle after all changes
+- [x] All tests pass
 - [ ] Commit milestone completion to `v2-modernisation` branch
 
 ---
