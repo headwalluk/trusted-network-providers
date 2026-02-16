@@ -4,6 +4,9 @@
   "description": "Trusted network hosts and address ranges.",
   "type": "module",
   "main": "./src/index.js",
+  "bin": {
+    "trusted-lookup": "./bin/lookup.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/headwalluk/trusted-network-providers.git"
@@ -16,7 +19,8 @@
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,json,md}\"",
     "lint": "eslint \"src/**/*.js\"",
-    "lint:fix": "eslint --fix \"src/**/*.js\""
+    "lint:fix": "eslint --fix \"src/**/*.js\"",
+    "lookup": "node bin/lookup.js"
   },
   "jest": {
     "testEnvironment": "node",
@@ -57,6 +61,7 @@
     "node": ">=18.0.0"
   },
   "files": [
+    "bin/",
     "src/",
     "scripts/",
     "README.md",
