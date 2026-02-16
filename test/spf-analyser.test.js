@@ -47,14 +47,10 @@ describe('spfAnalyser', () => {
   describe('happy path', () => {
     it('should extract IPv4 addresses from SPF records', async () => {
       // Main domain SPF record
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
       // Include domain SPF record with IPv4
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:192.0.2.1 ip4:198.51.100.5 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1 ip4:198.51.100.5 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -65,13 +61,9 @@ describe('spfAnalyser', () => {
     });
 
     it('should extract IPv4 CIDR ranges from SPF records', async () => {
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:192.0.2.0/24 ip4:198.51.100.0/28 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.0/24 ip4:198.51.100.0/28 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -80,13 +72,9 @@ describe('spfAnalyser', () => {
     });
 
     it('should extract IPv6 addresses from SPF records', async () => {
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip6:2001:db8::1 ip6:2001:db8::2 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip6:2001:db8::1 ip6:2001:db8::2 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -97,13 +85,9 @@ describe('spfAnalyser', () => {
     });
 
     it('should extract IPv6 CIDR ranges from SPF records', async () => {
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip6:2001:db8::/32 ip6:2001:db8:1::/48 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip6:2001:db8::/32 ip6:2001:db8:1::/48 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -112,9 +96,7 @@ describe('spfAnalyser', () => {
     });
 
     it('should extract mixed IPv4 and IPv6 addresses', async () => {
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
       mockResolveTxt.mockResolvedValueOnce([
         ['v=spf1 ip4:192.0.2.1 ip4:198.51.100.0/24 ip6:2001:db8::1 ip6:2001:db8::/32 ~all'],
@@ -130,19 +112,13 @@ describe('spfAnalyser', () => {
 
     it('should handle multiple include directives', async () => {
       // Main domain with two includes
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf1.example.com include:_spf2.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf1.example.com include:_spf2.example.com ~all']]);
 
       // First include
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:192.0.2.1 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1 ~all']]);
 
       // Second include
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:198.51.100.5 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:198.51.100.5 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -151,14 +127,10 @@ describe('spfAnalyser', () => {
 
     it('should deduplicate include directives', async () => {
       // Main domain with duplicate includes
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com include:_spf.example.com ~all']]);
 
       // Include domain (should only be resolved once)
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:192.0.2.1 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -176,13 +148,9 @@ describe('spfAnalyser', () => {
       mockProvider.ipv6.addresses = ['old-ipv6-address'];
       mockProvider.ipv6.ranges = ['old-ipv6-range'];
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:192.0.2.1 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -195,9 +163,7 @@ describe('spfAnalyser', () => {
 
   describe('edge cases', () => {
     it('should handle empty SPF records', async () => {
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -210,15 +176,11 @@ describe('spfAnalyser', () => {
     it('should return early when no SPF netblocks found', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Not updating test-provider addresses because no SPF netblocks found'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Not updating test-provider addresses because no SPF netblocks found');
       expect(mockResolveTxt).toHaveBeenCalledTimes(1); // Only main domain, no includes
 
       consoleSpy.mockRestore();
@@ -231,9 +193,7 @@ describe('spfAnalyser', () => {
         ['v=spf1 include:_spf.example.com ~all'],
       ]);
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:192.0.2.1 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -242,13 +202,9 @@ describe('spfAnalyser', () => {
 
     it('should handle simple array wrapped TXT records', async () => {
       // DNS returns records as array of arrays, each inner array contains strings
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:192.0.2.1 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -256,14 +212,10 @@ describe('spfAnalyser', () => {
     });
 
     it('should handle split TXT records (long records)', async () => {
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
       // Some DNS responses split long TXT records into multiple strings in the inner array
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ', 'ip4:192.0.2.1 ', 'ip4:198.51.100.5 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ', 'ip4:192.0.2.1 ', 'ip4:198.51.100.5 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -271,13 +223,9 @@ describe('spfAnalyser', () => {
     });
 
     it('should skip include directives with invalid format', async () => {
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:too:many:colons include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:too:many:colons include:_spf.example.com ~all']]);
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:192.0.2.1 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -287,13 +235,9 @@ describe('spfAnalyser', () => {
     });
 
     it('should handle IP directives with missing values (edge case)', async () => {
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4: ip4:192.0.2.1 ip6: ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4: ip4:192.0.2.1 ip6: ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -314,18 +258,14 @@ describe('spfAnalyser', () => {
 
       await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow('ENOTFOUND');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to analyse SPF records for test-provider: ENOTFOUND'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to analyse SPF records for test-provider: ENOTFOUND');
 
       consoleSpy.mockRestore();
     });
 
     it('should throw when include resolution fails', async () => {
       // Main domain resolves successfully
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
       // Include domain fails
       mockResolveTxt.mockRejectedValueOnce(new Error('DNS timeout'));
@@ -334,31 +274,23 @@ describe('spfAnalyser', () => {
 
       await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow('DNS timeout');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to analyse SPF records for test-provider: DNS timeout'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to analyse SPF records for test-provider: DNS timeout');
 
       consoleSpy.mockRestore();
     });
 
     it('should handle partial include resolution failures gracefully', async () => {
       // Main domain with two includes
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf1.example.com include:_spf2.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf1.example.com include:_spf2.example.com ~all']]);
 
       // First include succeeds, second fails
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:192.0.2.1 ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1 ~all']]);
 
       mockResolveTxt.mockRejectedValueOnce(new Error('Include resolution failed'));
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow(
-        'Include resolution failed'
-      );
+      await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow('Include resolution failed');
 
       consoleSpy.mockRestore();
     });
@@ -366,13 +298,9 @@ describe('spfAnalyser', () => {
 
   describe('SPF record format variations', () => {
     it('should handle SPF records without trailing ~all', async () => {
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com']]);
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:192.0.2.1'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -384,9 +312,7 @@ describe('spfAnalyser', () => {
         ['v=spf1 include:_spf.example.com -all'], // fail all qualifier
       ]);
 
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 ip4:192.0.2.1 ip4:198.51.100.5 -all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1 ip4:198.51.100.5 -all']]);
 
       await spfAnalyser('example.com', mockProvider);
 
@@ -396,9 +322,7 @@ describe('spfAnalyser', () => {
     });
 
     it('should only process records starting with v=spf1', async () => {
-      mockResolveTxt.mockResolvedValueOnce([
-        ['v=spf1 include:_spf.example.com ~all'],
-      ]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
       mockResolveTxt.mockResolvedValueOnce([
         ['v=spf2 ip4:192.0.2.1 ~all'], // Future SPF version (not v=spf1)

@@ -107,17 +107,13 @@ describe('Googlebot Provider', () => {
 
       global.fetch = jest.fn().mockResolvedValue(createMockResponse(invalidData));
 
-      await expect(googlebot.reloadFromWeb()).rejects.toThrow(
-        'Invalid response format from Googlebot API'
-      );
+      await expect(googlebot.reloadFromWeb()).rejects.toThrow('Invalid response format from Googlebot API');
     });
 
     test('should throw error if API returns null', async () => {
       global.fetch = jest.fn().mockResolvedValue(createMockResponse(null));
 
-      await expect(googlebot.reloadFromWeb()).rejects.toThrow(
-        'Invalid response format from Googlebot API'
-      );
+      await expect(googlebot.reloadFromWeb()).rejects.toThrow('Invalid response format from Googlebot API');
     });
 
     test('should throw error if prefixes is not an array', async () => {
@@ -125,9 +121,7 @@ describe('Googlebot Provider', () => {
 
       global.fetch = jest.fn().mockResolvedValue(createMockResponse(invalidData));
 
-      await expect(googlebot.reloadFromWeb()).rejects.toThrow(
-        'Invalid response format from Googlebot API'
-      );
+      await expect(googlebot.reloadFromWeb()).rejects.toThrow('Invalid response format from Googlebot API');
     });
 
     test('should handle network errors gracefully', async () => {
