@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 4b — Lifecycle & State Management (Robustness)
-**Last commit:** [M4b] Fix SPF analyser error handling
+**Last commit:** [M4b] Fix race condition in cache clearing
 **Blockers:** None
-**Next action:** Fix race condition in provider data clearing (atomic swap).
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. Fixed SPF analyser DNS resolution error handling — replaced Promise.all() with Promise.allSettled() for graceful partial failure handling ✓. All 239 tests passing ✓. Continuing M4b: robustness improvements.
-**Last updated:** 2026-02-16 17:20
+**Next action:** Add input validation: max IPs per provider, max providers, CIDR validation.
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. Fixed SPF analyser DNS resolution error handling ✓. Fixed race condition in provider data clearing by implementing atomic cache swap ✓. All 239 tests passing ✓. Continuing M4b: robustness improvements.
+**Last updated:** 2026-02-16 17:50
 
 ---
 
@@ -123,7 +123,7 @@ Make providers observable for long-running pm2 apps.
 Make providers resilient to failures and misuse.
 
 - [x] Fix SPF analyser error handling — add `.catch()` on DNS resolution
-- [ ] Fix race condition in provider data clearing (atomic swap)
+- [x] Fix race condition in provider data clearing (atomic swap)
 - [ ] Add input validation: max IPs per provider, max providers, CIDR validation
 - [ ] All tests pass
 - [ ] Commit milestone completion to `v2-modernisation` branch
