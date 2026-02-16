@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 4b — Lifecycle & State Management (Robustness)
-**Last commit:** [M4a] Mark logging abstraction task complete
+**Last commit:** [M4b] Fix SPF analyser error handling
 **Blockers:** None
-**Next action:** Start M4b: Fix SPF analyser error handling.
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. Added configurable logging abstraction (logger.js module with LOG_LEVELS, setLevel/getLevel/resetLevel APIs) ✓. Replaced all console.* calls across all source files ✓. Added comprehensive logger unit and integration tests ✓. All 239 tests passing ✓. Moving to M4b: robustness improvements.
-**Last updated:** 2026-02-16 17:00
+**Next action:** Fix race condition in provider data clearing (atomic swap).
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. Fixed SPF analyser DNS resolution error handling — replaced Promise.all() with Promise.allSettled() for graceful partial failure handling ✓. All 239 tests passing ✓. Continuing M4b: robustness improvements.
+**Last updated:** 2026-02-16 17:20
 
 ---
 
@@ -122,7 +122,7 @@ Make providers observable for long-running pm2 apps.
 
 Make providers resilient to failures and misuse.
 
-- [ ] Fix SPF analyser error handling — add `.catch()` on DNS resolution
+- [x] Fix SPF analyser error handling — add `.catch()` on DNS resolution
 - [ ] Fix race condition in provider data clearing (atomic swap)
 - [ ] Add input validation: max IPs per provider, max providers, CIDR validation
 - [ ] All tests pass
