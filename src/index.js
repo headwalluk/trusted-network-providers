@@ -63,7 +63,7 @@ const defaultProviders = [
   // seobilityProvider, // Unreliable
 ];
 
-const parsedAddresses = {};
+let parsedAddresses = {};
 
 /**
  * Provider metadata tracking.
@@ -531,7 +531,14 @@ const self = {
       }
     }
 
-    return Promise.allSettled(reloadRequests);
+    const results = await Promise.allSettled(reloadRequests);
+
+    // Atomically clear the CIDR cache after all reloads complete
+    // This prevents stale cached parses from being used with updated provider ranges
+    // Assignment is atomic - any concurrent lookups see either the old cache or the new empty one
+    parsedAddresses = {};
+
+    return results;
   },
 
   /**
