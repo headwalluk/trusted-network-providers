@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 1 — Foundation tasks  
-**Last commit:** [M1] Convert ESLint config to ESM  
+**Last commit:** [M1] Mark ESM migration complete  
 **Blockers:** None  
-**Next action:** ESM migration — migrate source code from CommonJS (require/module.exports) to ESM (import/export)  
-**Notes:** package.json "type": "module" ✓. ESLint config converted to ESM ✓. Clean lint cycle verified ✓. Next: convert src/ files to import/export.  
-**Last updated:** 2026-02-15 15:56
+**Next action:** Improve test coverage — add tests for uncovered providers and utilities (currently 50.72%, target >80%)  
+**Notes:** ESM migration complete ✓ (all src/ files already using import/export). Current coverage: 50.72%. Main gaps: provider files (ahrefsbot, brevo, cloudflare, etc.), spf-analyser.js (39.68%), secure-http-client.js (22.38%).  
+**Last updated:** 2026-02-16 08:32
 
 ---
 
@@ -42,7 +42,7 @@ Get the tooling right before touching runtime code. Nothing here changes behavio
 - [x] Snapshot responses from external provider APIs (Stripe, Cloudflare, Google)
 - [x] Tag v1.9.0 as `v1-stable` before branching
 - [x] Run `npm audit fix` to resolve known vulnerabilities (fast-xml-parser, qs)
-- [ ] Migrate from CommonJS (`require`/`module.exports`) to ESM (`import`/`export`)
+- [x] Migrate from CommonJS (`require`/`module.exports`) to ESM (`import`/`export`)
 - [x] Update `package.json` with `"type": "module"`
 - [x] Add `.nvmrc` pinned to Node 22 LTS
 - [x] Replace hand-rolled `src/test.js` with Jest test framework
