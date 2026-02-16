@@ -4,7 +4,7 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import ipaddr from 'ipaddr.js';
 import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
 import logger from '../utils/logger.js';
@@ -20,8 +20,8 @@ const self = {
       // Verify checksums of bundled assets
       const ipv4Path = path.join(__dirname, '../assets/bunnynet-ip4s.json');
       const ipv6Path = path.join(__dirname, '../assets/bunnynet-ip6s.json');
-      verifyAssetChecksum(ipv4Path, 'bunnynet-ipv4', false);
-      verifyAssetChecksum(ipv6Path, 'bunnynet-ipv6', false);
+      await verifyAssetChecksum(ipv4Path, 'bunnynet-ipv4', false);
+      await verifyAssetChecksum(ipv6Path, 'bunnynet-ipv6', false);
 
       // Clear existing data
       self.ipv4.ranges.length = 0;
@@ -35,9 +35,9 @@ const self = {
         path.join(__dirname, '../assets/bunnynet-ip6s.json'),
       ];
 
-      sources.forEach((source) => {
-        newIps.push(...JSON.parse(readFileSync(source, 'utf8')));
-      });
+      for (const source of sources) {
+        newIps.push(...JSON.parse(await readFile(source, 'utf8')));
+      }
 
       newIps.forEach((address) => {
         const parsedIp = ipaddr.parse(address);

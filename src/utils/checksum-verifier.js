@@ -4,7 +4,7 @@
  * Utilities for verifying checksums of bundled assets
  */
 
-import fs from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { calculateSHA256 } from './secure-http-client.js';
@@ -19,14 +19,14 @@ let cachedChecksums = null;
  * Load checksums from the checksums.json file
  * @returns {object} - The checksums configuration
  */
-function loadChecksums() {
+async function loadChecksums() {
   if (cachedChecksums) {
     return cachedChecksums;
   }
 
   try {
     const checksumsPath = path.join(__dirname, '../assets/checksums.json');
-    const checksumsData = fs.readFileSync(checksumsPath, 'utf8');
+    const checksumsData = await readFile(checksumsPath, 'utf8');
     cachedChecksums = JSON.parse(checksumsData);
     return cachedChecksums;
   } catch (error) {
@@ -43,8 +43,8 @@ function loadChecksums() {
  * @returns {boolean} - True if checksum matches or verification disabled
  * @throws {Error} - If strict=true and checksum doesn't match
  */
-function verifyAssetChecksum(filePath, providerKey, strict = false) {
-  const checksums = loadChecksums();
+async function verifyAssetChecksum(filePath, providerKey, strict = false) {
+  const checksums = await loadChecksums();
   const providerConfig = checksums.providers[providerKey];
 
   // If no checksum configured, skip verification
@@ -56,7 +56,7 @@ function verifyAssetChecksum(filePath, providerKey, strict = false) {
   }
 
   try {
-    const fileContent = fs.readFileSync(filePath, 'utf8');
+    const fileContent = await readFile(filePath, 'utf8');
     const actualChecksum = calculateSHA256(fileContent);
     const expectedChecksum = providerConfig.sha256;
 
@@ -95,8 +95,8 @@ function verifyAssetChecksum(filePath, providerKey, strict = false) {
  * @param {string} providerKey - Key in checksums.json
  * @returns {string|null} - The expected checksum or null
  */
-function getExpectedChecksum(providerKey) {
-  const checksums = loadChecksums();
+async function getExpectedChecksum(providerKey) {
+  const checksums = await loadChecksums();
   const providerConfig = checksums.providers[providerKey];
   return providerConfig ? providerConfig.sha256 : null;
 }

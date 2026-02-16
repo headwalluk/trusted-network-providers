@@ -4,7 +4,7 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { fetchJSON } from '../utils/secure-http-client.js';
 import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
 import logger from '../utils/logger.js';
@@ -21,13 +21,13 @@ const self = {
     try {
       // Verify checksum of bundled asset
       const assetPath = path.join(__dirname, '../assets/googlebot-ips.json');
-      verifyAssetChecksum(assetPath, 'googlebot', false);
+      await verifyAssetChecksum(assetPath, 'googlebot', false);
 
       // Clear existing ranges
       self.ipv4.ranges.length = 0;
       self.ipv6.ranges.length = 0;
 
-      const newIps = JSON.parse(readFileSync(assetPath, 'utf8'));
+      const newIps = JSON.parse(await readFile(assetPath, 'utf8'));
       newIps.prefixes.forEach((range) => {
         if (range.ipv4Prefix) {
           self.ipv4.ranges.push(range.ipv4Prefix);

@@ -14,6 +14,7 @@
  */
 
 import crypto from 'node:crypto';
+import { HttpError } from '../errors.js';
 
 /**
  * Configuration for secure HTTP requests
@@ -72,21 +73,26 @@ async function fetchWithTimeout(url, fetchOptions, timeoutMs) {
 }
 
 /**
- * Fetch JSON data from a URL with security best practices
+ * Sleep utility for retry delays
+ * @param {number} ms - Milliseconds to sleep
+ * @returns {Promise<void>}
+ */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Internal helper that handles HTTPS enforcement, retry loop, error classification,
+ * and backoff for all fetch functions.
  *
  * @param {string} url - The URL to fetch from (must be HTTPS)
- * @param {object} options - Optional configuration overrides
- * @param {number} options.timeout - Request timeout in milliseconds
- * @param {number} options.retries - Number of retry attempts
- * @param {boolean} options.strictSSL - Whether to enforce SSL validation
- * @param {string} options.expectedChecksum - Optional SHA-256 checksum to verify
- * @param {boolean} options.verifyStructure - Callback to verify JSON structure instead of checksum
- * @returns {Promise<object>} - The parsed JSON response
- * @throws {Error} - If the request fails, URL is not HTTPS, or checksum doesn't match
+ * @param {object} config - Merged configuration (DEFAULT_CONFIG + caller overrides)
+ * @param {object} fetchOptions - The { method, headers } object for fetch
+ * @param {Function} processResponse - Callback receiving the Response, returns the final value
+ * @returns {Promise<*>} - The processed response value
+ * @throws {Error|HttpError} - On failure
  */
-async function fetchJSON(url, options = {}) {
-  const config = { ...DEFAULT_CONFIG, ...options };
-
+async function fetchWithRetry(url, config, fetchOptions, processResponse) {
   // Security check: Only allow HTTPS
   if (!url.startsWith('https://')) {
     throw new Error(`Insecure URL rejected: ${url}. Only HTTPS URLs are allowed.`);
@@ -96,75 +102,27 @@ async function fetchJSON(url, options = {}) {
 
   for (let attempt = 0; attempt <= config.retries; attempt++) {
     try {
-      const response = await fetchWithTimeout(
-        url,
-        {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-          },
-        },
-        config.timeout
-      );
+      const response = await fetchWithTimeout(url, fetchOptions, config.timeout);
 
-      // Check HTTP status
+      // Check HTTP status — non-retryable client errors
       if (response.status === 404 || response.status === 403 || response.status === 401) {
-        throw new Error(`HTTP ${response.status} error for ${url}`);
+        throw new HttpError(response.status, url);
       }
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status} error for ${url}: ${response.statusText}`);
+        throw new HttpError(response.status, url, response.statusText);
       }
 
-      // Get the response text for checksum verification
-      const text = await response.text();
-
-      // Validate response
-      if (!text) {
-        throw new Error('Empty response body received');
-      }
-
-      // Parse JSON
-      let body;
-      try {
-        body = JSON.parse(text);
-      } catch (parseError) {
-        throw new Error(`Failed to parse JSON from ${url}: ${parseError.message}`);
-      }
-
-      // Checksum verification if provided
-      if (config.expectedChecksum) {
-        verifyChecksum(text, config.expectedChecksum, url);
-      }
-
-      // Structure verification if provided (for data that changes frequently)
-      if (config.verifyStructure && typeof config.verifyStructure === 'function') {
-        const isValid = config.verifyStructure(body);
-        if (!isValid) {
-          throw new Error(`Structure verification failed for ${url}`);
-        }
-      }
-
-      return body;
+      return await processResponse(response);
     } catch (error) {
       lastError = error;
 
-      // Don't retry on certain errors (permanent failures)
-      // HTTP 4xx errors indicate client errors that won't be fixed by retrying
-      // - 404 Not Found: The endpoint doesn't exist
-      // - 403 Forbidden: Access denied (auth/permissions issue)
-      // - 401 Unauthorized: Missing or invalid credentials
-      if (
-        error.message.includes('HTTP 404') ||
-        error.message.includes('HTTP 403') ||
-        error.message.includes('HTTP 401')
-      ) {
+      // Don't retry on permanent HTTP client errors
+      if (error instanceof HttpError && [401, 403, 404].includes(error.statusCode)) {
         throw error;
       }
 
       // Certificate validation errors should not be retried
-      // These indicate a security issue (expired cert, self-signed cert, etc.)
-      // that won't be resolved by retrying
       if (
         error.code === 'CERT_HAS_EXPIRED' ||
         error.code === 'CERT_UNTRUSTED' ||
@@ -173,20 +131,15 @@ async function fetchJSON(url, options = {}) {
         throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
       }
 
-      // Timeout errors (transient failures)
-      // These can be caused by network congestion or slow servers
-      // Retry makes sense here because the next attempt might succeed
+      // Timeout errors (transient — retry makes sense)
       if (error.name === 'AbortError') {
         lastError = new Error(`Request timeout for ${url} after ${config.timeout}ms`);
-        // Allow retry on timeout (fall through to retry logic below)
       }
 
       // If this isn't the last attempt, wait before retrying
-      // Exponential backoff: 1s, 2s, 3s... (linear, not exponential in this implementation)
-      // This gives the server time to recover from transient issues
-      // and reduces load if the server is overloaded
+      // Linear backoff: 1s, 2s, 3s...
       if (attempt < config.retries) {
-        await sleep(config.retryDelay * (attempt + 1)); // Exponential backoff
+        await sleep(config.retryDelay * (attempt + 1));
         continue;
       }
     }
@@ -194,6 +147,50 @@ async function fetchJSON(url, options = {}) {
 
   // All retries exhausted
   throw new Error(`Failed to fetch ${url} after ${config.retries + 1} attempts: ${lastError.message}`);
+}
+
+/**
+ * Fetch JSON data from a URL with security best practices
+ *
+ * @param {string} url - The URL to fetch from (must be HTTPS)
+ * @param {object} options - Optional configuration overrides
+ * @param {number} options.timeout - Request timeout in milliseconds
+ * @param {number} options.retries - Number of retry attempts
+ * @param {string} options.expectedChecksum - Optional SHA-256 checksum to verify
+ * @param {Function} options.verifyStructure - Callback to verify JSON structure instead of checksum
+ * @returns {Promise<object>} - The parsed JSON response
+ * @throws {Error} - If the request fails, URL is not HTTPS, or checksum doesn't match
+ */
+async function fetchJSON(url, options = {}) {
+  const config = { ...DEFAULT_CONFIG, ...options };
+
+  return fetchWithRetry(url, config, { method: 'GET', headers: { Accept: 'application/json' } }, async (response) => {
+    const text = await response.text();
+
+    if (!text) {
+      throw new Error('Empty response body received');
+    }
+
+    let body;
+    try {
+      body = JSON.parse(text);
+    } catch (parseError) {
+      throw new Error(`Failed to parse JSON from ${url}: ${parseError.message}`);
+    }
+
+    if (config.expectedChecksum) {
+      verifyChecksum(text, config.expectedChecksum, url);
+    }
+
+    if (config.verifyStructure && typeof config.verifyStructure === 'function') {
+      const isValid = config.verifyStructure(body);
+      if (!isValid) {
+        throw new Error(`Structure verification failed for ${url}`);
+      }
+    }
+
+    return body;
+  });
 }
 
 /**
@@ -207,73 +204,9 @@ async function fetchJSON(url, options = {}) {
 async function fetchText(url, options = {}) {
   const config = { ...DEFAULT_CONFIG, ...options };
 
-  // Security check: Only allow HTTPS
-  if (!url.startsWith('https://')) {
-    throw new Error(`Insecure URL rejected: ${url}. Only HTTPS URLs are allowed.`);
-  }
-
-  let lastError;
-
-  for (let attempt = 0; attempt <= config.retries; attempt++) {
-    try {
-      const response = await fetchWithTimeout(
-        url,
-        {
-          method: 'GET',
-          headers: {
-            Accept: 'text/plain',
-          },
-        },
-        config.timeout
-      );
-
-      // Check HTTP status
-      if (response.status === 404 || response.status === 403 || response.status === 401) {
-        throw new Error(`HTTP ${response.status} error for ${url}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} error for ${url}: ${response.statusText}`);
-      }
-
-      return await response.text();
-    } catch (error) {
-      lastError = error;
-
-      // Don't retry on certain errors (permanent failures)
-      if (
-        error.message.includes('HTTP 404') ||
-        error.message.includes('HTTP 403') ||
-        error.message.includes('HTTP 401')
-      ) {
-        throw error;
-      }
-
-      // Certificate validation errors should not be retried
-      if (
-        error.code === 'CERT_HAS_EXPIRED' ||
-        error.code === 'CERT_UNTRUSTED' ||
-        error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
-      ) {
-        throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
-      }
-
-      // Timeout errors (transient failures - retry makes sense)
-      if (error.name === 'AbortError') {
-        lastError = new Error(`Request timeout for ${url} after ${config.timeout}ms`);
-        // Allow retry on timeout
-      }
-
-      // Exponential backoff before retry (reduces load on overloaded servers)
-      if (attempt < config.retries) {
-        await sleep(config.retryDelay * (attempt + 1));
-        continue;
-      }
-    }
-  }
-
-  // All retries exhausted
-  throw new Error(`Failed to fetch ${url} after ${config.retries + 1} attempts: ${lastError.message}`);
+  return fetchWithRetry(url, config, { method: 'GET', headers: { Accept: 'text/plain' } }, (response) => {
+    return response.text();
+  });
 }
 
 /**
@@ -287,84 +220,10 @@ async function fetchText(url, options = {}) {
 async function fetchXML(url, options = {}) {
   const config = { ...DEFAULT_CONFIG, ...options };
 
-  // Security check: Only allow HTTPS
-  if (!url.startsWith('https://')) {
-    throw new Error(`Insecure URL rejected: ${url}. Only HTTPS URLs are allowed.`);
-  }
-
-  let lastError;
-
-  for (let attempt = 0; attempt <= config.retries; attempt++) {
-    try {
-      const response = await fetchWithTimeout(
-        url,
-        {
-          method: 'GET',
-          headers: {
-            Accept: 'application/xml',
-          },
-        },
-        config.timeout
-      );
-
-      // Check HTTP status
-      if (response.status === 404 || response.status === 403 || response.status === 401) {
-        throw new Error(`HTTP ${response.status} error for ${url}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} error for ${url}: ${response.statusText}`);
-      }
-
-      // Return as buffer for XML parsing
-      const arrayBuffer = await response.arrayBuffer();
-      return Buffer.from(arrayBuffer);
-    } catch (error) {
-      lastError = error;
-
-      // Don't retry on certain errors (permanent failures)
-      if (
-        error.message.includes('HTTP 404') ||
-        error.message.includes('HTTP 403') ||
-        error.message.includes('HTTP 401')
-      ) {
-        throw error;
-      }
-
-      // Certificate validation errors should not be retried
-      if (
-        error.code === 'CERT_HAS_EXPIRED' ||
-        error.code === 'CERT_UNTRUSTED' ||
-        error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
-      ) {
-        throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
-      }
-
-      // Timeout errors (transient failures - retry makes sense)
-      if (error.name === 'AbortError') {
-        lastError = new Error(`Request timeout for ${url} after ${config.timeout}ms`);
-        // Allow retry on timeout
-      }
-
-      // Exponential backoff before retry (reduces load on overloaded servers)
-      if (attempt < config.retries) {
-        await sleep(config.retryDelay * (attempt + 1));
-        continue;
-      }
-    }
-  }
-
-  // All retries exhausted
-  throw new Error(`Failed to fetch ${url} after ${config.retries + 1} attempts: ${lastError.message}`);
+  return fetchWithRetry(url, config, { method: 'GET', headers: { Accept: 'application/xml' } }, async (response) => {
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  });
 }
 
-/**
- * Sleep utility for retry delays
- * @param {number} ms - Milliseconds to sleep
- * @returns {Promise<void>}
- */
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export { fetchJSON, fetchText, fetchXML, calculateSHA256, verifyChecksum, DEFAULT_CONFIG };
+export { fetchJSON, fetchText, fetchXML, calculateSHA256, verifyChecksum, DEFAULT_CONFIG, HttpError };

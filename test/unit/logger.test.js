@@ -10,16 +10,19 @@ describe('Logger', () => {
   let originalConsoleLog;
   let originalConsoleError;
   let originalConsoleWarn;
+  let originalConsoleDebug;
 
   beforeEach(() => {
     // Mock console methods
     originalConsoleLog = console.log;
     originalConsoleError = console.error;
     originalConsoleWarn = console.warn;
+    originalConsoleDebug = console.debug;
 
     console.log = jest.fn();
     console.error = jest.fn();
     console.warn = jest.fn();
+    console.debug = jest.fn();
 
     // Reset to default level (error) before each test
     logger.setLevel('error');
@@ -30,6 +33,7 @@ describe('Logger', () => {
     console.log = originalConsoleLog;
     console.error = originalConsoleError;
     console.warn = originalConsoleWarn;
+    console.debug = originalConsoleDebug;
   });
 
   describe('setLevel / getLevel', () => {
@@ -76,6 +80,7 @@ describe('Logger', () => {
       expect(console.error).not.toHaveBeenCalled();
       expect(console.warn).not.toHaveBeenCalled();
       expect(console.log).not.toHaveBeenCalled();
+      expect(console.debug).not.toHaveBeenCalled();
     });
   });
 
@@ -93,6 +98,7 @@ describe('Logger', () => {
       expect(console.error).toHaveBeenCalledWith('error message');
       expect(console.warn).not.toHaveBeenCalled();
       expect(console.log).not.toHaveBeenCalled();
+      expect(console.debug).not.toHaveBeenCalled();
     });
 
     test('should pass multiple arguments to console.error', () => {
@@ -117,6 +123,7 @@ describe('Logger', () => {
       expect(console.error).toHaveBeenCalledWith('error message');
       expect(console.warn).toHaveBeenCalledWith('warn message');
       expect(console.log).not.toHaveBeenCalled();
+      expect(console.debug).not.toHaveBeenCalled();
     });
   });
 
@@ -152,8 +159,9 @@ describe('Logger', () => {
       expect(console.error).toHaveBeenCalledWith('error message');
       expect(console.warn).toHaveBeenCalledWith('warn message');
       expect(console.log).toHaveBeenCalledWith('info message');
-      expect(console.log).toHaveBeenCalledWith('debug message');
-      expect(console.log).toHaveBeenCalledTimes(2); // info + debug
+      expect(console.log).toHaveBeenCalledTimes(1); // info only
+      expect(console.debug).toHaveBeenCalledWith('debug message');
+      expect(console.debug).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -183,7 +191,7 @@ describe('Logger', () => {
       expect(console.log).toHaveBeenCalledWith('info:', arr);
 
       logger.debug('debug:', obj, arr);
-      expect(console.log).toHaveBeenCalledWith('debug:', obj, arr);
+      expect(console.debug).toHaveBeenCalledWith('debug:', obj, arr);
     });
   });
 

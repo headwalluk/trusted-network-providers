@@ -6,20 +6,20 @@ import { jest } from '@jest/globals';
 import trustedProviders from '../../src/index.js';
 
 describe('Logger API (index.js)', () => {
-  let originalConsoleLog;
+  let originalConsoleDebug;
   let originalConsoleError;
 
   beforeEach(() => {
     // Mock console methods
-    originalConsoleLog = console.log;
+    originalConsoleDebug = console.debug;
     originalConsoleError = console.error;
 
-    console.log = jest.fn();
+    console.debug = jest.fn();
     console.error = jest.fn();
 
     // Reset to default level
     trustedProviders.setLogLevel('error');
-    
+
     // Clear providers to ensure test isolation
     while (trustedProviders.getAllProviders().length > 0) {
       trustedProviders.deleteProvider(trustedProviders.getAllProviders()[0].name);
@@ -28,7 +28,7 @@ describe('Logger API (index.js)', () => {
 
   afterEach(() => {
     // Restore original console methods
-    console.log = originalConsoleLog;
+    console.debug = originalConsoleDebug;
     console.error = originalConsoleError;
   });
 
@@ -56,7 +56,6 @@ describe('Logger API (index.js)', () => {
 
   test('should suppress diagnostic output at error level', () => {
     trustedProviders.setLogLevel('error');
-    trustedProviders.isDiagnosticsEnabled = true;
 
     // addProvider should not log at error level
     trustedProviders.addProvider({
@@ -66,12 +65,11 @@ describe('Logger API (index.js)', () => {
     });
 
     // The debug message from addProvider should not appear
-    expect(console.log).not.toHaveBeenCalled();
+    expect(console.debug).not.toHaveBeenCalled();
   });
 
   test('should show diagnostic output at debug level', () => {
     trustedProviders.setLogLevel('debug');
-    trustedProviders.isDiagnosticsEnabled = true;
 
     // addProvider should log at debug level
     trustedProviders.addProvider({
@@ -81,21 +79,20 @@ describe('Logger API (index.js)', () => {
     });
 
     // The debug message from addProvider should appear
-    expect(console.log).toHaveBeenCalledWith('➕ Add provider: Test Provider Debug');
+    expect(console.debug).toHaveBeenCalledWith('➕ Add provider: Test Provider Debug');
   });
 
   test('should suppress all output at silent level', () => {
     trustedProviders.setLogLevel('silent');
-    trustedProviders.isDiagnosticsEnabled = true;
 
-    // Even with diagnostics enabled, nothing should log
+    // Even at silent, nothing should log
     trustedProviders.addProvider({
       name: 'Test Provider Silent',
       ipv4: { addresses: [], ranges: [] },
       ipv6: { addresses: [], ranges: [] },
     });
 
-    expect(console.log).not.toHaveBeenCalled();
+    expect(console.debug).not.toHaveBeenCalled();
     expect(console.error).not.toHaveBeenCalled();
   });
 

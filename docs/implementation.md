@@ -108,14 +108,13 @@ return await response.json();
 - Provider registry management
 - IP address lookup logic
 - Test execution framework
-- Diagnostic output control
+- Log level control
 
 **State Management**:
 
 ```javascript
 {
   providers: [],                    // Array of provider objects
-  isDiagnosticsEnabled: false,      // Debug output flag (deprecated, use logger)
   logger: console,                  // Configurable logging abstraction
   eventEmitter: EventEmitter,       // Lifecycle event emitter
   parsedAddresses: LRUCache,        // CIDR range cache (max 10,000 entries)
@@ -216,7 +215,9 @@ export default {
 **v1.x (CommonJS)**:
 
 ```javascript
-module.exports = { /* same structure */ };
+module.exports = {
+  /* same structure */
+};
 ```
 
 **Provider Categories**:
@@ -312,18 +313,6 @@ const spfAnalyser = require('./spf-analyser');
 reload: () => spfAnalyser('_spf.google.com', self);
 ```
 
-#### `src/test.js`
-
-**Purpose**: Integration testing and examples
-
-**Features**:
-
-- Enables diagnostic mode
-- Loads default and custom providers
-- Simulates slow reload with timeout
-- Runs full test suite
-- Demonstrates API usage
-
 ---
 
 ## Algorithm Details
@@ -411,12 +400,12 @@ The library now extends `EventEmitter` to provide observability into provider li
 
 **Available Events**:
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `providerReloadStart` | `{ provider }` | Provider reload initiated |
-| `providerReloadSuccess` | `{ provider }` | Provider reload completed successfully |
-| `providerReloadError` | `{ provider, error }` | Provider reload failed |
-| `providerStale` | `{ provider }` | Provider data exceeds staleness threshold |
+| Event                   | Payload               | Description                               |
+| ----------------------- | --------------------- | ----------------------------------------- |
+| `providerReloadStart`   | `{ provider }`        | Provider reload initiated                 |
+| `providerReloadSuccess` | `{ provider }`        | Provider reload completed successfully    |
+| `providerReloadError`   | `{ provider, error }` | Provider reload failed                    |
+| `providerStale`         | `{ provider }`        | Provider data exceeds staleness threshold |
 
 **Usage Example**:
 
@@ -664,19 +653,19 @@ self.ipv6 = newIpv6;
 
 ## Configuration & Customization
 
-### Diagnostic Mode
+### Debug Logging
 
-Enable verbose logging:
+Enable verbose logging via log level:
 
 ```javascript
-trustedProviders.isDiagnosticsEnabled = true;
+trustedProviders.setLogLevel('debug');
 ```
 
 **Output**:
 
 - Provider additions
 - Reload operations
-- Test results
+- Staleness checks
 
 ### Custom Providers
 
@@ -713,7 +702,7 @@ const myProvider = {
     const response = await fetch('https://api.example.com/ips');
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    
+
     // Atomic swap pattern
     myProvider.ipv4 = {
       addresses: data.ips,
@@ -754,7 +743,7 @@ export default provider;
 
 ### Test Framework
 
-**Implementation**: Custom test runner in `src/test.js`
+**Implementation**: Jest test suite in `test/`
 
 **Test Data Sources**:
 
@@ -809,12 +798,12 @@ import trustedProviders from '@headwall/trusted-network-providers';
 
 async function initializeTrustedProviders() {
   trustedProviders.loadDefaultProviders();
-  
+
   // Optional: Listen for lifecycle events
   trustedProviders.on('providerReloadError', ({ provider, error }) => {
     console.error(`Failed to reload ${provider.name}:`, error);
   });
-  
+
   const results = await trustedProviders.reloadAll();
   console.log(`Providers ready: ${results.successful} ok, ${results.failed} failed`);
 }

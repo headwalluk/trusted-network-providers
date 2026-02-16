@@ -17,6 +17,7 @@ import {
   calculateSHA256,
   verifyChecksum,
   DEFAULT_CONFIG,
+  HttpError,
 } from '../src/utils/secure-http-client.js';
 
 // Mock global fetch
@@ -88,21 +89,30 @@ describe('fetchJSON', () => {
   it('should handle 404 errors without retry', async () => {
     global.fetch.mockResolvedValue(createMockResponse('Not Found', 404, 'Not Found'));
 
-    await expect(fetchJSON('https://example.com/missing.json')).rejects.toThrow(/HTTP 404 error/);
+    const error = await fetchJSON('https://example.com/missing.json').catch((e) => e);
+    expect(error).toBeInstanceOf(HttpError);
+    expect(error.statusCode).toBe(404);
+    expect(error.message).toMatch(/HTTP 404 error/);
     expect(global.fetch).toHaveBeenCalledTimes(1); // No retries
   });
 
   it('should handle 403 errors without retry', async () => {
     global.fetch.mockResolvedValue(createMockResponse('Forbidden', 403, 'Forbidden'));
 
-    await expect(fetchJSON('https://example.com/forbidden.json')).rejects.toThrow(/HTTP 403 error/);
+    const error = await fetchJSON('https://example.com/forbidden.json').catch((e) => e);
+    expect(error).toBeInstanceOf(HttpError);
+    expect(error.statusCode).toBe(403);
+    expect(error.message).toMatch(/HTTP 403 error/);
     expect(global.fetch).toHaveBeenCalledTimes(1); // No retries
   });
 
   it('should handle 401 errors without retry', async () => {
     global.fetch.mockResolvedValue(createMockResponse('Unauthorized', 401, 'Unauthorized'));
 
-    await expect(fetchJSON('https://example.com/auth.json')).rejects.toThrow(/HTTP 401 error/);
+    const error = await fetchJSON('https://example.com/auth.json').catch((e) => e);
+    expect(error).toBeInstanceOf(HttpError);
+    expect(error.statusCode).toBe(401);
+    expect(error.message).toMatch(/HTTP 401 error/);
     expect(global.fetch).toHaveBeenCalledTimes(1); // No retries
   });
 
@@ -195,7 +205,7 @@ describe('fetchJSON', () => {
     ).rejects.toThrow(/Request timeout.*after 100ms/);
   });
 
-  it('should retry with exponential backoff', async () => {
+  it('should retry with linear backoff', async () => {
     const abortError = new Error('Aborted');
     abortError.name = 'AbortError';
 

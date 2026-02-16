@@ -10,15 +10,11 @@ import trustedProviders from '../src/index.js';
 describe('Edge Cases and Error Handling', () => {
   beforeEach(() => {
     // Clean slate - remove all providers
-    // Use a while loop to handle providers without names
     let providers = trustedProviders.getAllProviders();
     while (providers.length > 0) {
       const provider = providers[0];
       if (provider.name) {
         trustedProviders.deleteProvider(provider.name);
-      } else {
-        // Provider has no name, remove it directly by splicing the internal array
-        providers.splice(0, 1);
       }
       providers = trustedProviders.getAllProviders();
     }
@@ -300,12 +296,9 @@ describe('Edge Cases and Error Handling', () => {
     });
   });
 
-  describe('Diagnostics Mode', () => {
-    test('should log diagnostics when isDiagnosticsEnabled is true', async () => {
-      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-
-      // Enable diagnostics
-      trustedProviders.isDiagnosticsEnabled = true;
+  describe('Debug Logging', () => {
+    test('should log debug messages at debug level', async () => {
+      const consoleDebugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
 
       const diagnosticProvider = {
         name: 'Diagnostic Test Provider',
@@ -324,18 +317,17 @@ describe('Edge Cases and Error Handling', () => {
       // Set log level to debug so diagnostic messages appear
       trustedProviders.setLogLevel('debug');
 
-      // addProvider should log when diagnostics enabled
+      // addProvider should log at debug level
       trustedProviders.addProvider(diagnosticProvider);
-      expect(consoleLogSpy).toHaveBeenCalledWith('➕ Add provider: Diagnostic Test Provider');
+      expect(consoleDebugSpy).toHaveBeenCalledWith('➕ Add provider: Diagnostic Test Provider');
 
-      // reloadAll should log when diagnostics enabled
+      // reloadAll should log at debug level
       await trustedProviders.reloadAll();
-      expect(consoleLogSpy).toHaveBeenCalledWith('🔃 Reload: Diagnostic Test Provider');
+      expect(consoleDebugSpy).toHaveBeenCalledWith('🔃 Reload: Diagnostic Test Provider');
 
       // Restore
-      trustedProviders.isDiagnosticsEnabled = false;
       trustedProviders.setLogLevel('error'); // Reset to default
-      consoleLogSpy.mockRestore();
+      consoleDebugSpy.mockRestore();
     });
   });
 

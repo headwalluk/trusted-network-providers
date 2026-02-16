@@ -358,8 +358,8 @@ cat src/assets/checksums.json | jq '.providers.googlebot.sha256'
 ### Test 3: Verify Runtime Behavior
 
 ```javascript
-// Run with diagnostic mode
-trustedProviders.isDiagnosticsEnabled = true;
+// Run with debug logging
+trustedProviders.setLogLevel('debug');
 await trustedProviders.reloadAll();
 
 // Check output for DNS queries

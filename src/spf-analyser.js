@@ -148,12 +148,6 @@ export default async (domain, provider) => {
     }
 
     // Step 5: Atomically replace provider data
-    // Clear arrays in place to maintain references, then copy new data
-    provider.ipv4.ranges.length = 0;
-    provider.ipv4.addresses.length = 0;
-    provider.ipv6.ranges.length = 0;
-    provider.ipv6.addresses.length = 0;
-
     Object.assign(provider, newAddresses);
   } catch (error) {
     logger.error(`Failed to analyse SPF records for ${provider.name}: ${error.message}`);

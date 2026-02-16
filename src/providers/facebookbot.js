@@ -2,7 +2,7 @@
  * facebookbot.js
  */
 
-import fs from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import logger from '../utils/logger.js';
@@ -19,7 +19,8 @@ const self = {
     self.ipv6.ranges.length = 0;
 
     try {
-      const ranges = fs.readFileSync(path.resolve(__dirname, '../assets/facebookbot-ip4s.txt'), 'utf8').split('\n');
+      const data = await readFile(path.resolve(__dirname, '../assets/facebookbot-ip4s.txt'), 'utf8');
+      const ranges = data.split('\n');
       ranges.forEach((range) => {
         if (range.length) {
           self.ipv4.ranges.push(range);
@@ -30,7 +31,8 @@ const self = {
     }
 
     try {
-      const ranges = fs.readFileSync(path.resolve(__dirname, '../assets/facebookbot-ip6s.txt'), 'utf8').split('\n');
+      const data = await readFile(path.resolve(__dirname, '../assets/facebookbot-ip6s.txt'), 'utf8');
+      const ranges = data.split('\n');
       ranges.forEach((range) => {
         if (range.length) {
           self.ipv6.ranges.push(range);

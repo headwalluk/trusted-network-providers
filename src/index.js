@@ -174,7 +174,6 @@ function validateProvider(provider, currentProviderCount) {
 
 const self = {
   providers: [],
-  isDiagnosticsEnabled: false,
 
   /**
    * Adds a new provider to the trusted network list.
@@ -201,9 +200,7 @@ const self = {
       // Validate provider before adding
       validateProvider(provider, self.providers.length);
 
-      if (self.isDiagnosticsEnabled) {
-        logger.debug(`➕ Add provider: ${provider.name}`);
-      }
+      logger.debug(`➕ Add provider: ${provider.name}`);
 
       self.providers.push(provider);
 
@@ -250,7 +247,7 @@ const self = {
    * console.log(`Loaded ${providers.length} providers`);
    */
   getAllProviders: () => {
-    return self.providers;
+    return [...self.providers];
   },
 
   /**
@@ -477,11 +474,9 @@ const self = {
           timestamp: now,
         });
 
-        if (self.isDiagnosticsEnabled) {
-          logger.info(
-            `⚠️  Provider ${providerName} marked as stale (${Math.floor(timeSinceUpdate / (60 * 60 * 1000))}h since update)`
-          );
-        }
+        logger.debug(
+          `⚠️  Provider ${providerName} marked as stale (${Math.floor(timeSinceUpdate / (60 * 60 * 1000))}h since update)`
+        );
       }
     }
 
@@ -571,9 +566,7 @@ const self = {
 
     for (const provider of self.providers) {
       if (typeof provider.reload === 'function') {
-        if (self.isDiagnosticsEnabled) {
           logger.debug(`🔃 Reload: ${provider.name}`);
-        }
 
         // Set provider state to LOADING before starting the reload
         // This allows consumers to detect when a provider is updating

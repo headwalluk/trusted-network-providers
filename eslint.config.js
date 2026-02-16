@@ -5,12 +5,11 @@ export default [
   {
     files: ['**/*.js'],
     languageOptions: {
-      ecmaVersion: 2021,
+      ecmaVersion: 'latest',
       sourceType: 'module',
       globals: {
         console: 'readonly',
         process: 'readonly',
-        __dirname: 'readonly',
         Buffer: 'readonly',
         setTimeout: 'readonly',
         setInterval: 'readonly',

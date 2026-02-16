@@ -15,8 +15,7 @@ const self = {
   reload: async () => {
     const requests = [];
 
-    for (const addressListType in self.sources) {
-      const addressListUrl = self.sources[addressListType];
+    for (const [addressListType, addressListUrl] of Object.entries(self.sources)) {
 
       const request = (async () => {
         try {

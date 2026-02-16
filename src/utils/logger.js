@@ -106,7 +106,7 @@ export const info = (...args) => {
  */
 export const debug = (...args) => {
   if (currentLevel >= LOG_LEVELS.debug) {
-    console.log(...args);
+    console.debug(...args);
   }
 };
 
