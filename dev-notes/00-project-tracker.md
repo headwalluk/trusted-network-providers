@@ -3,18 +3,18 @@
 **Status:** In Progress
 **Current Version:** 1.9.0
 **Target Version:** 2.0.0
-**Current Phase:** Milestone 4a — Lifecycle & State Management (Observability)
+**Current Phase:** Milestone 6 — Documentation & Release
 **Last Updated:** 16 February 2026
-**Progress:** 75% (6 of 8 milestones complete)
+**Progress:** 88% (7 of 8 milestones complete)
 
 ## Current Status
 
-**Working on:** Milestone 5 — Performance
-**Last commit:** [M5] Fix cache invalidation and test isolation issues
+**Working on:** Milestone 6 — Documentation & Release
+**Last commit:** [M5] Mark tasks complete
 **Blockers:** None
-**Next action:** Profile lookup performance before/after with 20+ providers.
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. M5 in progress: Implemented result cache with TTL (TTLCache class), fixed cache invalidation in deleteProvider and reloadAll. All 275 tests passing ✓.
-**Last updated:** 2026-02-16 19:15
+**Next action:** Update README for v2.0.0 (ESM imports, new APIs, lifecycle events)
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. M5 complete ✓. Performance profiling shows 192x speedup with result cache (cold: 30.5ms, warm: 0.16ms for 15 IP lookups). See dev-notes/05-milestone-5-performance.md for full analysis. All 278 tests passing ✓.
+**Last updated:** 2026-02-16 19:10
 
 ---
 
@@ -137,10 +137,10 @@ Lower priority, but worth doing while we're in here.
 - [x] Implement LRU cache with max size for parsed CIDR ranges (replace unbounded `parsedAddresses`)
 - [x] Add LRU result cache with configurable TTL for IP lookups
 - [x] Invalidate caches on provider reload
-- [ ] Profile lookup performance before/after with 20+ providers
-- [ ] Document performance characteristics
-- [ ] All tests pass
-- [ ] Commit milestone completion to `v2-modernisation` branch
+- [x] Profile lookup performance before/after with 20+ providers
+- [x] Document performance characteristics
+- [x] All tests pass
+- [x] Commit milestone completion to `v2-modernisation` branch
 
 ---
 
