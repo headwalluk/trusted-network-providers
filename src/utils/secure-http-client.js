@@ -2,14 +2,17 @@
  * secure-http-client.js
  *
  * Centralized HTTP client with security best practices:
- * - Strict HTTPS certificate validation
+ * - Strict HTTPS certificate validation (native fetch default)
  * - Request timeouts
  * - Retry logic for transient failures
  * - SHA-256 checksum verification
  * - Error handling
+ *
+ * Note: Native Node.js fetch (v18+) performs strict certificate validation
+ * by default (rejectUnauthorized: true, modern TLS versions). No additional
+ * HTTPS agent configuration is needed.
  */
 
-import https from 'node:https';
 import crypto from 'node:crypto';
 
 /**
@@ -19,16 +22,7 @@ const DEFAULT_CONFIG = {
   timeout: 30000, // 30 seconds
   retries: 2,
   retryDelay: 1000, // 1 second between retries
-  strictSSL: true, // Enforce certificate validation
 };
-
-/**
- * HTTPS agent with strict certificate validation
- */
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: true, // Reject invalid certificates
-  minVersion: 'TLSv1.2', // Minimum TLS version
-});
 
 /**
  * Calculate SHA-256 hash of data
@@ -70,7 +64,6 @@ async function fetchWithTimeout(url, fetchOptions, timeoutMs) {
     const response = await fetch(url, {
       ...fetchOptions,
       signal: controller.signal,
-      dispatcher: httpsAgent,
     });
     return response;
   } finally {
