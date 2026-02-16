@@ -9,11 +9,19 @@ import trustedProviders from '../src/index.js';
 
 describe('Edge Cases and Error Handling', () => {
   beforeEach(() => {
-    // Clean slate
-    const providers = trustedProviders.getAllProviders();
-    providers.forEach((provider) => {
-      trustedProviders.deleteProvider(provider.name);
-    });
+    // Clean slate - remove all providers
+    // Use a while loop to handle providers without names
+    let providers = trustedProviders.getAllProviders();
+    while (providers.length > 0) {
+      const provider = providers[0];
+      if (provider.name) {
+        trustedProviders.deleteProvider(provider.name);
+      } else {
+        // Provider has no name, remove it directly by splicing the internal array
+        providers.splice(0, 1);
+      }
+      providers = trustedProviders.getAllProviders();
+    }
   });
 
   describe('Invalid IP Addresses', () => {
