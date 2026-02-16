@@ -377,9 +377,9 @@ const self = {
     console.log();
 
     for (const test of tests) {
-      let testProviderName = test.provider ?? '_wild_';
+      const testProviderName = test.provider ?? '_wild_';
       const provider = self.getTrustedProvider(test.ip);
-      let foundProviderName = provider ?? '_wild_';
+      const foundProviderName = provider ?? '_wild_';
 
       if (provider !== test.provider) {
         console.log(`❌${test.ip} => ${foundProviderName} (should be ${testProviderName})`);
