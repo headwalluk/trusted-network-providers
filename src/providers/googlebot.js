@@ -16,34 +16,30 @@ const GOOGLE_ADDRESS_LIST_URL = 'https://developers.google.com/static/search/api
 const self = {
   name: 'Googlebot',
   testAddresses: ['66.249.66.87', '66.249.70.93'],
-  reload: () => {
-    return new Promise((resolve, reject) => {
-      try {
-        // Verify checksum of bundled asset
-        const assetPath = path.join(__dirname, '../assets/googlebot-ips.json');
-        verifyAssetChecksum(assetPath, 'googlebot', false);
+  reload: async () => {
+    try {
+      // Verify checksum of bundled asset
+      const assetPath = path.join(__dirname, '../assets/googlebot-ips.json');
+      verifyAssetChecksum(assetPath, 'googlebot', false);
 
-        // Clear existing ranges
-        self.ipv4.ranges.length = 0;
-        self.ipv6.ranges.length = 0;
+      // Clear existing ranges
+      self.ipv4.ranges.length = 0;
+      self.ipv6.ranges.length = 0;
 
-        const newIps = JSON.parse(readFileSync(assetPath, 'utf8'));
-        newIps.prefixes.forEach((range) => {
-          if (range.ipv4Prefix) {
-            self.ipv4.ranges.push(range.ipv4Prefix);
-          }
+      const newIps = JSON.parse(readFileSync(assetPath, 'utf8'));
+      newIps.prefixes.forEach((range) => {
+        if (range.ipv4Prefix) {
+          self.ipv4.ranges.push(range.ipv4Prefix);
+        }
 
-          if (range.ipv6Prefix) {
-            self.ipv6.ranges.push(range.ipv6Prefix);
-          }
-        });
-
-        resolve();
-      } catch (error) {
-        console.error(`Failed to load Googlebot IPs: ${error.message}`);
-        reject(error);
-      }
-    });
+        if (range.ipv6Prefix) {
+          self.ipv6.ranges.push(range.ipv6Prefix);
+        }
+      });
+    } catch (error) {
+      console.error(`Failed to load Googlebot IPs: ${error.message}`);
+      throw error;
+    }
   },
   reloadFromWeb: async () => {
     try {
