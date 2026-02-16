@@ -10,11 +10,11 @@
 ## Current Status
 
 **Working on:** Milestone 3 — Modernise Code Patterns
-**Last commit:** [M2] Complete Milestone 2 — dependency audit and dev-notes
+**Last commit:** [M3] Convert seobility.js reload() to async/await
 **Blockers:** None
-**Next action:** Convert all Promise chains and `new Promise()` wrappers to async/await
-**Notes:** M1 complete ✓. M2 complete ✓. Removed superagent dependency (replaced with native fetch). Audited all remaining dependencies: fast-xml-parser (required by gtmetrix) and ipaddr.js (core IP parsing) both retained. 0 vulnerabilities. All 122 tests passing. 80% coverage target deferred to M3b — modules with lowest coverage (secure-http-client.js, spf-analyser.js) were rewritten in M2, coverage will be addressed after M3 code modernisation when codebase has stabilised. Current baseline: 55.52%, 122 tests passing. M3 async/await conversion in progress: bunnynet, facebookbot, googlebot reload() methods converted and tested ✓. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
-**Last updated:** 2026-02-16 11:30
+**Next action:** Continue converting remaining provider reload() methods to async/await
+**Notes:** M1 complete ✓. M2 complete ✓. Removed superagent dependency (replaced with native fetch). Audited all remaining dependencies: fast-xml-parser (required by gtmetrix) and ipaddr.js (core IP parsing) both retained. 0 vulnerabilities. All 122 tests passing. 80% coverage target deferred to M3b — modules with lowest coverage (secure-http-client.js, spf-analyser.js) were rewritten in M2, coverage will be addressed after M3 code modernisation when codebase has stabilised. Current baseline: 55.52%, 122 tests passing. M3 async/await conversion in progress: bunnynet, facebookbot, googlebot, seobility reload() methods converted and tested ✓. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
+**Last updated:** 2026-02-16 11:50
 
 ---
 
