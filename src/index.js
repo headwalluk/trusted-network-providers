@@ -38,6 +38,10 @@ const PROVIDER_STATE_LOADING = 'loading';
 const PROVIDER_STATE_ERROR = 'error';
 const PROVIDER_STATE_STALE = 'stale';
 
+// Input validation limits
+const MAX_PROVIDERS = 100; // Maximum number of providers that can be registered
+const MAX_IPS_PER_PROVIDER = 10000; // Maximum combined IPs and ranges per provider
+
 const defaultProviders = [
   privateProvider,
   googlebotProvider,
@@ -100,6 +104,65 @@ let stalenessThresholdMs = 24 * 60 * 60 * 1000;
  * @property {string[]} ipv6.ranges - IPv6 CIDR ranges
  */
 
+/**
+ * Validates a provider configuration before adding it.
+ * Checks:
+ * - Provider count doesn't exceed MAX_PROVIDERS
+ * - Total IPs per provider doesn't exceed MAX_IPS_PER_PROVIDER
+ * - All CIDR ranges are valid
+ *
+ * @param {Provider} provider - The provider to validate
+ * @param {number} currentProviderCount - The current number of registered providers
+ * @throws {Error} If validation fails
+ * @returns {void}
+ */
+function validateProvider(provider, currentProviderCount) {
+  // Check max providers limit
+  if (currentProviderCount >= MAX_PROVIDERS) {
+    throw new Error(
+      `Maximum provider limit reached (${MAX_PROVIDERS}). Cannot add provider: ${provider.name}`
+    );
+  }
+
+  // Count total IPs and ranges
+  const ipv4Addresses = provider.ipv4?.addresses?.length || 0;
+  const ipv4Ranges = provider.ipv4?.ranges?.length || 0;
+  const ipv6Addresses = provider.ipv6?.addresses?.length || 0;
+  const ipv6Ranges = provider.ipv6?.ranges?.length || 0;
+  const totalIps = ipv4Addresses + ipv4Ranges + ipv6Addresses + ipv6Ranges;
+
+  if (totalIps > MAX_IPS_PER_PROVIDER) {
+    throw new Error(
+      `Provider "${provider.name}" exceeds maximum IP limit (${MAX_IPS_PER_PROVIDER}). Total IPs: ${totalIps}`
+    );
+  }
+
+  // Validate all CIDR ranges
+  const invalidRanges = [];
+
+  if (provider.ipv4?.ranges) {
+    for (const range of provider.ipv4.ranges) {
+      if (!ipaddr.isValidCIDR(range)) {
+        invalidRanges.push(range);
+      }
+    }
+  }
+
+  if (provider.ipv6?.ranges) {
+    for (const range of provider.ipv6.ranges) {
+      if (!ipaddr.isValidCIDR(range)) {
+        invalidRanges.push(range);
+      }
+    }
+  }
+
+  if (invalidRanges.length > 0) {
+    throw new Error(
+      `Provider "${provider.name}" contains invalid CIDR ranges: ${invalidRanges.join(', ')}`
+    );
+  }
+}
+
 const self = {
   providers: [],
   isDiagnosticsEnabled: false,
@@ -126,6 +189,9 @@ const self = {
    */
   addProvider: (provider) => {
     if (provider && provider.name && !self.hasProvider(provider.name)) {
+      // Validate provider before adding
+      validateProvider(provider, self.providers.length);
+
       if (self.isDiagnosticsEnabled) {
         logger.debug(`➕ Add provider: ${provider.name}`);
       }

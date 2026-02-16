@@ -36,9 +36,7 @@ let currentLevel = LOG_LEVELS.error; // Default: only show errors
  */
 export const setLevel = (level) => {
   if (!(level in LOG_LEVELS)) {
-    throw new Error(
-      `Invalid log level: ${level}. Must be one of: ${Object.keys(LOG_LEVELS).join(', ')}`,
-    );
+    throw new Error(`Invalid log level: ${level}. Must be one of: ${Object.keys(LOG_LEVELS).join(', ')}`);
   }
   currentLevel = LOG_LEVELS[level];
 };
