@@ -2,7 +2,7 @@
  * Tests for LRU cache implementation
  */
 
-import { LRUCache } from '../lru-cache.js';
+import { LRUCache } from '../src/lru-cache.js';
 
 describe('LRUCache', () => {
   describe('constructor', () => {
@@ -183,7 +183,7 @@ describe('LRUCache', () => {
   describe('integration scenarios', () => {
     test('should handle complex access patterns', () => {
       const cache = new LRUCache(4);
-      
+
       // Fill cache
       cache.set('a', 1);
       cache.set('b', 2);

@@ -69,7 +69,7 @@ const defaultProviders = [
   // seobilityProvider, // Unreliable
 ];
 
-let parsedAddresses = new LRUCache(MAX_PARSED_ADDRESSES);
+const parsedAddresses = new LRUCache(MAX_PARSED_ADDRESSES);
 
 /**
  * Provider metadata tracking.
