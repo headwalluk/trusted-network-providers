@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { calculateSHA256 } from './secure-http-client.js';
+import logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,7 +30,7 @@ function loadChecksums() {
     cachedChecksums = JSON.parse(checksumsData);
     return cachedChecksums;
   } catch (error) {
-    console.warn(`Warning: Could not load checksums file: ${error.message}`);
+    logger.warn(`Warning: Could not load checksums file: ${error.message}`);
     return { providers: {} };
   }
 }
@@ -49,7 +50,7 @@ function verifyAssetChecksum(filePath, providerKey, strict = false) {
   // If no checksum configured, skip verification
   if (!providerConfig || !providerConfig.sha256) {
     if (strict) {
-      console.warn(`Warning: No checksum configured for ${providerKey}`);
+      logger.warn(`Warning: No checksum configured for ${providerKey}`);
     }
     return true;
   }
@@ -69,7 +70,7 @@ function verifyAssetChecksum(filePath, providerKey, strict = false) {
       if (strict) {
         throw new Error(message);
       } else {
-        console.warn(`Warning: ${message}`);
+        logger.warn(`Warning: ${message}`);
         return false;
       }
     }
@@ -81,7 +82,7 @@ function verifyAssetChecksum(filePath, providerKey, strict = false) {
       if (strict) {
         throw new Error(message);
       } else {
-        console.warn(`Warning: ${message}`);
+        logger.warn(`Warning: ${message}`);
         return false;
       }
     }

@@ -4,6 +4,7 @@
 
 import { EventEmitter } from 'node:events';
 import ipaddr from 'ipaddr.js';
+import logger from './utils/logger.js';
 import privateProvider from './providers/private.js';
 import googlebotProvider from './providers/googlebot.js';
 import googleWorkspaceProvider from './providers/google-workspace.js';
@@ -126,7 +127,7 @@ const self = {
   addProvider: (provider) => {
     if (provider && provider.name && !self.hasProvider(provider.name)) {
       if (self.isDiagnosticsEnabled) {
-        console.log(`➕ Add provider: ${provider.name}`);
+        logger.debug(`➕ Add provider: ${provider.name}`);
       }
 
       self.providers.push(provider);
@@ -364,12 +365,43 @@ const self = {
         });
 
         if (self.isDiagnosticsEnabled) {
-          console.log(`⚠️  Provider ${providerName} marked as stale (${Math.floor(timeSinceUpdate / (60 * 60 * 1000))}h since update)`);
+          logger.info(
+            `⚠️  Provider ${providerName} marked as stale (${Math.floor(timeSinceUpdate / (60 * 60 * 1000))}h since update)`
+          );
         }
       }
     }
 
     return staleProviders;
+  },
+
+  /**
+   * Set the logging level for the library.
+   * Controls which messages are output to the console.
+   *
+   * @param {string} level - One of: 'silent', 'error', 'warn', 'info', 'debug'
+   * @returns {void}
+   * @throws {Error} If level is invalid
+   *
+   * @example
+   * trustedProviders.setLogLevel('info'); // Show errors, warnings, and info
+   * trustedProviders.setLogLevel('silent'); // Suppress all output
+   */
+  setLogLevel: (level) => {
+    logger.setLevel(level);
+  },
+
+  /**
+   * Get the current logging level.
+   *
+   * @returns {string} Current log level ('silent', 'error', 'warn', 'info', or 'debug')
+   *
+   * @example
+   * const level = trustedProviders.getLogLevel();
+   * console.log(`Current log level: ${level}`); // 'error'
+   */
+  getLogLevel: () => {
+    return logger.getLevel();
   },
 
   /**
@@ -427,7 +459,7 @@ const self = {
     for (const provider of self.providers) {
       if (typeof provider.reload === 'function') {
         if (self.isDiagnosticsEnabled) {
-          console.log(`🔃 Reload: ${provider.name}`);
+          logger.debug(`🔃 Reload: ${provider.name}`);
         }
 
         // Set provider state to LOADING
@@ -535,8 +567,8 @@ const self = {
     try {
       parsedIp = ipaddr.parse(ipAddress);
     } catch (error) {
-      console.error(`Failed to parse IP: ${ipAddress}`);
-      console.error(error);
+      logger.error(`Failed to parse IP: ${ipAddress}`);
+      logger.error(error);
       parsedIp = null;
     }
 
@@ -582,8 +614,8 @@ const self = {
             }
           }
         } catch (error) {
-          console.error(`ERROR: Failed to find trusted source of ${ipAddress}`);
-          console.error(error);
+          logger.error(`ERROR: Failed to find trusted source of ${ipAddress}`);
+          logger.error(error);
         }
 
         if (trustedSource) {
@@ -635,10 +667,10 @@ const self = {
     for (const testProvider of self.getAllProviders()) {
       if (!Array.isArray(testProvider.testAddresses)) {
         if (failedProviderIndex === 0) {
-          console.log();
+          logger.info();
         }
 
-        console.log(`🔷 No tests for ${testProvider.name}`);
+        logger.info(`🔷 No tests for ${testProvider.name}`);
         ++failedProviderIndex;
       } else {
         for (const testAddress of testProvider.testAddresses) {
@@ -650,7 +682,7 @@ const self = {
       }
     }
 
-    console.log();
+    logger.info();
 
     for (const test of tests) {
       const testProviderName = test.provider ?? '_wild_';
@@ -658,15 +690,15 @@ const self = {
       const foundProviderName = provider ?? '_wild_';
 
       if (provider !== test.provider) {
-        console.log(`❌${test.ip} => ${foundProviderName} (should be ${testProviderName})`);
+        logger.info(`❌${test.ip} => ${foundProviderName} (should be ${testProviderName})`);
       } else {
-        console.log(`✅${test.ip} => ${foundProviderName}`);
+        logger.info(`✅${test.ip} => ${foundProviderName}`);
       }
     }
 
-    console.log();
-    console.log('🏁 Finished tests');
-    console.log();
+    logger.info();
+    logger.info('🏁 Finished tests');
+    logger.info();
   },
 };
 

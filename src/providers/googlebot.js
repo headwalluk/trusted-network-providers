@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { fetchJSON } from '../utils/secure-http-client.js';
 import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,7 +38,7 @@ const self = {
         }
       });
     } catch (error) {
-      console.error(`Failed to load Googlebot IPs: ${error.message}`);
+      logger.error(`Failed to load Googlebot IPs: ${error.message}`);
       throw error;
     }
   },
@@ -63,7 +64,7 @@ const self = {
         throw new Error('Invalid response format from Googlebot API');
       }
     } catch (error) {
-      console.error(`Failed to reload Googlebot IPs from web: ${error.message}`);
+      logger.error(`Failed to reload Googlebot IPs from web: ${error.message}`);
       throw error;
     }
   },

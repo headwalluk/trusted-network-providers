@@ -321,6 +321,9 @@ describe('Edge Cases and Error Handling', () => {
         },
       };
 
+      // Set log level to debug so diagnostic messages appear
+      trustedProviders.setLogLevel('debug');
+
       // addProvider should log when diagnostics enabled
       trustedProviders.addProvider(diagnosticProvider);
       expect(consoleLogSpy).toHaveBeenCalledWith('➕ Add provider: Diagnostic Test Provider');
@@ -331,6 +334,7 @@ describe('Edge Cases and Error Handling', () => {
 
       // Restore
       trustedProviders.isDiagnosticsEnabled = false;
+      trustedProviders.setLogLevel('error'); // Reset to default
       consoleLogSpy.mockRestore();
     });
   });
@@ -390,12 +394,16 @@ describe('Edge Cases and Error Handling', () => {
       trustedProviders.addProvider(testProvider);
       await trustedProviders.reloadAll();
 
+      // Set log level to info so test output appears
+      trustedProviders.setLogLevel('info');
+
       // runTests() should not throw
       expect(() => trustedProviders.runTests()).not.toThrow();
 
       // Should have logged test results
       expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Finished tests'));
 
+      trustedProviders.setLogLevel('error'); // Reset to default
       consoleLogSpy.mockRestore();
     });
 
@@ -419,12 +427,16 @@ describe('Edge Cases and Error Handling', () => {
       trustedProviders.addProvider(noTestProvider);
       await trustedProviders.reloadAll();
 
+      // Set log level to info so test output appears
+      trustedProviders.setLogLevel('info');
+
       // runTests() should handle missing testAddresses
       expect(() => trustedProviders.runTests()).not.toThrow();
 
       // Should have logged "No tests for Provider Without Tests"
       expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('No tests for Provider Without Tests'));
 
+      trustedProviders.setLogLevel('error'); // Reset to default
       consoleLogSpy.mockRestore();
     });
   });

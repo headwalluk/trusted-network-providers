@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,7 @@ const self = {
         }
       });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     }
 
     try {
@@ -36,7 +37,7 @@ const self = {
         }
       });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     }
   },
   ipv4: {

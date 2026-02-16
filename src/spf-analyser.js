@@ -18,6 +18,7 @@
  */
 
 import dns from 'node:dns/promises';
+import logger from './utils/logger.js';
 
 export default async (domain, provider) => {
   try {
@@ -52,7 +53,7 @@ export default async (domain, provider) => {
     }
 
     if (sourceNetblocks.length === 0) {
-      console.log(`Not updating ${provider.name} addresses because no SPF netblocks found`);
+      logger.info(`Not updating ${provider.name} addresses because no SPF netblocks found`);
       return;
     }
 
@@ -123,7 +124,7 @@ export default async (domain, provider) => {
 
     Object.assign(provider, newAddresses);
   } catch (error) {
-    console.error(`Failed to analyse SPF records for ${provider.name}: ${error.message}`);
+    logger.error(`Failed to analyse SPF records for ${provider.name}: ${error.message}`);
     throw error;
   }
 };

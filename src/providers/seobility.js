@@ -4,6 +4,7 @@
 
 import { fetchText } from '../utils/secure-http-client.js';
 import ipaddr from 'ipaddr.js';
+import logger from '../utils/logger.js';
 
 const self = {
   name: 'Seobility',
@@ -22,7 +23,7 @@ const self = {
           const text = await fetchText(addressListUrl);
 
           if (!text) {
-            console.error(`Failed to fetch ${addressListType} from ${addressListUrl}`);
+            logger.error(`Failed to fetch ${addressListType} from ${addressListUrl}`);
           } else {
             // Clear existing data
             self[addressListType].addresses.length = 0;
@@ -37,7 +38,7 @@ const self = {
             });
           }
         } catch (error) {
-          console.error(`Failed to reload Seobility ${addressListType} IPs: ${error.message}`);
+          logger.error(`Failed to reload Seobility ${addressListType} IPs: ${error.message}`);
           throw error;
         }
       })();

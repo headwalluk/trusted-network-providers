@@ -23,6 +23,7 @@ jest.unstable_mockModule('node:dns/promises', () => ({
 
 // Import the module under test AFTER setting up the mock
 const { default: spfAnalyser } = await import('../src/spf-analyser.js');
+import logger from '../src/utils/logger.js';
 
 describe('spfAnalyser', () => {
   let mockProvider;
@@ -176,6 +177,9 @@ describe('spfAnalyser', () => {
     it('should return early when no SPF netblocks found', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
+      // Set log level to info so the message appears
+      logger.setLevel('info');
+
       mockResolveTxt.mockResolvedValueOnce([['v=spf1 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
@@ -183,6 +187,7 @@ describe('spfAnalyser', () => {
       expect(consoleSpy).toHaveBeenCalledWith('Not updating test-provider addresses because no SPF netblocks found');
       expect(mockResolveTxt).toHaveBeenCalledTimes(1); // Only main domain, no includes
 
+      logger.setLevel('error'); // Reset to default
       consoleSpy.mockRestore();
     });
 

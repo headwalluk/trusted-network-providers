@@ -6,6 +6,7 @@
 
 import { jest } from '@jest/globals';
 import { loadChecksums, verifyAssetChecksum, getExpectedChecksum } from '../src/utils/checksum-verifier.js';
+import logger from '../src/utils/logger.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -75,11 +76,15 @@ describe('Checksum Verifier', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       const assetPath = path.join(__dirname, '../src/assets/googlebot-ips.json');
 
+      // Set log level to warn so the warning appears
+      logger.setLevel('warn');
+
       const result = verifyAssetChecksum(assetPath, 'unconfigured-provider', true);
 
       expect(result).toBe(true);
       expect(consoleSpy).toHaveBeenCalled();
 
+      logger.setLevel('error'); // Reset to default
       consoleSpy.mockRestore();
     });
 
@@ -87,11 +92,15 @@ describe('Checksum Verifier', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       const assetPath = path.join(__dirname, '../src/assets/nonexistent-file.json');
 
+      // Set log level to warn so the warning appears
+      logger.setLevel('warn');
+
       const result = verifyAssetChecksum(assetPath, 'googlebot', false);
 
       expect(result).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Asset file not found'));
 
+      logger.setLevel('error'); // Reset to default
       consoleSpy.mockRestore();
     });
 
@@ -106,6 +115,9 @@ describe('Checksum Verifier', () => {
     test('should detect checksum mismatch (non-strict)', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
+      // Set log level to warn so the warning appears
+      logger.setLevel('warn');
+
       // Use bunnynet's ipv4 file with googlebot's checksum (will mismatch)
       const result = verifyAssetChecksum(
         path.join(__dirname, '../src/assets/bunnynet-ip4s.json'),
@@ -116,6 +128,7 @@ describe('Checksum Verifier', () => {
       expect(result).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Checksum mismatch'));
 
+      logger.setLevel('error'); // Reset to default
       consoleSpy.mockRestore();
     });
 

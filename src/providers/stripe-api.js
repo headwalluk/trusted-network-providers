@@ -3,6 +3,7 @@
  */
 
 import { fetchJSON } from '../utils/secure-http-client.js';
+import logger from '../utils/logger.js';
 
 const STRIPE_ADDRESSES_URL = 'https://stripe.com/files/ips/ips_api.json';
 
@@ -34,7 +35,7 @@ const self = {
         throw new Error('Invalid response format from Stripe API');
       }
     } catch (error) {
-      console.error(`Failed to reload Stripe API IPs: ${error.message}`);
+      logger.error(`Failed to reload Stripe API IPs: ${error.message}`);
       throw error;
     }
   },
