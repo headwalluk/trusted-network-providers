@@ -3,18 +3,18 @@
 **Status:** In Progress
 **Current Version:** 1.9.0
 **Target Version:** 2.0.0
-**Current Phase:** Milestone 3b — Test Coverage
+**Current Phase:** Milestone 4a — Lifecycle & State Management (Observability)
 **Last Updated:** 16 February 2026
-**Progress:** 37.5% (3 of 8 milestones complete)
+**Progress:** 50% (4 of 8 milestones complete)
 
 ## Current Status
 
 **Working on:** Milestone 3b — Test Coverage
-**Last commit:** [M3b] Add comprehensive test suite for secure-http-client
+**Last commit:** [M3b] Add comprehensive edge case tests for index.js
 **Blockers:** None
-**Next action:** Continue M3b coverage work — add tests for index.js edge cases, then verify >80% coverage target.
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b in progress: Added comprehensive test suite for googlebot provider (18 tests) ✓. Added comprehensive test suite for spf-analyser.js (21 tests) ✓. Added comprehensive test suite for secure-http-client.js (35 tests covering SSL cert errors, 500 errors, timeouts, retries, redirects, network errors — 96.87% coverage) ✓. All 196 tests passing (was 189, now 196 after adding secure-http-client tests) ✓. Testing sprint verified: npm test (196/196), format check (clean), lint (clean) ✓. Current baseline: coverage significantly improved, target >80%. Focus area: index.js edge cases. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
-**Last updated:** 2026-02-16 15:05
+**Next action:** Commit milestone completion to v2-modernisation branch and move to Milestone 4a.
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓: Added comprehensive test suite for googlebot provider (18 tests) ✓. Added comprehensive test suite for spf-analyser.js (21 tests) ✓. Added comprehensive test suite for secure-http-client.js (35 tests covering SSL cert errors, 500 errors, timeouts, retries, redirects, network errors — 96.87% coverage) ✓. Added comprehensive edge case tests for index.js (4 tests covering diagnostics mode, error handling, runTests function) — index.js coverage improved from 73.95% to 98.95% ✓. All 200 tests passing ✓. Testing sprint verified: npm test (200/200), format check (clean), lint (clean) ✓. Coverage target >80% achieved across all modules ✓. Note: Gemini 2.0 Flash and 2.5 Flash are currently avoided for this project due to reasoning issues with complex mocking; Zee-CodeLite (Claude 3.5 Sonnet) or Gemini 3 Flash Preview are the preferred models.
+**Last updated:** 2026-02-16 15:20
 
 ---
 
@@ -93,11 +93,11 @@ Bring the JavaScript up to 2026 standards.
 
 Now that the code is modernised, write durable tests against the stable codebase.
 
-- [ ] Achieve >80% code coverage across all modules
+- [x] Achieve >80% code coverage across all modules
 - [x] Add tests for refactored secure-http-client.js (native fetch)
 - [x] Add tests for refactored spf-analyser.js (async/await)
-- [ ] Add tests for index.js uncovered edge cases
-- [ ] All tests pass
+- [x] Add tests for index.js uncovered edge cases
+- [x] All tests pass
 - [ ] Commit milestone completion to `v2-modernisation` branch
 
 ---
