@@ -106,7 +106,10 @@ describe('Input Validation', () => {
     });
 
     test('should reject provider exceeding max IPs limit (ranges only)', () => {
-      const ranges = Array.from({ length: 10001 }, (_, i) => `10.${Math.floor(i / 65536)}.${Math.floor((i % 65536) / 256)}.0/24`);
+      const ranges = Array.from(
+        { length: 10001 },
+        (_, i) => `10.${Math.floor(i / 65536)}.${Math.floor((i % 65536) / 256)}.0/24`
+      );
 
       const provider = {
         name: 'Too Many Ranges',

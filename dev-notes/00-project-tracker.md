@@ -5,16 +5,16 @@
 **Target Version:** 2.0.0
 **Current Phase:** Milestone 4a — Lifecycle & State Management (Observability)
 **Last Updated:** 16 February 2026
-**Progress:** 62.5% (5 of 8 milestones complete)
+**Progress:** 75% (6 of 8 milestones complete)
 
 ## Current Status
 
-**Working on:** Milestone 4b — Lifecycle & State Management (Robustness)
-**Last commit:** [M4b] Fix race condition in cache clearing
+**Working on:** Milestone 5 — Performance
+**Last commit:** [M4b] Add input validation (max IPs, max providers, CIDR)
 **Blockers:** None
-**Next action:** Add input validation: max IPs per provider, max providers, CIDR validation.
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. Fixed SPF analyser DNS resolution error handling ✓. Fixed race condition in provider data clearing by implementing atomic cache swap ✓. All 239 tests passing ✓. Continuing M4b: robustness improvements.
-**Last updated:** 2026-02-16 17:50
+**Next action:** Implement LRU cache with max size for parsed CIDR ranges.
+**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. Added input validation to prevent unbounded growth and malformed inputs. All 257 tests passing ✓. Moving to M5: performance improvements.
+**Last updated:** 2026-02-16 18:10
 
 ---
 
@@ -124,9 +124,9 @@ Make providers resilient to failures and misuse.
 
 - [x] Fix SPF analyser error handling — add `.catch()` on DNS resolution
 - [x] Fix race condition in provider data clearing (atomic swap)
-- [ ] Add input validation: max IPs per provider, max providers, CIDR validation
-- [ ] All tests pass
-- [ ] Commit milestone completion to `v2-modernisation` branch
+- [x] Add input validation: max IPs per provider, max providers, CIDR validation
+- [x] All tests pass
+- [x] Commit milestone completion to `v2-modernisation` branch
 
 ---
 

@@ -119,9 +119,7 @@ let stalenessThresholdMs = 24 * 60 * 60 * 1000;
 function validateProvider(provider, currentProviderCount) {
   // Check max providers limit
   if (currentProviderCount >= MAX_PROVIDERS) {
-    throw new Error(
-      `Maximum provider limit reached (${MAX_PROVIDERS}). Cannot add provider: ${provider.name}`
-    );
+    throw new Error(`Maximum provider limit reached (${MAX_PROVIDERS}). Cannot add provider: ${provider.name}`);
   }
 
   // Count total IPs and ranges
@@ -157,9 +155,7 @@ function validateProvider(provider, currentProviderCount) {
   }
 
   if (invalidRanges.length > 0) {
-    throw new Error(
-      `Provider "${provider.name}" contains invalid CIDR ranges: ${invalidRanges.join(', ')}`
-    );
+    throw new Error(`Provider "${provider.name}" contains invalid CIDR ranges: ${invalidRanges.join(', ')}`);
   }
 }
 
