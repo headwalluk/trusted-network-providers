@@ -37,38 +37,41 @@ console.log(provider); // "Googlebot"
 #### Required Changes
 
 1. **Replace `require()` with `import`**
+
    ```javascript
    // Old
    const trustedProviders = require('@headwall/trusted-network-providers');
-   
+
    // New
    import trustedProviders from '@headwall/trusted-network-providers';
    ```
 
 2. **Use `await` instead of `.then()` for async operations**
+
    ```javascript
    // Old
    trustedProviders.reloadAll().then(() => {
      // ...
    });
-   
+
    // New
    await trustedProviders.reloadAll();
    ```
 
 3. **Update your package.json**
-   
+
    If your project uses this library, ensure your `package.json` supports ES modules:
+
    ```json
    {
      "type": "module"
    }
    ```
-   
+
    Alternatively, use `.mjs` file extensions for ES module files.
 
 4. **Node.js Version Requirement**
-   
+
    v2.0.0 requires **Node.js >= 18.0.0** (tested on v22.21.0). Upgrade if you're on an older version.
 
 ---
@@ -98,6 +101,7 @@ trustedProviders.on('stale', ({ provider, lastUpdated, staleDuration }) => {
 ```
 
 **Events:**
+
 - `reload:success` — fired when a provider successfully updates
 - `reload:error` — fired when a provider fails to update
 - `stale` — fired when a provider hasn't updated within the staleness threshold
@@ -116,12 +120,14 @@ console.log(status);
 ```
 
 **Provider States:**
+
 - `ready` — loaded and operational
 - `loading` — currently fetching data
 - `error` — last reload failed
 - `stale` — hasn't been updated within the configured staleness threshold
 
 **State Constants (exported):**
+
 ```javascript
 import trustedProviders, {
   PROVIDER_STATE_READY,
@@ -160,6 +166,7 @@ console.log(ttl); // 1800000
 ```
 
 **How it works:**
+
 - When `getTrustedProvider(ip)` or `isTrusted(ip)` is called, the result is cached for the configured TTL
 - Cache is invalidated when providers are reloaded via `reloadAll()`
 - Default TTL: 1 hour (appropriate for most use cases)
@@ -178,6 +185,7 @@ console.log(level); // 'warn'
 ```
 
 **Log Levels:**
+
 - `silent` — no logging
 - `error` — errors only
 - `warn` — errors and warnings (recommended for production)
@@ -210,13 +218,16 @@ See `dev-notes/05-milestone-5-performance.md` for detailed profiling.
 v2.0.0 removes **superagent** and replaces it with Node.js **native `fetch()`**.
 
 **Before (v1.x):**
+
 - Dependencies: `superagent`, `fast-xml-parser`, `ipaddr.js`
 
 **After (v2.x):**
+
 - Dependencies: `fast-xml-parser`, `ipaddr.js`
 - HTTP requests now use `fetch()` (available in Node.js >=18)
 
 **Why this matters:**
+
 - Smaller package size
 - Fewer supply-chain attack surfaces
 - Leverages built-in Node.js HTTP client
@@ -246,6 +257,7 @@ npm install @headwall/trusted-network-providers@^2.0.0
 #### Example: Express.js Middleware
 
 **Before (v1.x):**
+
 ```javascript
 const express = require('express');
 const trustedProviders = require('@headwall/trusted-network-providers');
@@ -269,6 +281,7 @@ app.listen(3000);
 ```
 
 **After (v2.x):**
+
 ```javascript
 import express from 'express';
 import trustedProviders from '@headwall/trusted-network-providers';
@@ -291,6 +304,7 @@ app.listen(3000);
 ```
 
 **Changes:**
+
 - `require()` → `import`
 - `.then()` → `await`
 - Added top-level `await` (requires `"type": "module"` in package.json or `.mjs` extension)
@@ -298,18 +312,23 @@ app.listen(3000);
 #### Example: Long-Running pm2 Service
 
 **Before (v1.x):**
+
 ```javascript
 const trustedProviders = require('@headwall/trusted-network-providers');
 
 trustedProviders.loadDefaultProviders();
 trustedProviders.reloadAll();
 
-setInterval(() => {
-  trustedProviders.reloadAll();
-}, 60 * 60 * 1000); // Reload every hour
+setInterval(
+  () => {
+    trustedProviders.reloadAll();
+  },
+  60 * 60 * 1000
+); // Reload every hour
 ```
 
 **After (v2.x):**
+
 ```javascript
 import trustedProviders from '@headwall/trusted-network-providers';
 
@@ -332,12 +351,16 @@ trustedProviders.on('reload:error', ({ provider, error }) => {
 });
 
 // Periodic reload (optional with staleness detection)
-setInterval(() => {
-  trustedProviders.reloadAll();
-}, 60 * 60 * 1000); // Every hour
+setInterval(
+  () => {
+    trustedProviders.reloadAll();
+  },
+  60 * 60 * 1000
+); // Every hour
 ```
 
 **Changes:**
+
 - `require()` → `import`
 - Added lifecycle event listeners for better observability
 - Added production logging configuration
@@ -422,18 +445,18 @@ Then revert your code changes (replace `import` with `require()`, `.then()` inst
 
 ## Summary
 
-| Change                     | v1.x                      | v2.x                                  |
-| -------------------------- | ------------------------- | ------------------------------------- |
-| Module System              | CommonJS                  | ES Modules                            |
-| Import Syntax              | `require()`               | `import`                              |
-| Async Handling             | `.then()` / `.catch()`    | `await` / `try...catch`               |
-| Node.js Version            | Not specified             | >= 18.0.0 (tested on v22.21.0)        |
-| HTTP Client                | `superagent`              | Native `fetch()`                      |
-| Provider Lifecycle Events  | Not available             | `reload:success`, `reload:error`, etc |
-| Provider State Tracking    | Not available             | `getProviderStatus()`                 |
+| Change                     | v1.x                      | v2.x                                       |
+| -------------------------- | ------------------------- | ------------------------------------------ |
+| Module System              | CommonJS                  | ES Modules                                 |
+| Import Syntax              | `require()`               | `import`                                   |
+| Async Handling             | `.then()` / `.catch()`    | `await` / `try...catch`                    |
+| Node.js Version            | Not specified             | >= 18.0.0 (tested on v22.21.0)             |
+| HTTP Client                | `superagent`              | Native `fetch()`                           |
+| Provider Lifecycle Events  | Not available             | `reload:success`, `reload:error`, etc      |
+| Provider State Tracking    | Not available             | `getProviderStatus()`                      |
 | Staleness Detection        | Not available             | Configurable via `setStalenessThreshold()` |
 | Result Caching             | Not available             | Configurable TTL via `setResultCacheTtl()` |
-| Logging                    | Bare `console` statements | Configurable via `setLogLevel()`      |
-| Performance (warm lookups) | ~30ms                     | ~0.16ms (192x faster)                 |
+| Logging                    | Bare `console` statements | Configurable via `setLogLevel()`           |
+| Performance (warm lookups) | ~30ms                     | ~0.16ms (192x faster)                      |
 
 **Bottom line:** v2.0.0 is faster, more observable, and more maintainable. The migration is straightforward if you follow this guide.

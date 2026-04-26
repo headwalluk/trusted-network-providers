@@ -28,10 +28,12 @@ All HTTP requests use the centralized `secure-http-client.js` module which enfor
 ### v2.0 Migration Note
 
 **Prior to v2.0** (using superagent):
+
 - Required explicit `https.Agent` configuration
 - Manual TLS version and certificate validation settings
 
 **v2.0+ (using native fetch)**:
+
 - No configuration needed — strict certificate validation is enabled by default
 - Fetch inherits TLS settings from Node.js runtime
 - Simplified codebase with fewer dependencies
@@ -46,6 +48,7 @@ SSL certificate validation failed for https://example.com: CERT_HAS_EXPIRED
 ```
 
 Certificate errors that abort requests without retry:
+
 - `CERT_HAS_EXPIRED` - Certificate has expired
 - `CERT_UNTRUSTED` - Certificate chain not trusted
 - `DEPTH_ZERO_SELF_SIGNED_CERT` - Self-signed certificate
@@ -298,7 +301,7 @@ Limits the total number of IP addresses and CIDR ranges per provider (combined I
 ```javascript
 const MAX_IPS_PER_PROVIDER = 10000;
 
-const totalIps = 
+const totalIps =
   (provider.ipv4?.addresses?.length || 0) +
   (provider.ipv4?.ranges?.length || 0) +
   (provider.ipv6?.addresses?.length || 0) +
@@ -930,6 +933,7 @@ Potential security improvements for future versions:
    - Prometheus-compatible metrics for checksum/validation failures
 
 **Implemented in v2.0**:
+
 - ✅ Input validation and resource limits
 - ✅ Memory exhaustion protection via LRU caches
 - ✅ CIDR validation at registration time

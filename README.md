@@ -141,7 +141,7 @@ import trustedProviders, {
   PROVIDER_STATE_READY,
   PROVIDER_STATE_LOADING,
   PROVIDER_STATE_ERROR,
-  PROVIDER_STATE_STALE
+  PROVIDER_STATE_STALE,
 } from '@headwall/trusted-network-providers';
 
 const status = trustedProviders.getProviderStatus('Stripe API');
@@ -218,12 +218,15 @@ trustedProviders.on('reload:error', ({ provider, error }) => {
 });
 
 // Check provider health periodically
-setInterval(() => {
-  const googlebot = trustedProviders.getProviderStatus('Googlebot');
-  if (googlebot.state === 'error' || googlebot.state === 'stale') {
-    console.warn(`Googlebot health check failed: ${googlebot.state}`);
-  }
-}, 60 * 60 * 1000); // Every hour
+setInterval(
+  () => {
+    const googlebot = trustedProviders.getProviderStatus('Googlebot');
+    if (googlebot.state === 'error' || googlebot.state === 'stale') {
+      console.warn(`Googlebot health check failed: ${googlebot.state}`);
+    }
+  },
+  60 * 60 * 1000
+); // Every hour
 ```
 
 ## Maintenance
