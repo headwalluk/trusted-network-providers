@@ -64,50 +64,50 @@ no broken internal links, no uncommitted release-relevant work.
 
 #### Phase 2: Commit / clean the working tree
 
-The branch carries a large uncommitted changeset that must be reviewed and
-committed (or reverted) before tagging. Group into logical commits:
+The branch carried a large uncommitted changeset, now committed in logical
+groups (commits `60af8b6`…`4f39a2e`):
 
-- [ ] Doc removals — `docs/implementation.md`, `docs/issues.md`, `docs/requirements.md` deleted (confirm intentional; they moved to `dev-notes/archive/`)
-- [ ] Doc edits — `README.md`, `docs/security.md`, `docs/migration-v1-to-v2.md`, `CONTRIBUTING.md`
-- [ ] Asset refreshes — bunnynet, facebookbot, googlebot (Phase 1)
-- [ ] Provider edits — `facebookbot.js`, `seobility.js`
-- [ ] Test additions — `test/ip-lookup-report.test.js` (untracked), `test/performance.test.js`
-- [ ] Tooling/meta — `package-lock.json`, `package.json` (stray blank-line removal in `scripts` — keep version at **2.0.0**)
-- [ ] `CLAUDE.md` (untracked) — decide whether to commit (it is checked-in project guidance)
-- [ ] Confirm `git status` is clean except deliberate ignores before tagging
+- [x] Doc removals — `docs/{implementation,issues,requirements}.md` moved to `dev-notes/archive/` (tracked as renames)
+- [x] Doc edits — `README.md`, `docs/security.md`, `docs/migration-v1-to-v2.md`, `CONTRIBUTING.md`
+- [x] Asset refreshes — bunnynet, facebookbot, googlebot (Phase 1)
+- [x] Provider edits — `facebookbot.js` (CRLF + error handling), `seobility.js` (whitespace)
+- [x] Test additions — `test/ip-lookup-report.test.js`, `test/performance.test.js`
+- [x] Tooling/meta — `package-lock.json`, `package.json` (version kept at **2.0.0**)
+- [x] `CLAUDE.md` committed (checked-in project guidance)
+- [x] `git status` clean
 
 #### Phase 3: Documentation consistency
 
-- [ ] Fix stale links to deleted docs — `CONTRIBUTING.md` references `docs/issues.md` in 3 places (lines ~140, ~167, ~371)
-- [ ] Audit all internal doc links resolve (`README.md`, `CONTRIBUTING.md`, `docs/*`)
-- [ ] Ensure `docs/providers.md` provider table matches the actual `defaultProviders` registry in `src/index.js` (incl. new Google Special Crawlers)
-- [ ] README: confirm ESM import examples, lifecycle API, and provider list are current
-- [ ] CHANGELOG: confirm the 2.0.0 entry is complete and all M6 changes are folded in (no premature 2.1.0 section)
+- [x] Fix stale links to deleted docs — `CONTRIBUTING.md` `docs/issues.md` references replaced with GitHub issue tracker
+- [x] Audit all internal doc links resolve (`README.md`, `CONTRIBUTING.md`, `docs/*`) — all OK
+- [x] `docs/providers.md` provider table matches the `defaultProviders` registry (incl. Google Special Crawlers)
+- [x] README: ESM import examples, lifecycle API current (provider detail lives in `docs/providers.md`)
+- [x] CHANGELOG: 2.0.0 entry complete, M6 changes folded in, no premature 2.1.0 section
 
 #### Phase 4: Quality gates
 
-- [ ] `npm run format:check` clean — **currently failing on `docs/providers.md`** (run `npm run format`)
-- [ ] `npm run lint` clean (0 warnings)
-- [ ] `npm test` green (was 306 passing; re-run after asset refresh)
-- [ ] Confirm CI workflow (`.github/workflows/ci.yml`) passes on Node 18/20/22
-- [ ] `npm audit` — 0 vulnerabilities
+- [x] `npm run format:check` clean
+- [x] `npm run lint` clean (0 warnings)
+- [x] `npm test` green (306 passing, 17 suites)
+- [ ] Confirm CI workflow (`.github/workflows/ci.yml`) passes on Node 18/20/22 — verify after push
+- [x] `npm audit` — 0 vulnerabilities (fast-xml-parser advisory fixed via lockfile; dev-only picomatch advisories not shipped)
 
 #### Phase 5: Package hygiene
 
-- [ ] Verify `package.json` `files[]` allowlist ships the right paths (`bin/`, `src/`, `README.md`, `LICENSE`, `CHANGELOG.md`) — note `src/` includes `src/assets/*` data
-- [ ] `npm pack --dry-run` — inspect the tarball contents (no dev-notes, no tests, no coverage)
-- [ ] Confirm `bin/lookup.js` is executable and the `trusted-lookup` bin works post-install
-- [ ] Confirm LICENSE present and correct (MIT) ✅
-- [ ] Verify `"engines": { "node": ">=18" }` and `"type": "module"` are correct
+- [x] `files[]` allowlist ships the right paths — `npm pack --dry-run` = 44 files, 39.2 kB
+- [x] `npm pack --dry-run` — no dev-notes/tests/coverage/.github leaked; `google-special-crawlers.json` included
+- [x] `bin/lookup.js` executable (shebang present), resolves Googlebot + Google Special Crawlers IPs
+- [x] LICENSE present and correct (MIT)
+- [x] `"engines": { "node": ">=18" }` and `"type": "module"` correct
 
-#### Phase 6: Release
+#### Phase 6: Release — **handoff (requires Paul / npm auth)**
 
-- [ ] Final `npm test` + `npm run lint` + `npm run format:check` on a clean tree
-- [ ] Confirm `package.json` version is `2.0.0`
-- [ ] Commit any final tracker/CHANGELOG updates
+- [x] Final `npm test` + `npm run lint` + `npm run format:check` on a clean tree
+- [x] `package.json` version is `2.0.0`
+- [x] Tracker/CHANGELOG updates committed
 - [ ] Push `main` to remote
-- [ ] Confirm git tag `v2.0.0` points at the release commit (a local `v2.0.0` tag already exists — re-tag/force if it predates M6 work)
-- [ ] `npm publish` (scoped public package — `--access public` if first scoped publish)
+- [ ] Move git tag `v2.0.0` to the release commit (existing tag predates M6 — `git tag -f v2.0.0 && git push --force origin v2.0.0`)
+- [ ] `npm publish --access public` (first scoped publish)
 - [ ] Verify the npm package page renders (README, version, links)
 - [ ] Smoke test: `npm install @headwall/trusted-network-providers` in a scratch dir and run a lookup
 
