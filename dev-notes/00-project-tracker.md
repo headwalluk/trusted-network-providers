@@ -58,9 +58,9 @@ no broken internal links, no uncommitted release-relevant work.
 - [x] Add Google Special Crawlers provider (AdsBot, AdSense/Mediapartners, APIs-Google, Google-Safety) — fixes AdsBot mis-reporting (commit `1461a9e`)
 - [x] `update-assets.sh` fetches `special-crawlers.json` and records its checksum
 - [x] Confirm Google IP source host (`developers.google.com`, **not** gstatic — gstatic only serves `goog.json`)
-- [ ] Refresh all bundled assets via `./scripts/update-assets.sh` and commit (googlebot, bunnynet v4/v6, facebookbot v4/v6 currently modified in tree)
-- [ ] Verify `src/assets/checksums.json` matches every bundled asset after refresh
-- [ ] Run provider self-tests (`runTests()` / `test/ip-lookup-report.test.js`) — all providers resolve their test addresses
+- [x] Refresh all bundled assets via `./scripts/update-assets.sh` and commit (googlebot, bunnynet v4/v6, facebookbot v4/v6)
+- [x] Verify `src/assets/checksums.json` matches every bundled asset after refresh
+- [x] Run provider self-tests (`runTests()` / `test/ip-lookup-report.test.js`) — all providers resolve their test addresses (36/36, 20 providers)
 
 #### Phase 2: Commit / clean the working tree
 
