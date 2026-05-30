@@ -16,7 +16,6 @@ const self = {
     const requests = [];
 
     for (const [addressListType, addressListUrl] of Object.entries(self.sources)) {
-
       const request = (async () => {
         try {
           const text = await fetchText(addressListUrl);

@@ -16,7 +16,6 @@
   },
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-
     "build-zip": "./scripts/build.sh zip",
     "clean": "./scripts/build.sh clean",
     "format": "prettier --write \"**/*.{js,json,md}\"",
