@@ -4,28 +4,28 @@ This document lists all built-in providers and explains how to add your own.
 
 ## Provider Reference
 
-| Provider         | Type          | Data Source                              | Update Method                |
-| ---------------- | ------------- | ---------------------------------------- | ---------------------------- |
-| Private          | Static        | RFC 1918/4193 ranges                     | None (fixed)                 |
-| Googlebot        | Bundled asset | `src/assets/googlebot-ips.json`          | `./scripts/update-assets.sh` |
+| Provider                | Type          | Data Source                               | Update Method                |
+| ----------------------- | ------------- | ----------------------------------------- | ---------------------------- |
+| Private                 | Static        | RFC 1918/4193 ranges                      | None (fixed)                 |
+| Googlebot               | Bundled asset | `src/assets/googlebot-ips.json`           | `./scripts/update-assets.sh` |
 | Google Special Crawlers | Bundled asset | `src/assets/google-special-crawlers.json` | `./scripts/update-assets.sh` |
-| Google Workspace | DNS/SPF       | `_spf.google.com`                        | `reloadAll()`                |
-| Google Services  | Static        | `8.8.8.8`, `8.8.4.4`                     | None (fixed)                 |
-| Stripe API       | HTTP API      | `stripe.com/files/ips/ips_api.json`      | `reloadAll()`                |
-| Stripe Webhooks  | HTTP API      | `stripe.com/files/ips/ips_webhooks.json` | `reloadAll()`                |
-| Opayo            | Static        | Hardcoded ranges                         | None (fixed)                 |
-| PayPal           | Static        | Hardcoded ranges                         | None (fixed)                 |
-| MS Outlook       | Static        | Hardcoded ranges                         | None (fixed)                 |
-| Cloudflare       | Static        | Hardcoded ranges                         | None (fixed)                 |
-| Ezoic            | Static        | Hardcoded ranges                         | None (fixed)                 |
-| ShipHero         | Static        | Hardcoded addresses                      | None (fixed)                 |
-| BunnyNet         | Bundled asset | `src/assets/bunnynet-ip*.json`           | `./scripts/update-assets.sh` |
-| SemrushBot       | Static        | Hardcoded ranges                         | None (fixed)                 |
-| AhrefsBot        | Static        | Hardcoded ranges                         | None (fixed)                 |
-| FacebookBot      | Bundled asset | `src/assets/facebookbot-ip*.txt`         | `./scripts/update-assets.sh` |
-| Brevo            | Static        | Hardcoded ranges                         | None (fixed)                 |
-| GetTerms         | Static        | Hardcoded address                        | None (fixed)                 |
-| Labrika          | Static        | Hardcoded addresses                      | None (fixed)                 |
+| Google Workspace        | DNS/SPF       | `_spf.google.com`                         | `reloadAll()`                |
+| Google Services         | Static        | `8.8.8.8`, `8.8.4.4`                      | None (fixed)                 |
+| Stripe API              | HTTP API      | `stripe.com/files/ips/ips_api.json`       | `reloadAll()`                |
+| Stripe Webhooks         | HTTP API      | `stripe.com/files/ips/ips_webhooks.json`  | `reloadAll()`                |
+| Opayo                   | Static        | Hardcoded ranges                          | None (fixed)                 |
+| PayPal                  | Static        | Hardcoded ranges                          | None (fixed)                 |
+| MS Outlook              | Static        | Hardcoded ranges                          | None (fixed)                 |
+| Cloudflare              | Static        | Hardcoded ranges                          | None (fixed)                 |
+| Ezoic                   | Static        | Hardcoded ranges                          | None (fixed)                 |
+| ShipHero                | Static        | Hardcoded addresses                       | None (fixed)                 |
+| BunnyNet                | Bundled asset | `src/assets/bunnynet-ip*.json`            | `./scripts/update-assets.sh` |
+| SemrushBot              | Static        | Hardcoded ranges                          | None (fixed)                 |
+| AhrefsBot               | Static        | Hardcoded ranges                          | None (fixed)                 |
+| FacebookBot             | Bundled asset | `src/assets/facebookbot-ip*.txt`          | `./scripts/update-assets.sh` |
+| Brevo                   | Static        | Hardcoded ranges                          | None (fixed)                 |
+| GetTerms                | Static        | Hardcoded address                         | None (fixed)                 |
+| Labrika                 | Static        | Hardcoded addresses                       | None (fixed)                 |
 
 ### Disabled Providers
 
