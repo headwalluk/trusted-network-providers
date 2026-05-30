@@ -122,6 +122,13 @@ groups (commits `60af8b6`…`4f39a2e`):
 
 Not in scope for v2.0.0. Revisit after release.
 
+- **Dependency refresh (first post-release task)** — deferred from M6 to keep the
+  release tree audit-clean and tested. None are security fixes (`npm audit` = 0).
+  As of 30 May 2026:
+  - `ipaddr.js` 2.2.0 → 2.4.0 (ships; in-range minor — retest IP parsing carefully)
+  - `eslint` 9.39.1 → 10.4.1 (dev; **major**, needs flat-config review)
+  - `jest` 30.2.0 → 30.4.2 (dev; in-range patch)
+  - `prettier` 3.6.2 → 3.8.3 (dev; in-range minor — may reformat files)
 - TypeScript migration of core modules
 - Ship `.d.ts` type definitions with the package
 - Add type checking to CI
