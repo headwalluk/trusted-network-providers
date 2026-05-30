@@ -120,8 +120,8 @@ trustedProviders.setStalenessThreshold(12 * 60 * 60 * 1000); // 12 hours
 
 ```javascript
 // Configure IP lookup result cache TTL (default: 1 hour)
-trustedProviders.setResultCacheTtl(30 * 60 * 1000); // 30 minutes
-const currentTtl = trustedProviders.getResultCacheTtl();
+trustedProviders.setResultCacheTTL(30 * 60 * 1000); // 30 minutes
+const currentTtl = trustedProviders.getResultCacheTTL();
 ```
 
 ### Logging
@@ -141,7 +141,7 @@ import trustedProviders, {
   PROVIDER_STATE_READY,
   PROVIDER_STATE_LOADING,
   PROVIDER_STATE_ERROR,
-  PROVIDER_STATE_STALE
+  PROVIDER_STATE_STALE,
 } from '@headwall/trusted-network-providers';
 
 const status = trustedProviders.getProviderStatus('Stripe API');
@@ -152,10 +152,10 @@ if (status.state === PROVIDER_STATE_ERROR) {
 
 ## Documentation
 
-- **[Requirements](docs/requirements.md)** - Project requirements and specifications
-- **[Implementation](docs/implementation.md)** - Architecture and technical details
-- **[Security](docs/security.md)** - Security features and best practices
-- **[Issues](docs/issues.md)** - Known issues and improvement opportunities
+- **[Providers](docs/providers.md)** - Built-in provider reference and custom provider guide
+- **[Security](docs/security.md)** - Security features and production recommendations
+- **[DNS Security Guide](docs/dns-security-guide.md)** - DNS/SPF provider security considerations
+- **[Migration Guide](docs/migration-v1-to-v2.md)** - Upgrading from v1.x to v2.x
 
 ## Example: Custom Provider
 
@@ -218,12 +218,15 @@ trustedProviders.on('reload:error', ({ provider, error }) => {
 });
 
 // Check provider health periodically
-setInterval(() => {
-  const googlebot = trustedProviders.getProviderStatus('Googlebot');
-  if (googlebot.state === 'error' || googlebot.state === 'stale') {
-    console.warn(`Googlebot health check failed: ${googlebot.state}`);
-  }
-}, 60 * 60 * 1000); // Every hour
+setInterval(
+  () => {
+    const googlebot = trustedProviders.getProviderStatus('Googlebot');
+    if (googlebot.state === 'error' || googlebot.state === 'stale') {
+      console.warn(`Googlebot health check failed: ${googlebot.state}`);
+    }
+  },
+  60 * 60 * 1000
+); // Every hour
 ```
 
 ## Maintenance
