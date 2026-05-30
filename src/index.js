@@ -9,6 +9,7 @@ import { TTLCache } from './ttl-cache.js';
 import logger from './utils/logger.js';
 import privateProvider from './providers/private.js';
 import googlebotProvider from './providers/googlebot.js';
+import googleSpecialCrawlersProvider from './providers/google-special-crawlers.js';
 import googleWorkspaceProvider from './providers/google-workspace.js';
 import googleServicesProvider from './providers/google-services.js';
 import stripeApiProvider from './providers/stripe-api.js';
@@ -50,6 +51,7 @@ const DEFAULT_RESULT_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour default TTL for IP
 const defaultProviders = [
   privateProvider,
   googlebotProvider,
+  googleSpecialCrawlersProvider,
   googleWorkspaceProvider,
   googleServicesProvider,
   stripeApiProvider,
@@ -566,7 +568,7 @@ const self = {
 
     for (const provider of self.providers) {
       if (typeof provider.reload === 'function') {
-          logger.debug(`🔃 Reload: ${provider.name}`);
+        logger.debug(`🔃 Reload: ${provider.name}`);
 
         // Set provider state to LOADING before starting the reload
         // This allows consumers to detect when a provider is updating

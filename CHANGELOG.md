@@ -13,6 +13,15 @@
 
 ### 🚀 New Features
 
+#### Providers
+
+- **Google Special Crawlers provider**: New bundled-asset provider covering Google's special-case crawlers, which publish their IP ranges separately from Googlebot and are **not** present in `googlebot.json`. This fixes mis-reporting of Google Ads (AdsBot) traffic as untrusted.
+  - Covers AdsBot-Google and AdsBot-Google-Mobile (Ads landing-page quality checks), Mediapartners-Google (AdSense), APIs-Google, and Google-Safety
+  - Source: `developers.google.com/static/search/apis/ipranges/special-crawlers.json`
+  - Bundled as `src/assets/google-special-crawlers.json`, SHA-256 verified on load
+  - Registered immediately after Googlebot; user-triggered fetchers are intentionally excluded
+  - `update-assets.sh` now downloads `special-crawlers.json` and records its checksum
+
 #### Lifecycle & Observability
 
 - **Provider State Tracking**: Track provider health with `getProviderStatus(name)`
@@ -37,7 +46,7 @@
   - Reduces memory footprint vs unbounded `parsedAddresses` map
   - Automatic eviction of least-recently-used entries
 - **Result Caching with TTL**: Cache IP lookup results
-  - Default TTL: 1 hour (configurable via `setResultCacheTtl(ms)`)
+  - Default TTL: 1 hour (configurable via `setResultCacheTTL(ms)`)
   - Max 10,000 cached IPs
   - **192x speedup** for warm cache vs cold cache (30.5ms → 0.16ms for 15 IP lookups)
   - **1,394x speedup** for repeated lookups of the same IP (2.3ms → 0.0016ms)

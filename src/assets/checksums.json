@@ -3,17 +3,22 @@
   "providers": {
     "googlebot": {
       "url": "https://developers.google.com/static/search/apis/ipranges/googlebot.json",
-      "sha256": "1cc6d5f5326ed3914308f0c2cdc35a4cfaee69d5d853dbe273ac187920315346",
+      "sha256": "5b29125b52e3031d8ed3787904a7de3ec423217ed92d7af09ed0987540ec7af5",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "google-special-crawlers": {
+      "url": "https://developers.google.com/static/search/apis/ipranges/special-crawlers.json",
+      "sha256": "fdda321bbb4a169c2712e469e67afca5010a3b8ef90f40bcd5bfe7608fa46cd1",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv4": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist",
-      "sha256": "81ab4404a1df22f440d4ef1f6a541ccc3eca4e5d19daf8d4c53299cf489f72d1",
+      "sha256": "79464d87181f83d50cc414ec8f7073fc96e4ed0bd2c04b99c0d036dcdbd8f49a",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv6": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist/IPv6",
-      "sha256": "10087cb54890de1179ce18b5e8a44fc4217ca1abc4415716a39a8ad453fd2f67",
+      "sha256": "4407e15a145816438a02cc31c196c5eb41c3d00b2984e019d7f00a40a6aa2c46",
       "comment": "Bundled asset - checksum verified on load"
     },
     "stripe-api": {
@@ -27,5 +32,5 @@
       "comment": "Runtime verification - structure validation used instead (data changes frequently)"
     }
   },
-  "lastUpdated": "2025-11-21T20:06:42Z"
+  "lastUpdated": "2026-05-29T19:48:37Z"
 }
