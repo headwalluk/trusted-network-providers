@@ -26,8 +26,9 @@ const self = {
           self.ipv4.ranges.push(range);
         }
       });
-    } catch (err) {
-      logger.error(err);
+    } catch (error) {
+      logger.error(`Failed to load FacebookBot IPv4 IPs: ${error.message}`);
+      throw error;
     }
 
     try {
@@ -38,8 +39,9 @@ const self = {
           self.ipv6.ranges.push(range);
         }
       });
-    } catch (err) {
-      logger.error(err);
+    } catch (error) {
+      logger.error(`Failed to load FacebookBot IPv6 IPs: ${error.message}`);
+      throw error;
     }
   },
   ipv4: {
