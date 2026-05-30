@@ -11,6 +11,11 @@
       "sha256": "fdda321bbb4a169c2712e469e67afca5010a3b8ef90f40bcd5bfe7608fa46cd1",
       "comment": "Bundled asset - checksum verified on load"
     },
+    "bingbot": {
+      "url": "https://www.bing.com/toolbox/bingbot.json",
+      "sha256": "a2d1cf229544205a24c61fb7c459408b1afe18f9fd5b172fe181f0eb73c1594d",
+      "comment": "Bundled asset - checksum verified on load"
+    },
     "bunnynet-ipv4": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist",
       "sha256": "79464d87181f83d50cc414ec8f7073fc96e4ed0bd2c04b99c0d036dcdbd8f49a",

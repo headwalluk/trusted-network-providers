@@ -9,6 +9,7 @@ This document lists all built-in providers and explains how to add your own.
 | Private                 | Static        | RFC 1918/4193 ranges                      | None (fixed)                 |
 | Googlebot               | Bundled asset | `src/assets/googlebot-ips.json`           | `./scripts/update-assets.sh` |
 | Google Special Crawlers | Bundled asset | `src/assets/google-special-crawlers.json` | `./scripts/update-assets.sh` |
+| Bingbot                 | Bundled asset | `src/assets/bingbot-ips.json`             | `./scripts/update-assets.sh` |
 | Google Workspace        | DNS/SPF       | `_spf.google.com`                         | `reloadAll()`                |
 | Google Services         | Static        | `8.8.8.8`, `8.8.4.4`                      | None (fixed)                 |
 | Stripe API              | HTTP API      | `stripe.com/files/ips/ips_api.json`       | `reloadAll()`                |

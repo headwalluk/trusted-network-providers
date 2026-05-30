@@ -22,6 +22,9 @@ GOOGLEBOT_ASSETS="${SRC_DIR}/assets/googlebot-ips.json"
 GOOGLE_SPECIAL_IPS=https://developers.google.com/static/search/apis/ipranges/special-crawlers.json
 GOOGLE_SPECIAL_ASSETS="${SRC_DIR}/assets/google-special-crawlers.json"
 
+BINGBOT_IPS=https://www.bing.com/toolbox/bingbot.json
+BINGBOT_ASSETS="${SRC_DIR}/assets/bingbot-ips.json"
+
 BUNNYNET_IP4_URL=https://bunnycdn.com/api/system/edgeserverlist
 BUNNYNET_IP4_ASSETS="${SRC_DIR}/assets/bunnynet-ip4s.json"
 
@@ -102,6 +105,24 @@ else
 fi
 
 ##
+# Bingbot
+#
+echo "Downloading Bingbot IPs..."
+if wget ${WGET_OPTS} -O "${TEMP_DOWNLOAD}" "${BINGBOT_IPS}"; then
+  # Validate JSON format
+  if jq empty "${TEMP_DOWNLOAD}" 2>/dev/null; then
+    mv "${TEMP_DOWNLOAD}" "${BINGBOT_ASSETS}"
+    echo "✓ Updated $(basename "${BINGBOT_ASSETS}")"
+  else
+    echo "ERROR: Downloaded Bingbot file is not valid JSON" >&2
+    exit 1
+  fi
+else
+  echo "ERROR: Failed to download ${BINGBOT_IPS}" >&2
+  exit 1
+fi
+
+##
 # BunnyNet IPv4
 #
 echo "Downloading BunnyNet IPv4 list..."
@@ -149,6 +170,7 @@ TEMP_CHECKSUMS="${TEMP_DOWNLOAD}.checksums"
 # Calculate checksums for each asset
 GOOGLEBOT_CHECKSUM=$(sha256sum "${GOOGLEBOT_ASSETS}" | cut -d' ' -f1)
 GOOGLE_SPECIAL_CHECKSUM=$(sha256sum "${GOOGLE_SPECIAL_ASSETS}" | cut -d' ' -f1)
+BINGBOT_CHECKSUM=$(sha256sum "${BINGBOT_ASSETS}" | cut -d' ' -f1)
 BUNNYNET_IP4_CHECKSUM=$(sha256sum "${BUNNYNET_IP4_ASSETS}" | cut -d' ' -f1)
 BUNNYNET_IP6_CHECKSUM=$(sha256sum "${BUNNYNET_IP6_ASSETS}" | cut -d' ' -f1)
 CURRENT_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -166,6 +188,11 @@ cat > "${TEMP_CHECKSUMS}" << EOF
     "google-special-crawlers": {
       "url": "https://developers.google.com/static/search/apis/ipranges/special-crawlers.json",
       "sha256": "${GOOGLE_SPECIAL_CHECKSUM}",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "bingbot": {
+      "url": "https://www.bing.com/toolbox/bingbot.json",
+      "sha256": "${BINGBOT_CHECKSUM}",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv4": {
@@ -198,6 +225,7 @@ mv "${TEMP_CHECKSUMS}" "${CHECKSUMS_FILE}"
 echo "✓ Checksums updated:"
 echo "  GoogleBot:        ${GOOGLEBOT_CHECKSUM}"
 echo "  Google Special:   ${GOOGLE_SPECIAL_CHECKSUM}"
+echo "  Bingbot:          ${BINGBOT_CHECKSUM}"
 echo "  BunnyNet IPv4:  ${BUNNYNET_IP4_CHECKSUM}"
 echo "  BunnyNet IPv6:  ${BUNNYNET_IP6_CHECKSUM}"
 echo ""

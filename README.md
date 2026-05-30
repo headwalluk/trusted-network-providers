@@ -44,7 +44,7 @@ console.log(unknown); // null
 
 Includes 20+ trusted providers out of the box:
 
-- **Search Engines**: Googlebot, AhrefsBot, SemrushBot
+- **Search Engines**: Googlebot, Bingbot, AhrefsBot, SemrushBot
 - **Advertising**: Google AdsBot, AdSense (Google Special Crawlers)
 - **Payment Processors**: Stripe, PayPal, Opayo
 - **Email Services**: Outlook, Brevo, Mailgun

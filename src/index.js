@@ -10,6 +10,7 @@ import logger from './utils/logger.js';
 import privateProvider from './providers/private.js';
 import googlebotProvider from './providers/googlebot.js';
 import googleSpecialCrawlersProvider from './providers/google-special-crawlers.js';
+import bingbotProvider from './providers/bingbot.js';
 import googleWorkspaceProvider from './providers/google-workspace.js';
 import googleServicesProvider from './providers/google-services.js';
 import stripeApiProvider from './providers/stripe-api.js';
@@ -52,6 +53,7 @@ const defaultProviders = [
   privateProvider,
   googlebotProvider,
   googleSpecialCrawlersProvider,
+  bingbotProvider,
   googleWorkspaceProvider,
   googleServicesProvider,
   stripeApiProvider,

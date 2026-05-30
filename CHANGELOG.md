@@ -1,5 +1,17 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 2.1.0 :: 2026-05-30
+
+### 🚀 New Features
+
+- **Bingbot provider**: New bundled-asset provider for Microsoft's Bing search
+  crawler (also powers Yahoo search). Recognises the official Bingbot IP ranges
+  so legitimate Bing crawl traffic is classified as trusted.
+  - Source: `https://www.bing.com/toolbox/bingbot.json` (same JSON format as Google's crawler lists)
+  - Bundled as `src/assets/bingbot-ips.json`, SHA-256 verified on load
+  - `update-assets.sh` now downloads `bingbot.json` and records its checksum
+  - Registered after the Google providers in `defaultProviders`
+
 ## 2.0.0 :: 2026-02-16
 
 ### ⚠️ Breaking Changes

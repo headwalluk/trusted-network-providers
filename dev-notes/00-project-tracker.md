@@ -1,7 +1,7 @@
 # Project Tracker - Trusted Network Providers
 
-**Current Version:** 2.0.0
-**Status:** M6 — final polish before npm publish
+**Current Version:** 2.1.0 (unpublished; 2.0.0 is live on npm)
+**Status:** M7 — additional trusted crawlers
 **Last Updated:** 30 May 2026
 
 ---
@@ -15,8 +15,9 @@ and traffic classification. Published on npm.
 
 v2.0.0 is a major modernisation of the v1 line: CJS→ESM, `superagent`→native
 `fetch`, async/await throughout, lifecycle events, state tracking, and a
-two-tier caching layer. **v2.0.0 has not yet been published to npm** (latest
-published is 1.9.0). M6 is the final milestone to get it shipped.
+two-tier caching layer. **v2.0.0 is published on npm** (it also added the Google
+Special Crawlers / AdsBot provider). M7 grows the trusted-crawler coverage for a
+2.1.0 release.
 
 ---
 
@@ -31,16 +32,17 @@ published is 1.9.0). M6 is the final milestone to get it shipped.
 | M4a | Lifecycle & observability (events, state tracking)        | ✅ Complete    |
 | M4b | Robustness (input validation, error handling)             | ✅ Complete    |
 | M5  | Performance (LRU cache, TTL result cache)                 | ✅ Complete    |
-| M6  | Documentation, polish & release                           | 🚧 In progress |
+| M6  | Documentation, polish & release (2.0.0 shipped)           | ✅ Complete    |
+| M7  | Additional trusted crawlers (2.1.0)                       | 🚧 In progress |
 
 Detailed write-ups for completed milestones live alongside this file
 (`05-milestone-5-performance.md`) and in `dev-notes/archive/`.
 
 ---
 
-### Milestone 6: Documentation, Polish & Release 🚧
+### Milestone 6: Documentation, Polish & Release ✅
 
-**Status:** In progress
+**Status:** Complete — 2.0.0 published to npm 30 May 2026
 **Priority:** High
 **Started:** 3 April 2026
 **Target:** 2.0.0 on npm
@@ -105,16 +107,52 @@ groups (commits `60af8b6`…`4f39a2e`):
 - [x] Final `npm test` + `npm run lint` + `npm run format:check` on a clean tree
 - [x] `package.json` version is `2.0.0`
 - [x] Tracker/CHANGELOG updates committed
-- [ ] Push `main` to remote
-- [ ] Move git tag `v2.0.0` to the release commit (existing tag predates M6 — `git tag -f v2.0.0 && git push --force origin v2.0.0`)
-- [ ] `npm publish --access public` (first scoped publish)
-- [ ] Verify the npm package page renders (README, version, links)
-- [ ] Smoke test: `npm install @headwall/trusted-network-providers` in a scratch dir and run a lookup
+- [x] Push `main` to remote
+- [x] Move git tag `v2.0.0` to the release commit
+- [x] `npm publish --access public` (first scoped publish)
+- [x] Verify the npm package page renders (README, version, links)
+- [x] Smoke test: `npm install` + lookup (validated end-to-end via Spam Shield API)
 
 **Notes:**
 
-- The local `v2.0.0` git tag and the merged v2 PR predate the M6 polish; the tag will need to move to the actual release commit before publishing.
-- npm publish is a one-way door — do the `npm pack --dry-run` inspection first.
+- Publish hit one snag: npm rejected the `./bin/lookup.js` bin path (leading `./`). Fixed to `bin/lookup.js`; 2.0.0 published cleanly on the retry.
+- The `trusted-lookup` CLI works via `npx -p @headwall/trusted-network-providers trusted-lookup <ip>`.
+
+---
+
+### Milestone 7: Additional Trusted Crawlers 🚧
+
+**Status:** In progress
+**Priority:** Medium
+**Started:** 30 May 2026
+**Target:** 2.1.0 on npm
+
+**Goal:** Broaden default coverage of legitimate, officially-published crawler IP
+ranges so they aren't mistakenly firewalled/RBL'd. Bar for inclusion: an
+**official, machine-readable** IP source (no guessed ranges).
+
+#### Bingbot ✅ (this release, 2.1.0)
+
+- [x] Add `bingbot` provider — `src/assets/bingbot-ips.json` from `bing.com/toolbox/bingbot.json` (Google-style JSON, checksum-verified)
+- [x] Wire into `defaultProviders`, `update-assets.sh`, `checksums.json`
+- [x] Test addresses, `docs/providers.md`, README provider list
+- [x] Bump to 2.1.0, CHANGELOG entry
+
+#### Next crawlers (candidate for 2.2.0 — verified official sources)
+
+All confirmed to publish the same `{creationTime, prefixes[]}` JSON format as
+Google, so each is a near-clone of `googlebot.js` (bundled asset + checksum):
+
+- [ ] **Applebot** — `https://search.developer.apple.com/applebot.json` (~12 prefixes). Apple's crawler (Siri/Spotlight/Safari suggestions).
+- [ ] **GPTBot** (OpenAI) — `https://openai.com/gptbot.json` (~21 prefixes). AI training crawler; fast-growing legit bot traffic.
+- [ ] **OAI-SearchBot** (OpenAI) — OpenAI's search crawler, separate published file.
+- [ ] _(considered, deferred)_ `ChatGPT-User` — user-triggered fetcher; skip by the same reasoning as Google's user-triggered fetchers.
+- [ ] _(stretch)_ Anthropic **ClaudeBot**, **PerplexityBot** — also publish ranges; natural "AI crawler" group if we want fuller coverage.
+
+**Per-provider checklist (repeat for each):** create `src/providers/<name>.js`
+(clone of `bingbot.js`), download asset, add to `defaultProviders` +
+`update-assets.sh` + `checksums.json`, add test addresses + provider test, update
+`docs/providers.md` and README, run lint/format/test, bump version + CHANGELOG.
 
 ---
 
