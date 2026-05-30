@@ -136,9 +136,8 @@ provider.ipv4.addresses.pop() on lines 163 and 169.
    npm audit
    ```
 
-4. **Update the issues tracker:**
-   - Mark related checkboxes in `docs/issues.md`
-   - Reference issue IDs in commits
+4. **Update the issue tracker:**
+   - Reference related GitHub issue numbers in commits
 
 5. **Push and create PR:**
 
@@ -164,7 +163,7 @@ Before submitting, ensure:
 - [ ] Code follows style guidelines
 - [ ] Documentation updated
 - [ ] Commits are clean and well-organized
-- [ ] Issue tracker updated (`docs/issues.md`)
+- [ ] Related GitHub issues referenced in commits
 - [ ] No commented-out code or debug statements
 
 ## Coding Standards
@@ -276,7 +275,7 @@ const self = {
   },
 };
 
-module.exports = self;
+export default self;
 ```
 
 ### Provider Types
@@ -368,7 +367,6 @@ console.assert(result === 'Your Provider Name', 'Provider match failed');
 - **New features:** Update README.md and relevant docs
 - **API changes:** Update JSDoc comments
 - **Security changes:** Update docs/security.md
-- **Known issues:** Update docs/issues.md
 - **Breaking changes:** Note in CHANGELOG.md
 
 ### Documentation Structure
