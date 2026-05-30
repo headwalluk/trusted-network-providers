@@ -1,213 +1,150 @@
-# Project Tracker - Trusted Network Providers Modernisation
+# Project Tracker - Trusted Network Providers
 
-**Status:** In Progress
-**Current Version:** 1.9.0
-**Target Version:** 2.0.0
-**Current Phase:** Milestone 6 — Documentation & Release
-**Last Updated:** 16 February 2026
-**Progress:** 88% (7 of 8 milestones complete)
-
-## Current Status
-
-**Working on:** Milestone 6 — Documentation & Release (READY FOR PAUL)
-**Last commit:** [M6] Mark final lint+test verification complete
-**Blockers:** None
-**Next action:** Ready for Paul to tag and publish v2.0.0
-**Notes:** M1 complete ✓. M2 complete ✓. M3 complete ✓. M3b complete ✓. M4a complete ✓. M4b complete ✓. M5 complete ✓. README updated for v2.0.0 ✓. Migration guide (v1.x → v2.x) complete ✓. Security documentation updated for v2.0 ✓. Implementation documentation updated for v2.0 (ESM, native fetch, async/await, lifecycle events, LRU caching, input validation) ✓. Inline code comments added for getTrustedProvider(), reloadAll(), and secure-http-client retry logic ✓. CHANGELOG.md updated for v2.0.0 release ✓. Final verification: 278 tests passing ✓, 0 lint errors ✓. Performance profiling shows 192x speedup with result cache (cold: 30.5ms, warm: 0.16ms for 15 IP lookups). See dev-notes/05-milestone-5-performance.md for full analysis. Branch ready for review and publication.
-**Last updated:** 2026-02-16 20:55
+**Current Version:** 2.0.0
+**Status:** M6 — final polish before npm publish
+**Last Updated:** 30 May 2026
 
 ---
 
-## Context
+## Overview
 
-This library underpins firewall management for ~300 WordPress hosting clients. It determines whether incoming traffic is from trusted sources (Googlebot, Stripe, PayPal, Cloudflare, etc.) or should be blocked.
+`@headwall/trusted-network-providers` is a Node.js (ESM) library for identifying
+IP addresses belonging to trusted network providers (Googlebot, Stripe,
+Cloudflare, PayPal, etc.). Used for firewall whitelisting, rate-limit bypassing,
+and traffic classification. Published on npm.
 
-**If we get this wrong:**
-
-- Blocking Googlebot → clients lose SEO indexing
-- Blocking PayPal/Stripe → clients can't take payments
-- Trusting malicious IPs → firewall bypass, security breach
-
-For v2.0.0, we want to ship significant lifecycle improvements, reduce dependencies, and migrate to modern code patterns, while remaining API-compatible.
-
-**These milestones involve breaking changes**
+v2.0.0 is a major modernisation of the v1 line: CJS→ESM, `superagent`→native
+`fetch`, async/await throughout, lifecycle events, state tracking, and a
+two-tier caching layer. **v2.0.0 has not yet been published to npm** (latest
+published is 1.9.0). M6 is the final milestone to get it shipped.
 
 ---
 
-## Milestone 1: Foundation
+## Milestones
 
-Get the tooling right before touching runtime code. Nothing here changes behaviour.
+| #   | Milestone                                                 | Status         |
+| --- | --------------------------------------------------------- | -------------- |
+| M1  | Foundation (ESM, Jest, CI)                                | ✅ Complete    |
+| M2  | Reduce dependencies (remove superagent)                   | ✅ Complete    |
+| M3  | Modernise code patterns (async/await, Promise.allSettled) | ✅ Complete    |
+| M3b | Test coverage (>80%)                                      | ✅ Complete    |
+| M4a | Lifecycle & observability (events, state tracking)        | ✅ Complete    |
+| M4b | Robustness (input validation, error handling)             | ✅ Complete    |
+| M5  | Performance (LRU cache, TTL result cache)                 | ✅ Complete    |
+| M6  | Documentation, polish & release                           | 🚧 In progress |
 
-- [x] Add integration test suite (load providers → reload → check IP → get result)
-- [x] Snapshot responses from external provider APIs (Stripe, Cloudflare, Google)
-- [x] Tag v1.9.0 as `v1-stable` before branching
-- [x] Run `npm audit fix` to resolve known vulnerabilities (fast-xml-parser, qs)
-- [x] Migrate from CommonJS (`require`/`module.exports`) to ESM (`import`/`export`)
-- [x] Update `package.json` with `"type": "module"`
-- [x] Add `.nvmrc` pinned to Node 22 LTS
-- [x] Replace hand-rolled `src/test.js` with Jest test framework
-- [x] Port all existing test cases to Jest
-- [~] ~~Achieve >80% code coverage~~ — deferred to post-M3 (see notes below)
-- [x] Update ESLint config for ESM
-- [x] Ensure clean lint cycle (0 errors, 0 warnings)
-- [x] Add GitHub Actions CI workflow (test on Node 18, 20, 22)
-- [ ] Commit milestone completion to `v2-modernisation` branch
-
-> **Coverage note:** 80% target deferred. Current coverage is 55.52% (122 tests). The lowest-covered modules — `secure-http-client.js` (22.38%) and `spf-analyser.js` (39.68%) — are being rewritten in M2 and M3 respectively. Writing mock-heavy tests for code that's about to change is wasted effort. Coverage will be revisited after M3 when the codebase has stabilised and the new code is inherently more testable.
+Detailed write-ups for completed milestones live alongside this file
+(`05-milestone-5-performance.md`) and in `dev-notes/archive/`.
 
 ---
 
-## Milestone 2: Reduce Dependencies
+### Milestone 6: Documentation, Polish & Release 🚧
 
-Strip out unnecessary packages. Use what Node gives us for free.
+**Status:** In progress
+**Priority:** High
+**Started:** 3 April 2026
+**Target:** 2.0.0 on npm
 
-- [x] Replace `superagent` with native `fetch` in secure-http-client.js
-- [x] Update all providers that use secure-http-client
-- [x] Audit `fast-xml-parser` usage — keep (required by gtmetrix)
-- [x] Remove any other unused dependencies — none found (only fast-xml-parser and ipaddr.js, both required)
-- [x] Run `npm audit` — 0 vulnerabilities ✓
-- [x] Verify all tests pass after dependency changes — 122/122 passing ✓
-- [x] Update dev-notes with dependency decisions
-- [x] Commit milestone completion to `v2-modernisation` branch
+**Goal:** Take the code-complete v2 branch to a clean, published 2.0.0 — working
+tree committed, docs consistent, lint/format/tests green, and the package
+verified on npm.
 
----
+**Definition of done:** A consumer can `npm install @headwall/trusted-network-providers`,
+get the documented v2 ESM API, and the npm page renders correctly. No stale docs,
+no broken internal links, no uncommitted release-relevant work.
 
-## Milestone 3: Modernise Code Patterns
+#### Phase 1: Provider data currency
 
-Bring the JavaScript up to 2026 standards.
+- [x] Add Google Special Crawlers provider (AdsBot, AdSense/Mediapartners, APIs-Google, Google-Safety) — fixes AdsBot mis-reporting (commit `1461a9e`)
+- [x] `update-assets.sh` fetches `special-crawlers.json` and records its checksum
+- [x] Confirm Google IP source host (`developers.google.com`, **not** gstatic — gstatic only serves `goog.json`)
+- [ ] Refresh all bundled assets via `./scripts/update-assets.sh` and commit (googlebot, bunnynet v4/v6, facebookbot v4/v6 currently modified in tree)
+- [ ] Verify `src/assets/checksums.json` matches every bundled asset after refresh
+- [ ] Run provider self-tests (`runTests()` / `test/ip-lookup-report.test.js`) — all providers resolve their test addresses
 
-- [x] Convert all Promise chains and `new Promise()` wrappers to async/await
-- [x] Refactor `spf-analyser.js` — replace nested promise callbacks with async/await
-- [x] Refactor `reloadAll()` — use `Promise.allSettled()` instead of `Promise.all()`
-- [x] Refactor `index.js` — replace `forEach` with `for...of` where appropriate
-- [x] Replace `hasProvider()` bitwise OR pattern with `.some()` or `.find()`
-- [x] Use optional chaining and nullish coalescing where appropriate
-- [x] Ensure consistent error handling (no swallowed errors)
-- [x] Clean lint cycle after all changes
-- [x] All tests pass
-- [x] Commit milestone completion to `v2-modernisation` branch
+#### Phase 2: Commit / clean the working tree
 
----
+The branch carries a large uncommitted changeset that must be reviewed and
+committed (or reverted) before tagging. Group into logical commits:
 
-## Milestone 3b: Test Coverage
+- [ ] Doc removals — `docs/implementation.md`, `docs/issues.md`, `docs/requirements.md` deleted (confirm intentional; they moved to `dev-notes/archive/`)
+- [ ] Doc edits — `README.md`, `docs/security.md`, `docs/migration-v1-to-v2.md`, `CONTRIBUTING.md`
+- [ ] Asset refreshes — bunnynet, facebookbot, googlebot (Phase 1)
+- [ ] Provider edits — `facebookbot.js`, `seobility.js`
+- [ ] Test additions — `test/ip-lookup-report.test.js` (untracked), `test/performance.test.js`
+- [ ] Tooling/meta — `package-lock.json`, `package.json` (stray blank-line removal in `scripts` — keep version at **2.0.0**)
+- [ ] `CLAUDE.md` (untracked) — decide whether to commit (it is checked-in project guidance)
+- [ ] Confirm `git status` is clean except deliberate ignores before tagging
 
-Now that the code is modernised, write durable tests against the stable codebase.
+#### Phase 3: Documentation consistency
 
-- [x] Achieve >80% code coverage across all modules
-- [x] Add tests for refactored secure-http-client.js (native fetch)
-- [x] Add tests for refactored spf-analyser.js (async/await)
-- [x] Add tests for index.js uncovered edge cases
-- [x] All tests pass
-- [x] Commit milestone completion to `v2-modernisation` branch
+- [ ] Fix stale links to deleted docs — `CONTRIBUTING.md` references `docs/issues.md` in 3 places (lines ~140, ~167, ~371)
+- [ ] Audit all internal doc links resolve (`README.md`, `CONTRIBUTING.md`, `docs/*`)
+- [ ] Ensure `docs/providers.md` provider table matches the actual `defaultProviders` registry in `src/index.js` (incl. new Google Special Crawlers)
+- [ ] README: confirm ESM import examples, lifecycle API, and provider list are current
+- [ ] CHANGELOG: confirm the 2.0.0 entry is complete and all M6 changes are folded in (no premature 2.1.0 section)
 
----
+#### Phase 4: Quality gates
 
-## Milestone 4a: Lifecycle & State Management — Observability
+- [ ] `npm run format:check` clean — **currently failing on `docs/providers.md`** (run `npm run format`)
+- [ ] `npm run lint` clean (0 warnings)
+- [ ] `npm test` green (was 306 passing; re-run after asset refresh)
+- [ ] Confirm CI workflow (`.github/workflows/ci.yml`) passes on Node 18/20/22
+- [ ] `npm audit` — 0 vulnerabilities
 
-Make providers observable for long-running pm2 apps.
+#### Phase 5: Package hygiene
 
-- [x] Add provider state tracking (ready / loading / error / stale)
-- [x] Add `lastUpdated` timestamp per provider
-- [x] Add `lastError` field per provider
-- [x] Add EventEmitter for provider lifecycle events (reload, error, stale)
-- [x] Add configurable staleness threshold (e.g., mark stale after 24h without update)
-- [x] Add `getProviderStatus(name)` API
-- [x] Add configurable logging abstraction (replace bare console.log/error)
-- [x] All tests pass, including new lifecycle tests
-- [x] Commit milestone completion to `v2-modernisation` branch
+- [ ] Verify `package.json` `files[]` allowlist ships the right paths (`bin/`, `src/`, `README.md`, `LICENSE`, `CHANGELOG.md`) — note `src/` includes `src/assets/*` data
+- [ ] `npm pack --dry-run` — inspect the tarball contents (no dev-notes, no tests, no coverage)
+- [ ] Confirm `bin/lookup.js` is executable and the `trusted-lookup` bin works post-install
+- [ ] Confirm LICENSE present and correct (MIT) ✅
+- [ ] Verify `"engines": { "node": ">=18" }` and `"type": "module"` are correct
 
----
+#### Phase 6: Release
 
-## Milestone 4b: Lifecycle & State Management — Robustness
+- [ ] Final `npm test` + `npm run lint` + `npm run format:check` on a clean tree
+- [ ] Confirm `package.json` version is `2.0.0`
+- [ ] Commit any final tracker/CHANGELOG updates
+- [ ] Push `main` to remote
+- [ ] Confirm git tag `v2.0.0` points at the release commit (a local `v2.0.0` tag already exists — re-tag/force if it predates M6 work)
+- [ ] `npm publish` (scoped public package — `--access public` if first scoped publish)
+- [ ] Verify the npm package page renders (README, version, links)
+- [ ] Smoke test: `npm install @headwall/trusted-network-providers` in a scratch dir and run a lookup
 
-Make providers resilient to failures and misuse.
+**Notes:**
 
-- [x] Fix SPF analyser error handling — add `.catch()` on DNS resolution
-- [x] Fix race condition in provider data clearing (atomic swap)
-- [x] Add input validation: max IPs per provider, max providers, CIDR validation
-- [x] All tests pass
-- [x] Commit milestone completion to `v2-modernisation` branch
-
----
-
-## Milestone 5: Performance
-
-Lower priority, but worth doing while we're in here.
-
-- [x] Implement LRU cache with max size for parsed CIDR ranges (replace unbounded `parsedAddresses`)
-- [x] Add LRU result cache with configurable TTL for IP lookups
-- [x] Invalidate caches on provider reload
-- [x] Profile lookup performance before/after with 20+ providers
-- [x] Document performance characteristics
-- [x] All tests pass
-- [x] Commit milestone completion to `v2-modernisation` branch
+- The local `v2.0.0` git tag and the merged v2 PR predate the M6 polish; the tag will need to move to the actual release commit before publishing.
+- npm publish is a one-way door — do the `npm pack --dry-run` inspection first.
 
 ---
 
-## Milestone 6: Documentation & Release
-
-Polish and ship.
-
-- [x] Update README for v2.0.0 (ESM imports, new APIs, lifecycle events)
-- [x] Write migration guide (v1.x → v2.x)
-- [x] Update docs/security.md
-- [x] Update docs/implementation.md
-- [x] Add inline code comments for complex logic
-- [x] Update CHANGELOG.md
-- [x] Final clean lint cycle + full test suite — all 278 tests passing ✓, 0 lint errors ✓
-- [ ] Tag and publish v2.0.0 — ready for Paul to review and publish
-- [ ] Commit milestone completion to `v2-modernisation` branch
-
----
-
-## Future: Phase 2 (TypeScript)
+## Future: Phase 2 (post-2.0.0)
 
 Not in scope for v2.0.0. Revisit after release.
 
 - TypeScript migration of core modules
-- Ship .d.ts type definitions with package
+- Ship `.d.ts` type definitions with the package
 - Add type checking to CI
+- Cache hit-rate metrics / observability hook (noted in `05-milestone-5-performance.md`)
 
 ---
 
-## Branching Strategy
+## Architecture Notes
 
-All development happens on a single branch: `v2-modernisation`
-
-- Branch from `main` at the start
-- Commit regularly with clear messages referencing milestones (e.g., `[M1] Migrate to ESM`)
-- **Do not merge back to main** — Paul will review the full changeset before merging
-- Keep the branch rebased on main if main receives hotfixes
-- The public API must remain non-breaking: same function names, same parameters, same return values
-
-## Principles
-
-1. **Safety first.** Every change gets tested. We never ship with failing tests.
-2. **One milestone at a time.** Complete and verify before moving on.
-3. **No merging without review.** All work stays on `v2-modernisation` until Paul approves.
-4. **No YOLO.** This library protects real businesses.
-5. **Reduce, don't add.** Fewer dependencies = fewer attack surfaces.
-6. **Non-breaking API.** Consumers should be able to upgrade without code changes.
-7. **Document breaking changes immediately.** If a change could break dependents, log it in CHANGELOG.md under the v2.0.0 section. We'll decide on shims before the final merge.
+- **ES modules throughout** (`"type": "module"`). `import`/`export`, not `require`.
+- **Core** (`src/index.js`): singleton with EventEmitter lifecycle, provider
+  registry, two-tier caching (LRU for parsed CIDRs, TTL+LRU for lookup results),
+  provider state machine (ready/loading/error/stale). Lookups are synchronous
+  after load: linear scan, exact-match first then CIDR via `ipaddr.js`.
+- **Providers** (`src/providers/`): each exports `{ name, testAddresses, reload?, ipv4, ipv6 }`.
+  Four types — Static, Bundled asset (checksum-verified), HTTP API, DNS/SPF.
+- **Utilities**: `secure-http-client.js` (HTTPS-only fetch w/ retries+checksums),
+  `checksum-verifier.js` (SHA-256 vs `checksums.json`), `spf-analyser.js`,
+  `lru-cache.js` / `ttl-cache.js`.
 
 ---
 
-## Risk Register
+## Archived
 
-| Risk                                        | Impact | Mitigation                                       |
-| ------------------------------------------- | ------ | ------------------------------------------------ |
-| ESM migration breaks downstream consumers   | High   | Test with actual hosting stack before publishing |
-| Removing superagent changes HTTP behaviour  | Medium | Match timeout/retry/TLS behaviour exactly        |
-| async/await refactor introduces subtle bugs | Medium | Comprehensive test coverage before and after     |
-| Cache invalidation bugs cause stale IP data | High   | Conservative TTLs, clear-on-reload               |
-| SPF/DNS changes break Google Workspace      | High   | Keep bundled asset fallback                      |
-
----
-
-## Log
-
-| Date       | Milestone | Notes                                                                                                                                                                                                                                                      |
-| ---------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-02-14 | —         | Project tracker created. Codebase review complete.                                                                                                                                                                                                         |
-| 2026-02-16 | M1        | M1 closed. 80% coverage deferred to post-M3 — low-coverage modules are being rewritten in M2/M3. Added M3b (Test Coverage) milestone. Prioritising dependency reduction and code modernisation.                                                            |
-| 2026-02-16 | M2        | M2 closed. Removed superagent (replaced with native fetch). Audited all dependencies: fast-xml-parser and ipaddr.js both required and retained. 0 vulnerabilities. All 122 tests passing. See dev-notes/02-milestone-2-dependency-audit.md for full audit. |
+Previous detailed milestone tracker and the original `docs/` (implementation,
+issues, requirements, long-form security) moved to `dev-notes/archive/`.

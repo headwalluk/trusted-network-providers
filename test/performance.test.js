@@ -10,30 +10,30 @@ import trustedProviders from '../src/index.js';
 describe('Performance: IP Lookup with 20+ Providers', () => {
   // Test IP addresses covering different providers
   const testIPs = [
-    '66.249.66.1',      // Googlebot
-    '54.240.226.1',     // Stripe API
-    '192.0.2.1',        // Private (RFC 5737)
-    '13.110.62.1',      // PayPal
+    '66.249.66.1', // Googlebot
+    '54.240.226.1', // Stripe API
+    '192.0.2.1', // Private (RFC 5737)
+    '13.110.62.1', // PayPal
     '2001:4860:4801::', // Google IPv6
-    '203.0.113.50',     // Random (should not match)
-    '34.237.253.141',   // Stripe Webhooks
-    '157.55.9.128',     // Outlook
-    '104.16.0.1',       // Cloudflare
-    '69.169.224.1',     // Ezoic
-    '10.0.0.1',         // Private
-    '172.16.0.1',       // Private
-    '192.168.1.1',      // Private
-    '198.51.100.1',     // Random (should not match)
-    '2a06:98c0::',      // Cloudflare IPv6
+    '203.0.113.50', // Random (should not match)
+    '34.237.253.141', // Stripe Webhooks
+    '157.55.9.128', // Outlook
+    '104.16.0.1', // Cloudflare
+    '69.169.224.1', // Ezoic
+    '10.0.0.1', // Private
+    '172.16.0.1', // Private
+    '192.168.1.1', // Private
+    '198.51.100.1', // Random (should not match)
+    '2a06:98c0::', // Cloudflare IPv6
   ];
 
   beforeAll(async () => {
     // Load all default providers
     trustedProviders.loadDefaultProviders();
-    
+
     // Reload to fetch current IP ranges
     await trustedProviders.reloadAll();
-    
+
     // Verify we have 20+ providers loaded
     const providers = trustedProviders.getAllProviders();
     expect(providers.length).toBeGreaterThanOrEqual(19);
@@ -80,7 +80,7 @@ describe('Performance: IP Lookup with 20+ Providers', () => {
 
     // Assert that warm cache is faster
     expect(warmDuration).toBeLessThan(coldDuration);
-    
+
     // Assert that warm cache provides at least 2x speedup
     // (Conservative threshold - real-world speedup is typically much higher)
     expect(speedup).toBeGreaterThan(2);
@@ -124,14 +124,14 @@ describe('Performance: IP Lookup with 20+ Providers', () => {
 
     // Mix of IPs that match and don't match
     const mixedIPs = [
-      '66.249.66.1',      // Match: Googlebot
-      '203.0.113.1',      // No match
-      '54.240.226.1',     // Match: Stripe
-      '198.51.100.1',     // No match
-      '192.0.2.1',        // Match: Private
-      '203.0.113.50',     // No match
-      '13.110.62.1',      // Match: PayPal
-      '198.51.100.200',   // No match
+      '66.249.66.1', // Match: Googlebot
+      '203.0.113.1', // No match
+      '54.240.226.1', // Match: Stripe
+      '198.51.100.1', // No match
+      '192.0.2.1', // Match: Private
+      '203.0.113.50', // No match
+      '13.110.62.1', // Match: PayPal
+      '198.51.100.200', // No match
     ];
 
     // Cold cache

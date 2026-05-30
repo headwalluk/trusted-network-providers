@@ -6,6 +6,7 @@
 ## Overview
 
 Milestone 5 implemented two key performance optimizations:
+
 1. **LRU cache** for parsed CIDR ranges (max 5,000 entries)
 2. **TTL result cache** for IP lookups (max 10,000 entries, 1-hour TTL)
 
@@ -29,27 +30,27 @@ This document summarizes the performance profile with 20+ providers loaded.
 
 #### 1. Cold Cache vs Warm Cache (15 IP lookups)
 
-| Metric                | Cold Cache | Warm Cache | Speedup   |
-|-----------------------|------------|------------|-----------|
-| Total time            | 30.551ms   | 0.159ms    | 192.5x    |
-| Per-lookup average    | 2.037ms    | 0.011ms    | 185.2x    |
+| Metric             | Cold Cache | Warm Cache | Speedup |
+| ------------------ | ---------- | ---------- | ------- |
+| Total time         | 30.551ms   | 0.159ms    | 192.5x  |
+| Per-lookup average | 2.037ms    | 0.011ms    | 185.2x  |
 
 **Interpretation:** The result cache provides a ~200x speedup for repeated IP lookups. On a cold start, each lookup takes ~2ms to iterate through provider IP lists and CIDR ranges. Once cached, lookups complete in ~0.01ms.
 
 #### 2. Repeated Lookup Performance (100 iterations, single IP)
 
-| Metric                | First Lookup | Cached Lookup (avg) | Speedup   |
-|-----------------------|--------------|---------------------|-----------|
-| Single IP lookup      | 2.289ms      | 0.0016ms            | 1,394x    |
-| Total (100 lookups)   | -            | 0.164ms             | -         |
+| Metric              | First Lookup | Cached Lookup (avg) | Speedup |
+| ------------------- | ------------ | ------------------- | ------- |
+| Single IP lookup    | 2.289ms      | 0.0016ms            | 1,394x  |
+| Total (100 lookups) | -            | 0.164ms             | -       |
 
 **Interpretation:** After the first lookup, the IP → provider result is cached. Subsequent lookups are essentially a hash table lookup (O(1)) rather than iterating through 19 providers. This is the ideal scenario for high-traffic firewall rules where the same IPs are checked repeatedly.
 
 #### 3. Mixed Match/No-Match Performance (8 IP lookups)
 
-| Metric                | Cold Cache | Warm Cache | Speedup   |
-|-----------------------|------------|------------|-----------|
-| Total time            | 22.640ms   | 0.026ms    | 868.3x    |
+| Metric     | Cold Cache | Warm Cache | Speedup |
+| ---------- | ---------- | ---------- | ------- |
+| Total time | 22.640ms   | 0.026ms    | 868.3x  |
 
 **Interpretation:** The cache is equally effective for IPs that don't match any provider. After the first "not found" result, subsequent checks for the same IP are instant. This is important because the majority of firewall checks are likely to be unknown/untrusted IPs.
 
@@ -97,6 +98,7 @@ This document summarizes the performance profile with 20+ providers loaded.
 ### Cache Invalidation
 
 Caches are automatically cleared on:
+
 - `reloadAll()` — when providers fetch fresh IP lists
 - `deleteProvider()` — when a provider is removed
 - `setResultCacheTTL()` — when TTL is changed
@@ -115,11 +117,11 @@ Manual cache clearing is not exposed in the public API (not needed for typical u
 
 ### TTL Tuning
 
-| TTL       | Pro                                    | Con                                    |
-|-----------|----------------------------------------|----------------------------------------|
-| 1 hour    | Excellent cache hit rate               | Provider IP changes take up to 1h      |
-| 5 minutes | Faster response to provider changes    | Lower cache hit rate, more lookups     |
-| 24 hours  | Maximum cache effectiveness            | Stale IPs could persist for 24h        |
+| TTL       | Pro                                 | Con                                |
+| --------- | ----------------------------------- | ---------------------------------- |
+| 1 hour    | Excellent cache hit rate            | Provider IP changes take up to 1h  |
+| 5 minutes | Faster response to provider changes | Lower cache hit rate, more lookups |
+| 24 hours  | Maximum cache effectiveness         | Stale IPs could persist for 24h    |
 
 **Default choice:** 1 hour is a good balance. Provider IP ranges rarely change within an hour, and hourly reloads are common in production deployments.
 
@@ -148,6 +150,7 @@ Manual cache clearing is not exposed in the public API (not needed for typical u
 ## Conclusion
 
 The performance improvements in Milestone 5 are significant:
+
 - **192x faster** for typical usage (cold → warm)
 - **1,394x faster** for repeated lookups of the same IP
 - **Negligible memory cost** (~1MB for 10k IPs)
@@ -160,6 +163,7 @@ The caching layer transforms IP lookups from a ~2ms operation to a ~0.001ms oper
 ## Test Coverage
 
 Performance tests added to `test/performance.test.js`:
+
 - ✅ Cold cache vs warm cache comparison
 - ✅ Repeated lookup efficiency
 - ✅ Mixed match/no-match scenarios
