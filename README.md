@@ -151,6 +151,36 @@ if (status.state === PROVIDER_STATE_ERROR) {
 }
 ```
 
+## CLI
+
+A `trusted-lookup` command is included for ad-hoc IP checks from the terminal.
+
+Run it without installing, via `npx`:
+
+```bash
+# Check a single IP
+npx -p @headwall/trusted-network-providers trusted-lookup 66.249.66.87
+
+# Check several at once
+npx -p @headwall/trusted-network-providers trusted-lookup 66.249.66.87 1.2.3.4
+```
+
+Or install globally to get the bare command:
+
+```bash
+npm install -g @headwall/trusted-network-providers
+trusted-lookup 66.249.90.77
+```
+
+It prints the matching provider for each IP (or "not trusted"), and exits `0`
+when every IP is trusted or `1` if any are untrusted — handy for scripts and CI:
+
+```bash
+if npx -p @headwall/trusted-network-providers trusted-lookup "$ip"; then
+  echo "$ip is trusted"
+fi
+```
+
 ## Documentation
 
 - **[Providers](docs/providers.md)** - Built-in provider reference and custom provider guide

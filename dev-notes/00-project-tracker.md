@@ -129,6 +129,12 @@ Not in scope for v2.0.0. Revisit after release.
   - `eslint` 9.39.1 → 10.4.1 (dev; **major**, needs flat-config review)
   - `jest` 30.2.0 → 30.4.2 (dev; in-range patch)
   - `prettier` 3.6.2 → 3.8.3 (dev; in-range minor — may reformat files)
+- **README refactor — lean entry point + `docs/` index.** Slim `README.md` down to:
+  badges at the top, a short description of what the package is and who it's for,
+  then a set of links into focused `docs/` files. Move the detailed Configuration,
+  API Reference, Examples, Provider Management, and Performance sections out of the
+  README and into (or merged with) dedicated `docs/` pages, leaving the README as a
+  concise overview that points at them. (Not urgent — docs are accurate today.)
 - TypeScript migration of core modules
 - Ship `.d.ts` type definitions with the package
 - Add type checking to CI
