@@ -8,7 +8,7 @@
     ".": "./src/index.js"
   },
   "bin": {
-    "trusted-lookup": "./bin/lookup.js"
+    "trusted-lookup": "bin/lookup.js"
   },
   "repository": {
     "type": "git",
