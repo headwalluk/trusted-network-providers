@@ -63,6 +63,23 @@ To add a provider: create file in `src/providers/`, add import and entry to `def
 
 Jest with ESM support. Tests organized by concern: unit tests, integration tests, provider tests, edge cases, performance, lifecycle events. Test files use `.test.js` suffix.
 
+## Regular Maintenance
+
+The bundled-asset providers (Googlebot, Google Special Crawlers, Bingbot, BunnyNet, FacebookBot) ship IP lists under `src/assets/` that drift over time and must be refreshed periodically — monthly, and before any release. See [docs/regular-maintenance.md](docs/regular-maintenance.md) for the full guide. Runtime providers (Stripe, Google Workspace SPF) self-refresh and need no maintenance.
+
+`scripts/update-assets.sh` is deterministic: it stages downloads, validates them, writes back only files that actually changed, regenerates `src/assets/checksums.json`, and reports via exit code — `0` = no change, `10` = assets changed, `1` = error (nothing written).
+
+When asked to run maintenance, execute this loop:
+
+1. Run `./scripts/update-assets.sh` and read its exit code + summary block.
+2. **Exit 0** — report "no changes" and stop. Nothing to commit.
+3. **Exit 1** — report the failure; do not commit. Nothing was written.
+4. **Exit 10** — assets changed:
+   - Review `git diff src/assets/`; sanity-check the counts (plausible deltas, not a collapse to near-zero).
+   - **Patch-bump** `package.json` (asset refreshes are data-only, e.g. `2.1.0` → `2.1.1`).
+   - Prepend a dated `CHANGELOG.md` entry naming the changed assets and their count deltas.
+   - Commit and tag (Paul runs `npm publish` himself — do not publish).
+
 ## Style
 
 - Single quotes, semicolons required, 2-space indent

@@ -1,5 +1,49 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 2.1.1 :: 2026-06-06
+
+### 🐛 Fixes
+
+- **Google crawler endpoints relocated**: Google retired the
+  `/static/search/apis/ipranges/` paths — `googlebot.json` is now
+  `common-crawlers.json` under `/static/crawling/ipranges/`, and
+  `special-crawlers.json` moved to the same path. The old URLs had begun
+  returning a "temporarily broken" stub. Updated the source URLs in
+  `update-assets.sh`, the Googlebot and Google Special Crawlers providers, and
+  the checksum manifest. (The Googlebot provider name and asset filename are
+  unchanged; `common-crawlers.json` is the direct successor to `googlebot.json`.)
+
+### 🔒 Security
+
+- **FacebookBot assets now SHA-256 verified on load**: `facebookbot-ip4s.txt`
+  and `facebookbot-ip6s.txt` were previously shipped without checksum
+  verification (they were absent from `checksums.json`, which the verifier
+  silently skips). Added their entries to the manifest and wired
+  `facebookbot.js` to verify on load, matching the other bundled-asset providers.
+
+### 🔧 Tooling
+
+- **`update-assets.sh` reworked** into a download → validate → diff → report
+  flow: downloads stage to a temp dir and only replace a live asset once
+  validated **and** found to differ (atomic — a mid-run failure no longer leaves
+  a half-updated bundle); per-source structure validation (not just "valid
+  JSON"); prints `unchanged`/`UPDATED` with record-count deltas; exit codes
+  `0` = no change, `10` = changes applied, `1` = error. See
+  [docs/regular-maintenance.md](docs/regular-maintenance.md).
+
+### 📦 Assets
+
+- Refreshed bundled assets via `scripts/update-assets.sh`:
+  - Googlebot (`common-crawlers.json`, 313 prefixes)
+  - Google Special Crawlers (268 prefixes)
+  - BunnyNet IPv4 (573 → 567 addresses)
+
+### 📚 Documentation
+
+- New [docs/regular-maintenance.md](docs/regular-maintenance.md) and a
+  "Regular Maintenance" section in `CLAUDE.md` describing the run → review →
+  patch-bump → changelog workflow.
+
 ## 2.1.0 :: 2026-05-30
 
 ### 🚀 New Features

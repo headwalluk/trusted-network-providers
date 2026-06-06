@@ -7,9 +7,9 @@
  * Mediapartners-Google (AdSense), APIs-Google and Google-Safety.
  *
  * These ranges are published separately from Googlebot's and are NOT present
- * in googlebot.json, so a dedicated provider is required to recognise them.
+ * in the common-crawlers list, so a dedicated provider is required to recognise them.
  *
- * Source: https://developers.google.com/static/search/apis/ipranges/special-crawlers.json
+ * Source: https://developers.google.com/static/crawling/ipranges/special-crawlers.json
  */
 
 import path from 'node:path';
@@ -22,7 +22,7 @@ import logger from '../utils/logger.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const GOOGLE_ADDRESS_LIST_URL = 'https://developers.google.com/static/search/apis/ipranges/special-crawlers.json';
+const GOOGLE_ADDRESS_LIST_URL = 'https://developers.google.com/static/crawling/ipranges/special-crawlers.json';
 
 const self = {
   name: 'Google Special Crawlers',

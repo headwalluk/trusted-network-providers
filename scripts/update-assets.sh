@@ -2,207 +2,252 @@
 
 ##
 # update-assets.sh
-# 
-# Downloads the latest IP address lists from provider sources.
-# All downloads use HTTPS with certificate validation.
+#
+# Refreshes the bundled IP address lists from their provider sources.
+#
+# Flow: download every source into a temporary staging directory, validate it,
+# then compare each staged file to the live asset. Only files that actually
+# changed are written back into src/assets/. The checksums manifest is
+# regenerated whenever the bundled data changes.
+#
+# All downloads use HTTPS with TLS 1.2+ and certificate validation.
+#
+# Exit codes:
+#   0  - success, no assets changed (nothing to commit)
+#   10 - success, one or more assets changed (review, version-bump, changelog)
+#   1  - error (network/validation failure; nothing was written)
+#
+# See docs/regular-maintenance.md for the surrounding maintenance workflow.
 #
 
-set -e  # Exit on error
-set -u  # Exit on undefined variable
+set -e # Exit on error
+set -u # Exit on undefined variable
 
-THIS_FULL_PATH=$(realpath "${BASH_SOURCE}")
+THIS_FULL_PATH=$(realpath "${BASH_SOURCE[0]}")
 BASE_DIR=$(dirname "${THIS_FULL_PATH}")
 BASE_DIR=$(dirname "${BASE_DIR}")
 
 SRC_DIR="${BASE_DIR}/src"
+ASSETS_DIR="${SRC_DIR}/assets"
+CHECKSUMS_FILE="${ASSETS_DIR}/checksums.json"
 
-GOOGLEBOT_IPS=https://developers.google.com/static/search/apis/ipranges/googlebot.json
-GOOGLEBOT_ASSETS="${SRC_DIR}/assets/googlebot-ips.json"
-
-GOOGLE_SPECIAL_IPS=https://developers.google.com/static/search/apis/ipranges/special-crawlers.json
-GOOGLE_SPECIAL_ASSETS="${SRC_DIR}/assets/google-special-crawlers.json"
-
-BINGBOT_IPS=https://www.bing.com/toolbox/bingbot.json
-BINGBOT_ASSETS="${SRC_DIR}/assets/bingbot-ips.json"
-
+# Source URLs.
+# Note: Google retired the /static/search/apis/ipranges/ paths; googlebot.json was
+# replaced by common-crawlers.json under /static/crawling/ipranges/.
+GOOGLEBOT_URL=https://developers.google.com/static/crawling/ipranges/common-crawlers.json
+GOOGLE_SPECIAL_URL=https://developers.google.com/static/crawling/ipranges/special-crawlers.json
+BINGBOT_URL=https://www.bing.com/toolbox/bingbot.json
 BUNNYNET_IP4_URL=https://bunnycdn.com/api/system/edgeserverlist
-BUNNYNET_IP4_ASSETS="${SRC_DIR}/assets/bunnynet-ip4s.json"
-
 BUNNYNET_IP6_URL=https://bunnycdn.com/api/system/edgeserverlist/IPv6
-BUNNYNET_IP6_ASSETS="${SRC_DIR}/assets/bunnynet-ip6s.json"
-
-FACEBOOKBOT_IP4_ASSETS="${SRC_DIR}/assets/facebookbot-ip4s.txt"
-FACEBOOKBOT_IP6_ASSETS="${SRC_DIR}/assets/facebookbot-ip6s.txt"
 
 # wget options for secure downloads
 WGET_OPTS="--secure-protocol=TLSv1_2 --https-only --timeout=30 --tries=3"
 
-TEMP_DOWNLOAD="$(mktemp -q)"
-if [ $? -ne 0 ]; then
-  echo "ERROR: Failed to create temp file for asset download" >&2
+# Accumulators (populated by commit_asset / the checksums step)
+CHANGED=()
+UNCHANGED=()
+
+##
+# Preflight: make sure every external tool we depend on is available.
+#
+for cmd in wget jq whois sha256sum mktemp cmp diff awk grep; do
+  if ! command -v "${cmd}" >/dev/null 2>&1; then
+    echo "ERROR: required command not found: ${cmd}" >&2
+    exit 1
+  fi
+done
+
+##
+# Staging directory. Everything is downloaded here first; the live assets are
+# only touched once a file has been validated AND found to differ.
+#
+if ! STAGE_DIR="$(mktemp -d)" || [ -z "${STAGE_DIR}" ]; then
+  echo "ERROR: Failed to create staging directory" >&2
   exit 1
 fi
 
-# Cleanup function
 cleanup() {
-  rm -f "${TEMP_DOWNLOAD}"
+  rm -rf "${STAGE_DIR}"
 }
 trap cleanup EXIT
 
 ##
-# Facebook bot (via WHOIS)
+# Helpers
+#
+
+# download <url> <dest> <label>
+download() {
+  local url="$1" dest="$2" label="$3"
+  echo "Downloading ${label}..."
+  # shellcheck disable=SC2086  # WGET_OPTS is intentionally word-split into flags
+  if ! wget ${WGET_OPTS} -O "${dest}" "${url}"; then
+    echo "ERROR: Failed to download ${url}" >&2
+    exit 1
+  fi
+}
+
+# validate_json <file> <jq-expr> <label>
+# jq-expr must evaluate truthy for a structurally-valid payload.
+validate_json() {
+  local file="$1" expr="$2" label="$3"
+  if ! jq -e "${expr}" "${file}" >/dev/null 2>&1; then
+    echo "ERROR: ${label} failed structure validation (${expr})" >&2
+    exit 1
+  fi
+}
+
+# record_count <file> <prefixes|array|lines> -> prints a count
+record_count() {
+  case "$2" in
+  prefixes) jq '.prefixes | length' "$1" 2>/dev/null || echo '?' ;;
+  array) jq 'length' "$1" 2>/dev/null || echo '?' ;;
+  lines) wc -l <"$1" 2>/dev/null | tr -d ' ' || echo '?' ;;
+  esac
+}
+
+# commit_asset <staged> <live> <count-type> <unit>
+# Diffs the staged file against the live asset; only writes (and records as
+# CHANGED) when they differ. Otherwise records as UNCHANGED.
+commit_asset() {
+  local staged="$1" live="$2" ctype="$3" unit="$4"
+  local name old new
+  name=$(basename "${live}")
+  new=$(record_count "${staged}" "${ctype}")
+
+  if [ -f "${live}" ] && cmp -s "${staged}" "${live}"; then
+    echo "  unchanged: ${name} (${new} ${unit})"
+    UNCHANGED+=("${name}")
+  else
+    old='new'
+    [ -f "${live}" ] && old=$(record_count "${live}" "${ctype}")
+    mv "${staged}" "${live}"
+    echo "  UPDATED:   ${name}  (${old} -> ${new} ${unit})"
+    CHANGED+=("${name}  (${old} -> ${new} ${unit})")
+  fi
+}
+
+##
+# FacebookBot (via WHOIS) — one fetch, split into IPv4/IPv6 CIDR lists.
 #
 echo "Fetching FacebookBot IPs from WHOIS..."
-if whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{print $2}' > "${TEMP_DOWNLOAD}"; then
-  RECORD_COUNT=$(wc -l "${TEMP_DOWNLOAD}" | cut -d' ' -f1)
-  if [ ${RECORD_COUNT} -lt 10 ]; then
-    echo "ERROR: FacebookBot invalid record count (${RECORD_COUNT})" >&2
-    exit 1
-  else
-    grep -E '\..*/[0-9]+$' "${TEMP_DOWNLOAD}" > "${FACEBOOKBOT_IP4_ASSETS}"
-    grep -E ':.*/[0-9]+$' "${TEMP_DOWNLOAD}" > "${FACEBOOKBOT_IP6_ASSETS}"
-    echo "✓ Updated FacebookBot IPs (${RECORD_COUNT} routes)"
-  fi
-else
+FB_RAW="${STAGE_DIR}/facebook-raw.txt"
+if ! whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{print $2}' >"${FB_RAW}"; then
   echo "ERROR: Failed to fetch FacebookBot IPs from WHOIS" >&2
+  exit 1
+fi
+
+FB_COUNT=$(wc -l <"${FB_RAW}" | tr -d ' ')
+if [ "${FB_COUNT}" -lt 10 ]; then
+  echo "ERROR: FacebookBot returned an implausible route count (${FB_COUNT})" >&2
+  exit 1
+fi
+
+FB_STAGE_V4="${STAGE_DIR}/facebookbot-ip4s.txt"
+FB_STAGE_V6="${STAGE_DIR}/facebookbot-ip6s.txt"
+grep -E '\..*/[0-9]+$' "${FB_RAW}" >"${FB_STAGE_V4}" || true
+grep -E ':.*/[0-9]+$' "${FB_RAW}" >"${FB_STAGE_V6}" || true
+if [ ! -s "${FB_STAGE_V4}" ] || [ ! -s "${FB_STAGE_V6}" ]; then
+  echo "ERROR: FacebookBot split produced an empty IPv4 or IPv6 list" >&2
   exit 1
 fi
 
 ##
 # GoogleBot
 #
-echo "Downloading GoogleBot IPs..."
-if wget ${WGET_OPTS} -O "${TEMP_DOWNLOAD}" "${GOOGLEBOT_IPS}"; then
-  # Validate JSON format
-  if jq empty "${TEMP_DOWNLOAD}" 2>/dev/null; then
-    mv "${TEMP_DOWNLOAD}" "${GOOGLEBOT_ASSETS}"
-    echo "✓ Updated $(basename "${GOOGLEBOT_ASSETS}")"
-  else
-    echo "ERROR: Downloaded GoogleBot file is not valid JSON" >&2
-    exit 1
-  fi
-else
-  echo "ERROR: Failed to download ${GOOGLEBOT_IPS}" >&2
-  exit 1
-fi
+GOOGLEBOT_STAGE="${STAGE_DIR}/googlebot-ips.json"
+download "${GOOGLEBOT_URL}" "${GOOGLEBOT_STAGE}" "GoogleBot"
+validate_json "${GOOGLEBOT_STAGE}" '.prefixes | length > 0' "GoogleBot"
 
 ##
 # Google Special Crawlers (AdsBot, AdSense/Mediapartners, APIs-Google, Google-Safety)
 #
-echo "Downloading Google Special Crawlers IPs..."
-if wget ${WGET_OPTS} -O "${TEMP_DOWNLOAD}" "${GOOGLE_SPECIAL_IPS}"; then
-  # Validate JSON format
-  if jq empty "${TEMP_DOWNLOAD}" 2>/dev/null; then
-    mv "${TEMP_DOWNLOAD}" "${GOOGLE_SPECIAL_ASSETS}"
-    echo "✓ Updated $(basename "${GOOGLE_SPECIAL_ASSETS}")"
-  else
-    echo "ERROR: Downloaded Google Special Crawlers file is not valid JSON" >&2
-    exit 1
-  fi
-else
-  echo "ERROR: Failed to download ${GOOGLE_SPECIAL_IPS}" >&2
-  exit 1
-fi
+GOOGLE_SPECIAL_STAGE="${STAGE_DIR}/google-special-crawlers.json"
+download "${GOOGLE_SPECIAL_URL}" "${GOOGLE_SPECIAL_STAGE}" "Google Special Crawlers"
+validate_json "${GOOGLE_SPECIAL_STAGE}" '.prefixes | length > 0' "Google Special Crawlers"
 
 ##
 # Bingbot
 #
-echo "Downloading Bingbot IPs..."
-if wget ${WGET_OPTS} -O "${TEMP_DOWNLOAD}" "${BINGBOT_IPS}"; then
-  # Validate JSON format
-  if jq empty "${TEMP_DOWNLOAD}" 2>/dev/null; then
-    mv "${TEMP_DOWNLOAD}" "${BINGBOT_ASSETS}"
-    echo "✓ Updated $(basename "${BINGBOT_ASSETS}")"
-  else
-    echo "ERROR: Downloaded Bingbot file is not valid JSON" >&2
-    exit 1
-  fi
-else
-  echo "ERROR: Failed to download ${BINGBOT_IPS}" >&2
-  exit 1
-fi
+BINGBOT_STAGE="${STAGE_DIR}/bingbot-ips.json"
+download "${BINGBOT_URL}" "${BINGBOT_STAGE}" "Bingbot"
+validate_json "${BINGBOT_STAGE}" '.prefixes | length > 0' "Bingbot"
 
 ##
-# BunnyNet IPv4
+# BunnyNet IPv4 (JSON array of addresses)
 #
-echo "Downloading BunnyNet IPv4 list..."
-if wget ${WGET_OPTS} -O "${TEMP_DOWNLOAD}" "${BUNNYNET_IP4_URL}"; then
-  # Validate JSON format
-  if jq empty "${TEMP_DOWNLOAD}" 2>/dev/null; then
-    mv "${TEMP_DOWNLOAD}" "${BUNNYNET_IP4_ASSETS}"
-    echo "✓ Updated $(basename "${BUNNYNET_IP4_ASSETS}")"
-  else
-    echo "ERROR: Downloaded BunnyNet IPv4 file is not valid JSON" >&2
-    exit 1
-  fi
-else
-  echo "ERROR: Failed to download ${BUNNYNET_IP4_URL}" >&2
-  exit 1
-fi
+BUNNYNET_IP4_STAGE="${STAGE_DIR}/bunnynet-ip4s.json"
+download "${BUNNYNET_IP4_URL}" "${BUNNYNET_IP4_STAGE}" "BunnyNet IPv4"
+validate_json "${BUNNYNET_IP4_STAGE}" 'type == "array" and length > 0' "BunnyNet IPv4"
 
 ##
-# BunnyNet IPv6
+# BunnyNet IPv6 (JSON array of addresses)
 #
-echo "Downloading BunnyNet IPv6 list..."
-if wget ${WGET_OPTS} -O "${TEMP_DOWNLOAD}" "${BUNNYNET_IP6_URL}"; then
-  # Validate JSON format
-  if jq empty "${TEMP_DOWNLOAD}" 2>/dev/null; then
-    mv "${TEMP_DOWNLOAD}" "${BUNNYNET_IP6_ASSETS}"
-    echo "✓ Updated $(basename "${BUNNYNET_IP6_ASSETS}")"
-  else
-    echo "ERROR: Downloaded BunnyNet IPv6 file is not valid JSON" >&2
-    exit 1
-  fi
-else
-  echo "ERROR: Failed to download ${BUNNYNET_IP6_URL}" >&2
-  exit 1
-fi
+BUNNYNET_IP6_STAGE="${STAGE_DIR}/bunnynet-ip6s.json"
+download "${BUNNYNET_IP6_URL}" "${BUNNYNET_IP6_STAGE}" "BunnyNet IPv6"
+validate_json "${BUNNYNET_IP6_STAGE}" 'type == "array" and length > 0' "BunnyNet IPv6"
 
 ##
-# Update checksums file
+# All downloads validated — now diff each against the live asset and commit
+# only what changed.
 #
 echo ""
-echo "Calculating checksums..."
+echo "Comparing against bundled assets..."
+commit_asset "${FB_STAGE_V4}" "${ASSETS_DIR}/facebookbot-ip4s.txt" lines routes
+commit_asset "${FB_STAGE_V6}" "${ASSETS_DIR}/facebookbot-ip6s.txt" lines routes
+commit_asset "${GOOGLEBOT_STAGE}" "${ASSETS_DIR}/googlebot-ips.json" prefixes prefixes
+commit_asset "${GOOGLE_SPECIAL_STAGE}" "${ASSETS_DIR}/google-special-crawlers.json" prefixes prefixes
+commit_asset "${BINGBOT_STAGE}" "${ASSETS_DIR}/bingbot-ips.json" prefixes prefixes
+commit_asset "${BUNNYNET_IP4_STAGE}" "${ASSETS_DIR}/bunnynet-ip4s.json" array addresses
+commit_asset "${BUNNYNET_IP6_STAGE}" "${ASSETS_DIR}/bunnynet-ip6s.json" array addresses
 
-CHECKSUMS_FILE="${SRC_DIR}/assets/checksums.json"
-TEMP_CHECKSUMS="${TEMP_DOWNLOAD}.checksums"
+##
+# Regenerate the checksums manifest from the (post-commit) live assets. The
+# manifest is treated like any other tracked asset: we only rewrite it when its
+# provider content actually differs, ignoring the lastUpdated timestamp so an
+# unchanged run stays a no-op in git.
+#
+sha() { sha256sum "$1" | cut -d' ' -f1; }
 
-# Calculate checksums for each asset
-GOOGLEBOT_CHECKSUM=$(sha256sum "${GOOGLEBOT_ASSETS}" | cut -d' ' -f1)
-GOOGLE_SPECIAL_CHECKSUM=$(sha256sum "${GOOGLE_SPECIAL_ASSETS}" | cut -d' ' -f1)
-BINGBOT_CHECKSUM=$(sha256sum "${BINGBOT_ASSETS}" | cut -d' ' -f1)
-BUNNYNET_IP4_CHECKSUM=$(sha256sum "${BUNNYNET_IP4_ASSETS}" | cut -d' ' -f1)
-BUNNYNET_IP6_CHECKSUM=$(sha256sum "${BUNNYNET_IP6_ASSETS}" | cut -d' ' -f1)
+NEW_CHECKSUMS="${STAGE_DIR}/checksums.json"
 CURRENT_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# Create updated checksums file
-cat > "${TEMP_CHECKSUMS}" << EOF
+cat >"${NEW_CHECKSUMS}" <<EOF
 {
   "comment": "SHA-256 checksums for provider data sources. Updated by update-assets.sh",
   "providers": {
     "googlebot": {
-      "url": "https://developers.google.com/static/search/apis/ipranges/googlebot.json",
-      "sha256": "${GOOGLEBOT_CHECKSUM}",
+      "url": "${GOOGLEBOT_URL}",
+      "sha256": "$(sha "${ASSETS_DIR}/googlebot-ips.json")",
       "comment": "Bundled asset - checksum verified on load"
     },
     "google-special-crawlers": {
-      "url": "https://developers.google.com/static/search/apis/ipranges/special-crawlers.json",
-      "sha256": "${GOOGLE_SPECIAL_CHECKSUM}",
+      "url": "${GOOGLE_SPECIAL_URL}",
+      "sha256": "$(sha "${ASSETS_DIR}/google-special-crawlers.json")",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bingbot": {
-      "url": "https://www.bing.com/toolbox/bingbot.json",
-      "sha256": "${BINGBOT_CHECKSUM}",
+      "url": "${BINGBOT_URL}",
+      "sha256": "$(sha "${ASSETS_DIR}/bingbot-ips.json")",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv4": {
-      "url": "https://bunnycdn.com/api/system/edgeserverlist",
-      "sha256": "${BUNNYNET_IP4_CHECKSUM}",
+      "url": "${BUNNYNET_IP4_URL}",
+      "sha256": "$(sha "${ASSETS_DIR}/bunnynet-ip4s.json")",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv6": {
-      "url": "https://bunnycdn.com/api/system/edgeserverlist/IPv6",
-      "sha256": "${BUNNYNET_IP6_CHECKSUM}",
+      "url": "${BUNNYNET_IP6_URL}",
+      "sha256": "$(sha "${ASSETS_DIR}/bunnynet-ip6s.json")",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "facebookbot-ipv4": {
+      "url": "whois.radb.net -i origin AS32934 (IPv4 routes)",
+      "sha256": "$(sha "${ASSETS_DIR}/facebookbot-ip4s.txt")",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "facebookbot-ipv6": {
+      "url": "whois.radb.net -i origin AS32934 (IPv6 routes)",
+      "sha256": "$(sha "${ASSETS_DIR}/facebookbot-ip6s.txt")",
       "comment": "Bundled asset - checksum verified on load"
     },
     "stripe-api": {
@@ -220,13 +265,39 @@ cat > "${TEMP_CHECKSUMS}" << EOF
 }
 EOF
 
-mv "${TEMP_CHECKSUMS}" "${CHECKSUMS_FILE}"
+# Validate the manifest we just generated, then diff (ignoring lastUpdated).
+validate_json "${NEW_CHECKSUMS}" '.providers | length > 0' "checksums.json"
+if [ -f "${CHECKSUMS_FILE}" ] &&
+  diff -q <(jq -S 'del(.lastUpdated)' "${NEW_CHECKSUMS}") \
+    <(jq -S 'del(.lastUpdated)' "${CHECKSUMS_FILE}") >/dev/null 2>&1; then
+  echo "  unchanged: checksums.json"
+  UNCHANGED+=("checksums.json")
+else
+  mv "${NEW_CHECKSUMS}" "${CHECKSUMS_FILE}"
+  echo "  UPDATED:   checksums.json"
+  CHANGED+=("checksums.json")
+fi
 
-echo "✓ Checksums updated:"
-echo "  GoogleBot:        ${GOOGLEBOT_CHECKSUM}"
-echo "  Google Special:   ${GOOGLE_SPECIAL_CHECKSUM}"
-echo "  Bingbot:          ${BINGBOT_CHECKSUM}"
-echo "  BunnyNet IPv4:  ${BUNNYNET_IP4_CHECKSUM}"
-echo "  BunnyNet IPv6:  ${BUNNYNET_IP6_CHECKSUM}"
+##
+# Summary + exit code
+#
 echo ""
-echo "✓ All assets updated successfully"
+echo "=== ASSET UPDATE SUMMARY ==="
+if [ ${#CHANGED[@]} -eq 0 ]; then
+  echo "No assets changed. (${#UNCHANGED[@]} checked)"
+  echo "============================"
+  exit 0
+fi
+
+echo "Changed (${#CHANGED[@]}):"
+for item in "${CHANGED[@]}"; do
+  echo "  - ${item}"
+done
+if [ ${#UNCHANGED[@]} -gt 0 ]; then
+  echo "Unchanged (${#UNCHANGED[@]}): ${UNCHANGED[*]}"
+fi
+echo "============================"
+echo ""
+echo "Assets changed — review the diff, then patch-bump the version and add a"
+echo "CHANGELOG entry naming the changed assets (see docs/regular-maintenance.md)."
+exit 10

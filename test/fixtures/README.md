@@ -25,7 +25,7 @@ Example structure:
 
 ### googlebot-response.json
 
-**Source:** https://developers.google.com/static/search/apis/ipranges/googlebot.json  
+**Source:** https://developers.google.com/static/crawling/ipranges/common-crawlers.json  
 **Format:** JSON object with a `prefixes` array containing `ipv4Prefix` and `ipv6Prefix` objects  
 **Last Updated:** 2026-02-15  
 **Purpose:** Test data for Googlebot provider without network calls
@@ -52,7 +52,7 @@ To refresh these snapshots with current live data:
 curl -s https://stripe.com/files/ips/ips_api.json -o test/fixtures/stripe-api-response.json
 
 # Googlebot
-curl -s https://developers.google.com/static/search/apis/ipranges/googlebot.json -o test/fixtures/googlebot-response.json
+curl -s https://developers.google.com/static/crawling/ipranges/common-crawlers.json -o test/fixtures/googlebot-response.json
 ```
 
 Update the "Last Updated" date in this README after refreshing.

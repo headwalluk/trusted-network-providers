@@ -12,7 +12,8 @@ import logger from '../utils/logger.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const GOOGLE_ADDRESS_LIST_URL = 'https://developers.google.com/static/search/apis/ipranges/googlebot.json';
+// Google retired googlebot.json; its successor is common-crawlers.json.
+const GOOGLE_ADDRESS_LIST_URL = 'https://developers.google.com/static/crawling/ipranges/common-crawlers.json';
 
 const self = {
   name: 'Googlebot',
