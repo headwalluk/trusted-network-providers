@@ -1,5 +1,19 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 2.1.2 :: 2026-06-17
+
+### 🔄 Asset refresh
+
+Routine refresh of bundled IP lists from upstream sources:
+
+- **Googlebot** (`googlebot-ips.json`): 313 → 315 prefixes
+- **Google Special Crawlers** (`google-special-crawlers.json`): 268 → 270 prefixes
+- **BunnyNet IPv4** (`bunnynet-ip4s.json`): 567 → 582 addresses
+- **BunnyNet IPv6** (`bunnynet-ip6s.json`): 333 → 336 addresses
+- **FacebookBot IPv6** (`facebookbot-ip6s.txt`): 632 → 633 routes
+
+Bingbot and FacebookBot IPv4 were unchanged. Checksum manifest regenerated.
+
 ## 2.1.1 :: 2026-06-06
 
 ### 🐛 Fixes
