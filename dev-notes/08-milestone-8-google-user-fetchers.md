@@ -142,7 +142,7 @@ and 2.2.0 is tagged for Paul to publish.
 - [x] Prepend a dated `CHANGELOG.md` entry (new provider + the RBL false-positive
       it fixes)
 - [x] Update `00-project-tracker.md` (mark M8, current version)
-- [ ] Commit + tag `v2.2.0` (Paul runs `npm publish`)
+- [x] Commit + tag `v2.2.0` (commit `e9e0729`, pushed to `origin/main`; Paul runs `npm publish`)
 
 ### Validation (post-build, with Paul)
 
