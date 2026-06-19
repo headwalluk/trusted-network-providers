@@ -36,6 +36,7 @@ CHECKSUMS_FILE="${ASSETS_DIR}/checksums.json"
 # replaced by common-crawlers.json under /static/crawling/ipranges/.
 GOOGLEBOT_URL=https://developers.google.com/static/crawling/ipranges/common-crawlers.json
 GOOGLE_SPECIAL_URL=https://developers.google.com/static/crawling/ipranges/special-crawlers.json
+GOOGLE_USER_FETCHERS_URL=https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json
 BINGBOT_URL=https://www.bing.com/toolbox/bingbot.json
 BUNNYNET_IP4_URL=https://bunnycdn.com/api/system/edgeserverlist
 BUNNYNET_IP6_URL=https://bunnycdn.com/api/system/edgeserverlist/IPv6
@@ -166,6 +167,13 @@ download "${GOOGLE_SPECIAL_URL}" "${GOOGLE_SPECIAL_STAGE}" "Google Special Crawl
 validate_json "${GOOGLE_SPECIAL_STAGE}" '.prefixes | length > 0' "Google Special Crawlers"
 
 ##
+# Google User-Triggered Fetchers (Gmail image proxy, Chrome prefetch proxy, Feedfetcher, etc.)
+#
+GOOGLE_USER_FETCHERS_STAGE="${STAGE_DIR}/google-user-fetchers.json"
+download "${GOOGLE_USER_FETCHERS_URL}" "${GOOGLE_USER_FETCHERS_STAGE}" "Google User-Triggered Fetchers"
+validate_json "${GOOGLE_USER_FETCHERS_STAGE}" '.prefixes | length > 0' "Google User-Triggered Fetchers"
+
+##
 # Bingbot
 #
 BINGBOT_STAGE="${STAGE_DIR}/bingbot-ips.json"
@@ -196,6 +204,7 @@ commit_asset "${FB_STAGE_V4}" "${ASSETS_DIR}/facebookbot-ip4s.txt" lines routes
 commit_asset "${FB_STAGE_V6}" "${ASSETS_DIR}/facebookbot-ip6s.txt" lines routes
 commit_asset "${GOOGLEBOT_STAGE}" "${ASSETS_DIR}/googlebot-ips.json" prefixes prefixes
 commit_asset "${GOOGLE_SPECIAL_STAGE}" "${ASSETS_DIR}/google-special-crawlers.json" prefixes prefixes
+commit_asset "${GOOGLE_USER_FETCHERS_STAGE}" "${ASSETS_DIR}/google-user-fetchers.json" prefixes prefixes
 commit_asset "${BINGBOT_STAGE}" "${ASSETS_DIR}/bingbot-ips.json" prefixes prefixes
 commit_asset "${BUNNYNET_IP4_STAGE}" "${ASSETS_DIR}/bunnynet-ip4s.json" array addresses
 commit_asset "${BUNNYNET_IP6_STAGE}" "${ASSETS_DIR}/bunnynet-ip6s.json" array addresses
@@ -223,6 +232,11 @@ cat >"${NEW_CHECKSUMS}" <<EOF
     "google-special-crawlers": {
       "url": "${GOOGLE_SPECIAL_URL}",
       "sha256": "$(sha "${ASSETS_DIR}/google-special-crawlers.json")",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "google-user-fetchers": {
+      "url": "${GOOGLE_USER_FETCHERS_URL}",
+      "sha256": "$(sha "${ASSETS_DIR}/google-user-fetchers.json")",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bingbot": {

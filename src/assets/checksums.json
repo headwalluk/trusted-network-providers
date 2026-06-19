@@ -11,6 +11,11 @@
       "sha256": "15fae3ab46986cff5d574b36ad977b92455e6ceaaf6b42179b10d8188e620ff5",
       "comment": "Bundled asset - checksum verified on load"
     },
+    "google-user-fetchers": {
+      "url": "https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json",
+      "sha256": "e8fd7e13cf6f8db693d61fca195e2b875364fb2d49ecfac807a7e04bd157bebc",
+      "comment": "Bundled asset - checksum verified on load"
+    },
     "bingbot": {
       "url": "https://www.bing.com/toolbox/bingbot.json",
       "sha256": "a2d1cf229544205a24c61fb7c459408b1afe18f9fd5b172fe181f0eb73c1594d",

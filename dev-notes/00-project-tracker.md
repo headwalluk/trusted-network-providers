@@ -1,8 +1,8 @@
 # Project Tracker - Trusted Network Providers
 
-**Current Version:** 2.1.0 (unpublished; 2.0.0 is live on npm)
-**Status:** M7 — additional trusted crawlers
-**Last Updated:** 30 May 2026
+**Current Version:** 2.2.0 (unpublished; 2.1.x line live on npm)
+**Status:** M8 — Google user-triggered fetchers (2.2.0)
+**Last Updated:** 19 June 2026
 
 ---
 
@@ -33,7 +33,8 @@ Special Crawlers / AdsBot provider). M7 grows the trusted-crawler coverage for a
 | M4b | Robustness (input validation, error handling)             | ✅ Complete    |
 | M5  | Performance (LRU cache, TTL result cache)                 | ✅ Complete    |
 | M6  | Documentation, polish & release (2.0.0 shipped)           | ✅ Complete    |
-| M7  | Additional trusted crawlers (2.1.0)                       | 🚧 In progress |
+| M7  | Additional trusted crawlers (Bingbot 2.1.0; AI crawlers → 2.3.0) | 🚧 In progress |
+| M8  | Google user-triggered fetchers (2.2.0)                    | ✅ Complete    |
 
 Detailed write-ups for completed milestones live alongside this file
 (`05-milestone-5-performance.md`) and in `dev-notes/archive/`.
@@ -138,7 +139,11 @@ ranges so they aren't mistakenly firewalled/RBL'd. Bar for inclusion: an
 - [x] Test addresses, `docs/providers.md`, README provider list
 - [x] Bump to 2.1.0, CHANGELOG entry
 
-#### Next crawlers (candidate for 2.2.0 — verified official sources)
+#### Next crawlers (candidate for 2.3.0 — verified official sources)
+
+> **Re-scoped 19 Jun 2026:** kicked from 2.2.0 to 2.3.0 (targeted next week).
+> 2.2.0 shipped the Google User-Triggered Fetchers provider instead (M8), which
+> took priority due to active customer impact (Gmail newsletter images blocked).
 
 All confirmed to publish the same `{creationTime, prefixes[]}` JSON format as
 Google, so each is a near-clone of `googlebot.js` (bundled asset + checksum):

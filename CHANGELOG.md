@@ -1,5 +1,29 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 2.2.0 :: 2026-06-19
+
+### ✨ New provider
+
+- **Google User-Triggered Fetchers** (`google-user-fetchers.json`, 452 prefixes):
+  recognises Google's user-triggered fetcher infrastructure — the Gmail image
+  proxy (`GoogleImageProxy`), Chrome's Privacy Preserving Prefetch Proxy,
+  Feedfetcher, Google Read Aloud, Site Verifier, etc. — egressing from the
+  `google-proxy-*.google.com` ranges (notably `66.249.80.0/20`) plus Google's
+  edge blocks. Source:
+  `developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json`
+  (bundled asset, SHA-256 verified on load).
+
+  **Why:** these IPs were being added to a downstream RBL via a fail2ban
+  false-positive (Chrome prefetch probes to `/.well-known/traffic-advice`
+  returning 403), which then blocked the Gmail image proxy and broke newsletter
+  images in Gmail. The ranges don't overlap the Googlebot or Google Special
+  Crawlers providers (those cover the crawler half of `66.249.64.0/19`); this is
+  genuinely new coverage. See `dev-notes/08-milestone-8-google-user-fetchers.md`.
+
+- Wired into `defaultProviders`, `update-assets.sh`, and `checksums.json`; docs
+  (`README.md`, `docs/providers.md`, `docs/regular-maintenance.md`, `CLAUDE.md`)
+  updated.
+
 ## 2.1.2 :: 2026-06-17
 
 ### 🔄 Asset refresh

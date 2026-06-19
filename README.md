@@ -46,6 +46,7 @@ Includes 20+ trusted providers out of the box:
 
 - **Search Engines**: Googlebot, Bingbot, AhrefsBot, SemrushBot
 - **Advertising**: Google AdsBot, AdSense (Google Special Crawlers)
+- **User-Triggered Fetchers**: Google (Gmail image proxy, Chrome prefetch proxy, Feedfetcher, etc.)
 - **Payment Processors**: Stripe, PayPal, Opayo
 - **Email Services**: Outlook, Brevo, Mailgun
 - **CDN/Infrastructure**: Cloudflare, BunnyNet
