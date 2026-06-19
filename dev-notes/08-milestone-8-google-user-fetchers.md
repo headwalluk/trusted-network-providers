@@ -146,10 +146,15 @@ and 2.2.0 is tagged for Paul to publish.
 
 ### Validation (post-build, with Paul)
 
-- [ ] Confirm Spam Shield's RBL export now excludes the proxy IPs that were being
-      blocked (diff the export before/after, or spot-check `66.249.93.169`)
-- [ ] Confirm the client's newsletter images render in Gmail once the updated RBL
-      is live on the origin server
+- [x] Confirm Spam Shield reclassifies the proxy IPs as trusted (19 Jun 2026,
+      after the spamshield2 deploy): `net-ip-lookup.sh 66.249.93.171` now returns
+      `score: 1 "Trusted"`, `isAlwaysAllowed: true`, all abuse flags false, and
+      `trustedSource: "Google User-Triggered Fetchers"` (was score 0 "The worst").
+      The RBL export rebuilds on a 2-hourly cycle, so exclusion lands at the next
+      build; origin `ipset` then picks it up on its own refresh.
+- [ ] Confirm the client's newsletter images render in Gmail once the rebuilt RBL
+      has propagated to the origin server's `ipset` (end-to-end proof — pending
+      the next 2-hourly build + origin refresh)
 
 ---
 
