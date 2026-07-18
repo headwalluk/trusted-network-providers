@@ -1,5 +1,33 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 2.2.1 :: 2026-07-18
+
+### 🔄 Asset refresh
+
+Routine refresh of bundled IP lists from upstream sources:
+
+- **BunnyNet IPv4** (`bunnynet-ip4s.json`): 582 → 627 addresses
+- **BunnyNet IPv6** (`bunnynet-ip6s.json`): 336 → 355 addresses
+- **FacebookBot IPv6** (`facebookbot-ip6s.txt`): +2 routes (`2803:6080::/29`,
+  `2a03:2880:ff04::/47`)
+
+Googlebot, Google Special Crawlers, Google User-Triggered Fetchers, and Bingbot
+were unchanged (identical prefix sets). Checksum manifest regenerated.
+
+### 🐛 Maintenance-script fixes
+
+- **FacebookBot WHOIS de-duplication**: the RADB mirror had begun returning each
+  route object multiple times, inflating `facebookbot-ip4s.txt` (436 → 772
+  lines) and `facebookbot-ip6s.txt` (633 → 1215 lines) with pure duplicates on
+  the previous run. `update-assets.sh` now de-duplicates the WHOIS output
+  (order-preserving), so the IPv4 list drops back to its true 417 unique routes
+  and IPv6 to 635. No IP coverage was lost — only duplicate lines removed.
+- **Google feed timestamp churn**: the Google crawler JSON feeds embed a
+  per-fetch `creationTime`, so `commit_asset`'s byte-exact compare rewrote those
+  files on every run even when the prefix set was identical. It now compares the
+  payload with `creationTime` stripped, keeping unchanged Google feeds a true
+  git no-op.
+
 ## 2.2.0 :: 2026-06-19
 
 ### ✨ New provider

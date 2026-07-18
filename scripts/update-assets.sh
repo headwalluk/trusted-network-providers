@@ -106,6 +106,23 @@ record_count() {
   esac
 }
 
+# content_same <staged> <live> <count-type>
+# True when the two assets carry the same provider content. For "prefixes" JSON
+# (Google/Bing crawler feeds) the upstream embeds a per-fetch `creationTime`
+# that changes every run; comparing that verbatim would churn the file on a
+# timestamp with identical IPs, so we compare the payload with creationTime
+# stripped. Everything else is a byte-exact compare.
+content_same() {
+  local staged="$1" live="$2" ctype="$3"
+  if [ "${ctype}" = 'prefixes' ]; then
+    cmp -s \
+      <(jq -S 'del(.creationTime)' "${staged}" 2>/dev/null) \
+      <(jq -S 'del(.creationTime)' "${live}" 2>/dev/null)
+  else
+    cmp -s "${staged}" "${live}"
+  fi
+}
+
 # commit_asset <staged> <live> <count-type> <unit>
 # Diffs the staged file against the live asset; only writes (and records as
 # CHANGED) when they differ. Otherwise records as UNCHANGED.
@@ -115,7 +132,7 @@ commit_asset() {
   name=$(basename "${live}")
   new=$(record_count "${staged}" "${ctype}")
 
-  if [ -f "${live}" ] && cmp -s "${staged}" "${live}"; then
+  if [ -f "${live}" ] && content_same "${staged}" "${live}" "${ctype}"; then
     echo "  unchanged: ${name} (${new} ${unit})"
     UNCHANGED+=("${name}")
   else
@@ -132,7 +149,7 @@ commit_asset() {
 #
 echo "Fetching FacebookBot IPs from WHOIS..."
 FB_RAW="${STAGE_DIR}/facebook-raw.txt"
-if ! whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{print $2}' >"${FB_RAW}"; then
+if ! whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{print $2}' | awk '!seen[$0]++' >"${FB_RAW}"; then
   echo "ERROR: Failed to fetch FacebookBot IPs from WHOIS" >&2
   exit 1
 fi
