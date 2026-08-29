@@ -1,8 +1,8 @@
 # Project Tracker - Trusted Network Providers
 
-**Current Version:** 2.2.0 (unpublished; 2.1.x line live on npm)
-**Status:** M8 — Google user-triggered fetchers (2.2.0)
-**Last Updated:** 19 June 2026
+**Current Version:** 2.3.0 (tagged, awaiting publish; 2.2.x line live on npm)
+**Status:** M7 complete — AI crawlers + Applebot (2.3.0)
+**Last Updated:** 29 August 2026
 
 ---
 
@@ -16,25 +16,25 @@ and traffic classification. Published on npm.
 v2.0.0 is a major modernisation of the v1 line: CJS→ESM, `superagent`→native
 `fetch`, async/await throughout, lifecycle events, state tracking, and a
 two-tier caching layer. **v2.0.0 is published on npm** (it also added the Google
-Special Crawlers / AdsBot provider). M7 grows the trusted-crawler coverage for a
-2.1.0 release.
+Special Crawlers / AdsBot provider). M7 grew the trusted-crawler coverage across
+2.1.0 (Bingbot) and 2.3.0 (Applebot + OpenAI's crawlers).
 
 ---
 
 ## Milestones
 
-| #   | Milestone                                                 | Status         |
-| --- | --------------------------------------------------------- | -------------- |
-| M1  | Foundation (ESM, Jest, CI)                                | ✅ Complete    |
-| M2  | Reduce dependencies (remove superagent)                   | ✅ Complete    |
-| M3  | Modernise code patterns (async/await, Promise.allSettled) | ✅ Complete    |
-| M3b | Test coverage (>80%)                                      | ✅ Complete    |
-| M4a | Lifecycle & observability (events, state tracking)        | ✅ Complete    |
-| M4b | Robustness (input validation, error handling)             | ✅ Complete    |
-| M5  | Performance (LRU cache, TTL result cache)                 | ✅ Complete    |
-| M6  | Documentation, polish & release (2.0.0 shipped)           | ✅ Complete    |
-| M7  | Additional trusted crawlers (Bingbot 2.1.0; AI crawlers → 2.3.0) | 🚧 In progress |
-| M8  | Google user-triggered fetchers (2.2.0)                    | ✅ Complete    |
+| #   | Milestone                                                      | Status      |
+| --- | -------------------------------------------------------------- | ----------- |
+| M1  | Foundation (ESM, Jest, CI)                                     | ✅ Complete |
+| M2  | Reduce dependencies (remove superagent)                        | ✅ Complete |
+| M3  | Modernise code patterns (async/await, Promise.allSettled)      | ✅ Complete |
+| M3b | Test coverage (>80%)                                           | ✅ Complete |
+| M4a | Lifecycle & observability (events, state tracking)             | ✅ Complete |
+| M4b | Robustness (input validation, error handling)                  | ✅ Complete |
+| M5  | Performance (LRU cache, TTL result cache)                      | ✅ Complete |
+| M6  | Documentation, polish & release (2.0.0 shipped)                | ✅ Complete |
+| M7  | Additional trusted crawlers (Bingbot 2.1.0; AI crawlers 2.3.0) | ✅ Complete |
+| M8  | Google user-triggered fetchers (2.2.0)                         | ✅ Complete |
 
 Detailed write-ups for completed milestones live alongside this file
 (`05-milestone-5-performance.md`) and in `dev-notes/archive/`.
@@ -121,12 +121,13 @@ groups (commits `60af8b6`…`4f39a2e`):
 
 ---
 
-### Milestone 7: Additional Trusted Crawlers 🚧
+### Milestone 7: Additional Trusted Crawlers ✅
 
-**Status:** In progress
+**Status:** Complete
 **Priority:** Medium
 **Started:** 30 May 2026
-**Target:** 2.1.0 on npm
+**Completed:** 29 Aug 2026
+**Target:** Bingbot in 2.1.0; AI crawlers + Applebot in 2.3.0
 
 **Goal:** Broaden default coverage of legitimate, officially-published crawler IP
 ranges so they aren't mistakenly firewalled/RBL'd. Bar for inclusion: an
@@ -139,20 +140,39 @@ ranges so they aren't mistakenly firewalled/RBL'd. Bar for inclusion: an
 - [x] Test addresses, `docs/providers.md`, README provider list
 - [x] Bump to 2.1.0, CHANGELOG entry
 
-#### Next crawlers (candidate for 2.3.0 — verified official sources)
+#### AI crawlers + Applebot ✅ (2.3.0)
 
-> **Re-scoped 19 Jun 2026:** kicked from 2.2.0 to 2.3.0 (targeted next week).
-> 2.2.0 shipped the Google User-Triggered Fetchers provider instead (M8), which
-> took priority due to active customer impact (Gmail newsletter images blocked).
+> **Re-scoped 19 Jun 2026:** kicked from 2.2.0 to 2.3.0. 2.2.0 shipped the
+> Google User-Triggered Fetchers provider instead (M8), which took priority due
+> to active customer impact (Gmail newsletter images blocked).
+> **Delivered 29 Aug 2026.**
 
-All confirmed to publish the same `{creationTime, prefixes[]}` JSON format as
-Google, so each is a near-clone of `googlebot.js` (bundled asset + checksum):
+All publish the same `{creationTime, prefixes[]}` JSON format as Google, so each
+is a near-clone of `bingbot.js` (bundled asset + checksum):
 
-- [ ] **Applebot** — `https://search.developer.apple.com/applebot.json` (~12 prefixes). Apple's crawler (Siri/Spotlight/Safari suggestions).
-- [ ] **GPTBot** (OpenAI) — `https://openai.com/gptbot.json` (~21 prefixes). AI training crawler; fast-growing legit bot traffic.
-- [ ] **OAI-SearchBot** (OpenAI) — OpenAI's search crawler, separate published file.
-- [ ] _(considered, deferred)_ `ChatGPT-User` — user-triggered fetcher; skip by the same reasoning as Google's user-triggered fetchers.
-- [ ] _(stretch)_ Anthropic **ClaudeBot**, **PerplexityBot** — also publish ranges; natural "AI crawler" group if we want fuller coverage.
+- [x] **Applebot** — `https://search.developer.apple.com/applebot.json` (33 prefixes, not ~12 as first estimated). Apple's crawler (Siri/Spotlight/Safari suggestions).
+- [x] **GPTBot** (OpenAI) — `https://openai.com/gptbot.json` (21 prefixes). AI training crawler.
+- [x] **OAI-SearchBot** (OpenAI) — `https://openai.com/searchbot.json` (35 prefixes). ⚠️ The feed is at `searchbot.json`; the intuitive `oai-searchbot.json` path 404s.
+- [x] **ChatGPT-User** — `https://openai.com/chatgpt-user.json` (204 prefixes). **Included, reversing the earlier deferral**: M8 had already overturned the blanket "skip user-triggered fetchers" rule for Google on evidence of real breakage, and this is by some way the most actively maintained of the four feeds.
+
+**Findings worth keeping:**
+
+- All four feeds are **IPv4-only** — no `ipv6Prefix` entries at all, so these
+  providers ship an empty `ipv6.ranges`. Documented in `docs/providers.md` so it
+  isn't later mistaken for a loading bug.
+- **GPTBot and OAI-SearchBot share 6 egress prefixes.** Harmless (both trusted,
+  first-registered wins the linear scan) but it means provider names can't be
+  used to tell OpenAI's crawlers apart. Pinned by a test in
+  `test/ai-crawlers.test.js`.
+
+**Dropped from scope:**
+
+- ~~Anthropic **ClaudeBot**~~ — no machine-readable IP source could be found
+  (all plausible URLs 404 as of 29 Aug 2026). Fails the inclusion bar; revisit
+  only if Anthropic publishes a feed.
+- **PerplexityBot** — `https://www.perplexity.ai/perplexitybot.json` exists and
+  is valid (8 prefixes), but the feed has not been updated since Feb 2025. Left
+  out as low value for now; cheap to add if it starts moving.
 
 **Per-provider checklist (repeat for each):** create `src/providers/<name>.js`
 (clone of `bingbot.js`), download asset, add to `defaultProviders` +

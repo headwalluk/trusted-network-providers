@@ -1,5 +1,41 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 2.3.0 :: 2026-08-29
+
+### ✨ New providers — AI crawlers and Applebot (Milestone 7)
+
+Four new bundled-asset providers, each reading the same Google-style
+`{creationTime, prefixes[]}` feed and SHA-256 verified on load:
+
+- **Applebot** (`applebot-ips.json`, 33 prefixes) — Apple's crawler behind Siri,
+  Spotlight Suggestions and Safari search suggestions.
+  Source: `search.developer.apple.com/applebot.json`
+- **GPTBot** (`gptbot-ips.json`, 21 prefixes) — OpenAI's training crawler.
+  Source: `openai.com/gptbot.json`
+- **OAI-SearchBot** (`oai-searchbot-ips.json`, 35 prefixes) — OpenAI's
+  search/indexing crawler. Source: `openai.com/searchbot.json`
+- **ChatGPT-User** (`chatgpt-user-ips.json`, 204 prefixes) — OpenAI's
+  user-triggered fetcher, i.e. requests made because a user asked ChatGPT to
+  visit a page. Source: `openai.com/chatgpt-user.json`
+
+ChatGPT-User was previously deferred on the grounds that user-triggered fetchers
+were out of scope. That reasoning was already overturned for Google's fetchers
+in 2.2.0, after they were being RBL'd and breaking Gmail newsletter images; the
+same argument applies here, so it is included.
+
+### 📌 Notes for consumers
+
+- **All four feeds are IPv4-only.** None publishes an `ipv6Prefix` entry today,
+  so these providers ship an empty `ipv6.ranges`. That is the expected state,
+  not a loading failure.
+- **GPTBot and OAI-SearchBot share 6 egress prefixes.** OpenAI reuses egress
+  infrastructure across its crawlers. Lookups scan in registration order, so a
+  shared prefix reports `GPTBot`. Both are trusted, so this affects only the
+  reported name and never the trust decision — but don't use the provider name
+  to tell OpenAI's crawlers apart.
+
+No breaking changes; the public API is unchanged.
+
 ## 2.2.2 :: 2026-08-29
 
 ### 🔄 Asset refresh

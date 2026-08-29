@@ -18,6 +18,10 @@ crawler/CDN traffic can be misclassified as untrusted until the next release.
 | Google Special Crawlers        | `developers.google.com/static/crawling/ipranges/special-crawlers.json`               | `google-special-crawlers.json`                 |
 | Google User-Triggered Fetchers | `developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json` | `google-user-fetchers.json`                    |
 | Bingbot                        | `bing.com/toolbox/bingbot.json`                                                      | `bingbot-ips.json`                             |
+| Applebot                       | `search.developer.apple.com/applebot.json`                                           | `applebot-ips.json`                            |
+| GPTBot                         | `openai.com/gptbot.json`                                                             | `gptbot-ips.json`                              |
+| OAI-SearchBot                  | `openai.com/searchbot.json`                                                          | `oai-searchbot-ips.json`                       |
+| ChatGPT-User                   | `openai.com/chatgpt-user.json`                                                       | `chatgpt-user-ips.json`                        |
 | BunnyNet                       | `bunnycdn.com/api/system/edgeserverlist[/IPv6]`                                      | `bunnynet-ip4s.json`, `bunnynet-ip6s.json`     |
 | FacebookBot                    | `whois.radb.net` AS32934 routes                                                      | `facebookbot-ip4s.txt`, `facebookbot-ip6s.txt` |
 

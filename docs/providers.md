@@ -11,6 +11,10 @@ This document lists all built-in providers and explains how to add your own.
 | Google Special Crawlers        | Bundled asset | `src/assets/google-special-crawlers.json` | `./scripts/update-assets.sh` |
 | Google User-Triggered Fetchers | Bundled asset | `src/assets/google-user-fetchers.json`    | `./scripts/update-assets.sh` |
 | Bingbot                        | Bundled asset | `src/assets/bingbot-ips.json`             | `./scripts/update-assets.sh` |
+| Applebot                       | Bundled asset | `src/assets/applebot-ips.json`            | `./scripts/update-assets.sh` |
+| GPTBot                         | Bundled asset | `src/assets/gptbot-ips.json`              | `./scripts/update-assets.sh` |
+| OAI-SearchBot                  | Bundled asset | `src/assets/oai-searchbot-ips.json`       | `./scripts/update-assets.sh` |
+| ChatGPT-User                   | Bundled asset | `src/assets/chatgpt-user-ips.json`        | `./scripts/update-assets.sh` |
 | Google Workspace               | DNS/SPF       | `_spf.google.com`                         | `reloadAll()`                |
 | Google Services                | Static        | `8.8.8.8`, `8.8.4.4`                      | None (fixed)                 |
 | Stripe API                     | HTTP API      | `stripe.com/files/ips/ips_api.json`       | `reloadAll()`                |
@@ -28,6 +32,33 @@ This document lists all built-in providers and explains how to add your own.
 | Brevo                          | Static        | Hardcoded ranges                          | None (fixed)                 |
 | GetTerms                       | Static        | Hardcoded address                         | None (fixed)                 |
 | Labrika                        | Static        | Hardcoded addresses                       | None (fixed)                 |
+
+### AI Crawlers
+
+Four of the bundled-asset providers cover AI and assistant traffic, all of them
+published as the same Google-style `{creationTime, prefixes[]}` JSON:
+
+- **Applebot** — Apple's crawler behind Siri, Spotlight Suggestions and Safari
+  search suggestions.
+- **GPTBot** — OpenAI's training crawler.
+- **OAI-SearchBot** — OpenAI's search/indexing crawler. Note the feed is
+  published at `openai.com/searchbot.json`; the more obvious
+  `oai-searchbot.json` path does not exist.
+- **ChatGPT-User** — OpenAI's user-triggered fetcher, i.e. a request made
+  because someone asked ChatGPT to visit a page. Included for the same reason as
+  Google's user-triggered fetchers: the traffic is legitimate and blocking it
+  silently breaks a real user's action.
+
+All four feeds are **IPv4-only** at present — none publishes an `ipv6Prefix`
+entry — so an empty `ipv6.ranges` on these providers is expected, not a fault.
+
+**Overlapping prefixes:** OpenAI reuses egress infrastructure across its
+crawlers, so a small number of prefixes appear in both the GPTBot and
+OAI-SearchBot feeds. Lookups scan providers in registration order, so a shared
+prefix reports whichever is registered first (GPTBot, by default). Both are
+trusted, so this affects only the reported name, never the trust decision — but
+don't rely on the provider name to distinguish OpenAI's crawlers from one
+another.
 
 ### Disabled Providers
 

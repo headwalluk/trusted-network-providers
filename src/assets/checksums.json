@@ -21,6 +21,26 @@
       "sha256": "a2d1cf229544205a24c61fb7c459408b1afe18f9fd5b172fe181f0eb73c1594d",
       "comment": "Bundled asset - checksum verified on load"
     },
+    "applebot": {
+      "url": "https://search.developer.apple.com/applebot.json",
+      "sha256": "b845bdfb29aae14da031eab82d7f366dd295f8ea4bc4ef5fe3ce850c94b779b8",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "gptbot": {
+      "url": "https://openai.com/gptbot.json",
+      "sha256": "be778b84e1b5436be6ab9d6139ba2b3d6a98c1f581e038ec386e3a7d44cbfe50",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "oai-searchbot": {
+      "url": "https://openai.com/searchbot.json",
+      "sha256": "e757b3ed5b84ac71976c02f17d9a77385e7acaf5b50e17c7b60f7e5a9876f102",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "chatgpt-user": {
+      "url": "https://openai.com/chatgpt-user.json",
+      "sha256": "812f11df46d6fcac5779082dba32f7e2d571673f72b3e63b10ef706a25420996",
+      "comment": "Bundled asset - checksum verified on load"
+    },
     "bunnynet-ipv4": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist",
       "sha256": "38db132b581aefb5666511e6667ae651bd98a76c5237062af09f35fa4c965a2e",
@@ -52,5 +72,5 @@
       "comment": "Runtime verification - structure validation used instead (data changes frequently)"
     }
   },
-  "lastUpdated": "2026-08-29T18:04:24Z"
+  "lastUpdated": "2026-08-29T18:25:58Z"
 }

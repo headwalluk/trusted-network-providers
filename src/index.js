@@ -12,6 +12,10 @@ import googlebotProvider from './providers/googlebot.js';
 import googleSpecialCrawlersProvider from './providers/google-special-crawlers.js';
 import googleUserFetchersProvider from './providers/google-user-fetchers.js';
 import bingbotProvider from './providers/bingbot.js';
+import applebotProvider from './providers/applebot.js';
+import gptbotProvider from './providers/gptbot.js';
+import oaiSearchbotProvider from './providers/oai-searchbot.js';
+import chatgptUserProvider from './providers/chatgpt-user.js';
 import googleWorkspaceProvider from './providers/google-workspace.js';
 import googleServicesProvider from './providers/google-services.js';
 import stripeApiProvider from './providers/stripe-api.js';
@@ -56,6 +60,10 @@ const defaultProviders = [
   googleSpecialCrawlersProvider,
   googleUserFetchersProvider,
   bingbotProvider,
+  applebotProvider,
+  gptbotProvider,
+  oaiSearchbotProvider,
+  chatgptUserProvider,
   googleWorkspaceProvider,
   googleServicesProvider,
   stripeApiProvider,

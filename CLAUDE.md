@@ -65,7 +65,7 @@ Jest with ESM support. Tests organized by concern: unit tests, integration tests
 
 ## Regular Maintenance
 
-The bundled-asset providers (Googlebot, Google Special Crawlers, Google User-Triggered Fetchers, Bingbot, BunnyNet, FacebookBot) ship IP lists under `src/assets/` that drift over time and must be refreshed periodically — monthly, and before any release. See [docs/regular-maintenance.md](docs/regular-maintenance.md) for the full guide. Runtime providers (Stripe, Google Workspace SPF) self-refresh and need no maintenance.
+The bundled-asset providers (Googlebot, Google Special Crawlers, Google User-Triggered Fetchers, Bingbot, Applebot, GPTBot, OAI-SearchBot, ChatGPT-User, BunnyNet, FacebookBot) ship IP lists under `src/assets/` that drift over time and must be refreshed periodically — monthly, and before any release. See [docs/regular-maintenance.md](docs/regular-maintenance.md) for the full guide. Runtime providers (Stripe, Google Workspace SPF) self-refresh and need no maintenance.
 
 `scripts/update-assets.sh` is deterministic: it stages downloads, validates them, writes back only files that actually changed, regenerates `src/assets/checksums.json`, and reports via exit code — `0` = no change, `10` = assets changed, `1` = error (nothing written).
 

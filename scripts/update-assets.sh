@@ -38,6 +38,12 @@ GOOGLEBOT_URL=https://developers.google.com/static/crawling/ipranges/common-craw
 GOOGLE_SPECIAL_URL=https://developers.google.com/static/crawling/ipranges/special-crawlers.json
 GOOGLE_USER_FETCHERS_URL=https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json
 BINGBOT_URL=https://www.bing.com/toolbox/bingbot.json
+APPLEBOT_URL=https://search.developer.apple.com/applebot.json
+# Note: OpenAI's search crawler feed is published as searchbot.json, not
+# oai-searchbot.json (that path 404s).
+GPTBOT_URL=https://openai.com/gptbot.json
+OAI_SEARCHBOT_URL=https://openai.com/searchbot.json
+CHATGPT_USER_URL=https://openai.com/chatgpt-user.json
 BUNNYNET_IP4_URL=https://bunnycdn.com/api/system/edgeserverlist
 BUNNYNET_IP6_URL=https://bunnycdn.com/api/system/edgeserverlist/IPv6
 
@@ -198,6 +204,34 @@ download "${BINGBOT_URL}" "${BINGBOT_STAGE}" "Bingbot"
 validate_json "${BINGBOT_STAGE}" '.prefixes | length > 0' "Bingbot"
 
 ##
+# Applebot (Siri / Spotlight / Safari search suggestions)
+#
+APPLEBOT_STAGE="${STAGE_DIR}/applebot-ips.json"
+download "${APPLEBOT_URL}" "${APPLEBOT_STAGE}" "Applebot"
+validate_json "${APPLEBOT_STAGE}" '.prefixes | length > 0' "Applebot"
+
+##
+# GPTBot (OpenAI training crawler)
+#
+GPTBOT_STAGE="${STAGE_DIR}/gptbot-ips.json"
+download "${GPTBOT_URL}" "${GPTBOT_STAGE}" "GPTBot"
+validate_json "${GPTBOT_STAGE}" '.prefixes | length > 0' "GPTBot"
+
+##
+# OAI-SearchBot (OpenAI search/indexing crawler)
+#
+OAI_SEARCHBOT_STAGE="${STAGE_DIR}/oai-searchbot-ips.json"
+download "${OAI_SEARCHBOT_URL}" "${OAI_SEARCHBOT_STAGE}" "OAI-SearchBot"
+validate_json "${OAI_SEARCHBOT_STAGE}" '.prefixes | length > 0' "OAI-SearchBot"
+
+##
+# ChatGPT-User (OpenAI user-triggered fetcher)
+#
+CHATGPT_USER_STAGE="${STAGE_DIR}/chatgpt-user-ips.json"
+download "${CHATGPT_USER_URL}" "${CHATGPT_USER_STAGE}" "ChatGPT-User"
+validate_json "${CHATGPT_USER_STAGE}" '.prefixes | length > 0' "ChatGPT-User"
+
+##
 # BunnyNet IPv4 (JSON array of addresses)
 #
 BUNNYNET_IP4_STAGE="${STAGE_DIR}/bunnynet-ip4s.json"
@@ -223,6 +257,10 @@ commit_asset "${GOOGLEBOT_STAGE}" "${ASSETS_DIR}/googlebot-ips.json" prefixes pr
 commit_asset "${GOOGLE_SPECIAL_STAGE}" "${ASSETS_DIR}/google-special-crawlers.json" prefixes prefixes
 commit_asset "${GOOGLE_USER_FETCHERS_STAGE}" "${ASSETS_DIR}/google-user-fetchers.json" prefixes prefixes
 commit_asset "${BINGBOT_STAGE}" "${ASSETS_DIR}/bingbot-ips.json" prefixes prefixes
+commit_asset "${APPLEBOT_STAGE}" "${ASSETS_DIR}/applebot-ips.json" prefixes prefixes
+commit_asset "${GPTBOT_STAGE}" "${ASSETS_DIR}/gptbot-ips.json" prefixes prefixes
+commit_asset "${OAI_SEARCHBOT_STAGE}" "${ASSETS_DIR}/oai-searchbot-ips.json" prefixes prefixes
+commit_asset "${CHATGPT_USER_STAGE}" "${ASSETS_DIR}/chatgpt-user-ips.json" prefixes prefixes
 commit_asset "${BUNNYNET_IP4_STAGE}" "${ASSETS_DIR}/bunnynet-ip4s.json" array addresses
 commit_asset "${BUNNYNET_IP6_STAGE}" "${ASSETS_DIR}/bunnynet-ip6s.json" array addresses
 
@@ -259,6 +297,26 @@ cat >"${NEW_CHECKSUMS}" <<EOF
     "bingbot": {
       "url": "${BINGBOT_URL}",
       "sha256": "$(sha "${ASSETS_DIR}/bingbot-ips.json")",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "applebot": {
+      "url": "${APPLEBOT_URL}",
+      "sha256": "$(sha "${ASSETS_DIR}/applebot-ips.json")",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "gptbot": {
+      "url": "${GPTBOT_URL}",
+      "sha256": "$(sha "${ASSETS_DIR}/gptbot-ips.json")",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "oai-searchbot": {
+      "url": "${OAI_SEARCHBOT_URL}",
+      "sha256": "$(sha "${ASSETS_DIR}/oai-searchbot-ips.json")",
+      "comment": "Bundled asset - checksum verified on load"
+    },
+    "chatgpt-user": {
+      "url": "${CHATGPT_USER_URL}",
+      "sha256": "$(sha "${ASSETS_DIR}/chatgpt-user-ips.json")",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv4": {

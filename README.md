@@ -42,11 +42,12 @@ console.log(unknown); // null
 
 ## Built-in Providers
 
-Includes 20+ trusted providers out of the box:
+Includes 25+ trusted providers out of the box:
 
-- **Search Engines**: Googlebot, Bingbot, AhrefsBot, SemrushBot
+- **Search Engines**: Googlebot, Bingbot, Applebot, AhrefsBot, SemrushBot
+- **AI Crawlers**: GPTBot, OAI-SearchBot (OpenAI)
 - **Advertising**: Google AdsBot, AdSense (Google Special Crawlers)
-- **User-Triggered Fetchers**: Google (Gmail image proxy, Chrome prefetch proxy, Feedfetcher, etc.)
+- **User-Triggered Fetchers**: Google (Gmail image proxy, Chrome prefetch proxy, Feedfetcher, etc.), ChatGPT-User
 - **Payment Processors**: Stripe, PayPal, Opayo
 - **Email Services**: Outlook, Brevo, Mailgun
 - **CDN/Infrastructure**: Cloudflare, BunnyNet
