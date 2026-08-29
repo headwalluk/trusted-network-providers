@@ -13,7 +13,7 @@
     },
     "google-user-fetchers": {
       "url": "https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json",
-      "sha256": "e8fd7e13cf6f8db693d61fca195e2b875364fb2d49ecfac807a7e04bd157bebc",
+      "sha256": "d30f2dbd4d32bc5bbe32410a61769a50b1c469780e43a92a8d1e72ba7a3fd005",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bingbot": {
@@ -23,22 +23,22 @@
     },
     "bunnynet-ipv4": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist",
-      "sha256": "8ae91ac1ecf03def3423fa4d6784ea272cd8ba68c9843c38c96c01858cd42e5f",
+      "sha256": "38db132b581aefb5666511e6667ae651bd98a76c5237062af09f35fa4c965a2e",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv6": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist/IPv6",
-      "sha256": "705edf59f140fb1178d2941122608db891c0e57b7cd510cd3c12ee6dbe5bfdd5",
+      "sha256": "0376c96b57c9494263850994c9a4b29ce1ccb4ae9b711f450f9cb5de7977ed13",
       "comment": "Bundled asset - checksum verified on load"
     },
     "facebookbot-ipv4": {
       "url": "whois.radb.net -i origin AS32934 (IPv4 routes)",
-      "sha256": "43611aaba5becfae9669482387f9949858a7a5c8d6cbe986c766c070c5e6e6d1",
+      "sha256": "e2bfde5b6fe28327049d2b5bad76d0215f2a03756c4af5fba365f3f3a0df71df",
       "comment": "Bundled asset - checksum verified on load"
     },
     "facebookbot-ipv6": {
       "url": "whois.radb.net -i origin AS32934 (IPv6 routes)",
-      "sha256": "0730de851916b44873e79f5fc201e94c47c66189bcda6f9c4ff0047e7abd99e7",
+      "sha256": "9b37d4c629fd2bc2f44e7b891249ab33c7d9793e86dbf9bb544c7cb4ad49169c",
       "comment": "Bundled asset - checksum verified on load"
     },
     "stripe-api": {
@@ -52,5 +52,5 @@
       "comment": "Runtime verification - structure validation used instead (data changes frequently)"
     }
   },
-  "lastUpdated": "2026-07-18T17:47:12Z"
+  "lastUpdated": "2026-08-29T18:04:24Z"
 }

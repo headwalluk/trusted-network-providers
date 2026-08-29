@@ -1,6 +1,6 @@
 {
   "name": "@headwall/trusted-network-providers",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Trusted network hosts and address ranges.",
   "type": "module",
   "main": "./src/index.js",

@@ -1,5 +1,30 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 2.2.2 :: 2026-08-29
+
+### 🔄 Asset refresh
+
+Routine refresh of bundled IP lists from upstream sources:
+
+- **Google User-Triggered Fetchers** (`google-user-fetchers.json`): 452 → 494
+  prefixes
+- **BunnyNet IPv4** (`bunnynet-ip4s.json`): 627 → 590 addresses
+- **BunnyNet IPv6** (`bunnynet-ip6s.json`): 355 → 324 addresses
+- **FacebookBot IPv4** (`facebookbot-ip4s.txt`): 417 → 416 routes (removed
+  `189.247.71.0/24`)
+- **FacebookBot IPv6** (`facebookbot-ip6s.txt`): 635 → 633 routes (removed
+  `2806:1090:cbff::/48`, `2806:10a0:cbff::/48`)
+
+Googlebot, Google Special Crawlers, and Bingbot were unchanged (identical prefix
+sets). Checksum manifest regenerated.
+
+### 🔒 Dependency maintenance
+
+- `npm audit fix` applied to the dev toolchain, clearing 3 advisories (2 high, 1
+  low) in transitive dev dependencies — `brace-expansion`, `js-yaml`, and
+  `@babel/core`. Lockfile-only; no runtime dependencies changed and no public
+  API impact.
+
 ## 2.2.1 :: 2026-07-18
 
 ### 🔄 Asset refresh
