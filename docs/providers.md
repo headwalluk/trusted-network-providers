@@ -88,6 +88,19 @@ way its comment claimed — both had simply gone stale:
 - **Seobility** fetched two `.txt` lists that now 404. It publishes
   `bots.json` instead, in the `{prefixes:[…]}` shape Google uses.
 
+> **Seobility's IPv6 list is incomplete.** Measured 8 Sep 2026 against a day of
+> live traffic: of 60 unique IPv6 hosts sending `SeobilityBot` in 19 hours, the
+> feed matched **5**, all via its eight `/64` blocks — not one of its 64 bare
+> IPv6 host entries appeared in the log. Seobility's crawler fleet rotates
+> Hetzner `/64`s faster than it publishes them, and the hosts carry no PTR
+> record, so forward-confirmed reverse DNS is not available as a fallback.
+>
+> The provider is still correct: it trusts exactly what Seobility vouches for.
+> Do **not** widen the match to the enclosing `/48` or to Hetzner's
+> `2a01:4f8::/32` — that would extend trusted status to every Hetzner customer.
+> The practical consequence is that whitelisting Seobility catches a minority of
+> its IPv6 crawling, which for an SEO crawler is a tolerable outcome.
+
 **GTmetrix** was deleted in 3.0.1 — its locations feed went behind a Cloudflare
 proxy, and it was the only reason the package carried `fast-xml-parser`.
 
