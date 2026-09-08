@@ -1,5 +1,16 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 3.2.1 :: 2026-09-08
+
+### 📝 README provider list corrected
+
+The Built-in Providers section omitted three providers that have been registered
+all along — **Google Workspace**, **Google Services** and **Ezoic** — and still
+advertised "25+". It now lists all 27, cross-checked against
+`getAllProviders()`.
+
+No code change.
+
 ## 3.2.0 :: 2026-09-08
 
 ### 🐛 SPF includes are followed to the bottom, not one level down

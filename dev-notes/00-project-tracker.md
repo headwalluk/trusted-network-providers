@@ -230,25 +230,79 @@ mean. The field is optional precisely so it can be filled in as uses appear.
 
 ---
 
+### Milestone 10: Maintenance, Node 22, Provider Correctness ✅ (2.4.1 – 3.2.0)
+
+**Delivered 8 September 2026** across seven releases. Began as routine
+maintenance — dependency refresh and a monthly asset run — and turned into
+provider-correctness work once the data was checked against real traffic.
+
+**Maintenance (2.4.1, 2.4.2):** asset refresh (Google ×3, ChatGPT-User, BunnyNet
+×2); lockfile brought current; ESLint 9 → 10, whose new `preserve-caught-error`
+rule found four throws that discarded the original error (`cause` now attached).
+Formatting rules dropped in favour of Prettier, which already enforced them.
+
+**Node 22 floor (3.0.0).** `engines` `>=18` → `>=22`; CI matrix 18/20/22 →
+22/24/26, with lint and format split into their own job since ESLint 10 needs
+Node ≥ 20.19 — a toolchain constraint, deliberately not allowed to dictate the
+runtime floor.
+
+**Dependencies (3.0.1).** GTmetrix deleted (its feed went behind a Cloudflare
+proxy) and with it `fast-xml-parser` and the now-dead `fetchXML()`. `ipaddr.js`
+is the only runtime dependency.
+
+#### The theme: three providers were silently wrong
+
+Each looked healthy from inside the library — `state: 'ready'`, no error, data
+loaded — and each was only caught by checking against live traffic.
+
+1. **Google Workspace held zero ranges** (fixed 3.0.0). `spf-analyser.js` read
+   IPs only from `include:` targets; Google flattened `_spf.google.com` to
+   inline `ip4:`/`ip6:` directives, so it found nothing and returned early. Its
+   one log line was at `info`, below the default level of `error`. Every Google
+   Workspace address had been reported untrusted.
+2. **Mailgun held half its ranges** (fixed 3.2.0). The same analyser resolved
+   includes one level deep; `mailgun.org` → `_spf.mailgun.org` → `_spf1`/`_spf2`
+   holds 11 of its 22 ranges. Measured against a day of `mail.log`: 38 of 109
+   sender IPs before, **109 of 109** after. Resolution now walks the chain to the
+   RFC 7208 §4.6.4 ten-lookup limit.
+3. **Seobility could not be made correct** (removed 3.2.0). Its `bots.json` feed
+   matched 5 of 60 live crawler hosts, and no PTR records exist for FCrDNS. See
+   `docs/providers.md` — recorded so it is not attempted a fourth time.
+
+The analyser now refuses to replace provider data with an empty result, and logs
+at `error` rather than `info`, so this class of failure is loud.
+
+**Docs audit.** `security.md` named three static providers as DNS/SPF;
+`dns-security-guide.md` was still CommonJS throughout and described a bundled-SPF
+feature that never existed; the README listed two disabled providers as built-in
+and documented a `getProviderStatus()` key that never existed. All corrected.
+
+**Carried forward:** consider a mechanical check that the `docs/providers.md`
+table and the README lists match the registry — three of today's doc errors were
+exactly that drift, and a test would have caught them.
+
+**Handoff:** 3.2.0 tagged; `npm publish` is Paul's.
+
+---
+
 ---
 
 ## Future: Phase 2 (post-2.0.0)
 
 Not in scope for v2.0.0. Revisit after release.
 
-- **Dependency refresh (first post-release task)** — deferred from M6 to keep the
-  release tree audit-clean and tested. None are security fixes (`npm audit` = 0).
-  As of 30 May 2026:
-  - `ipaddr.js` 2.2.0 → 2.4.0 (ships; in-range minor — retest IP parsing carefully)
-  - `eslint` 9.39.1 → 10.4.1 (dev; **major**, needs flat-config review)
-  - `jest` 30.2.0 → 30.4.2 (dev; in-range patch)
-  - `prettier` 3.6.2 → 3.8.3 (dev; in-range minor — may reformat files)
+- ~~**Dependency refresh**~~ — done 8 Sep 2026 (M10). Everything current,
+  `npm audit` clean, ESLint on 10.x, `fast-xml-parser` dropped entirely.
+- **Mechanical docs-vs-registry check** — assert the `docs/providers.md` table
+  and the README provider lists match `getAllProviders()`. Three of the doc
+  errors found in M10 were exactly this drift, and each was invisible until read
+  side by side with the code. Cheap as a test.
 - **README refactor — lean entry point + `docs/` index.** Slim `README.md` down to:
   badges at the top, a short description of what the package is and who it's for,
   then a set of links into focused `docs/` files. Move the detailed Configuration,
   API Reference, Examples, Provider Management, and Performance sections out of the
   README and into (or merged with) dedicated `docs/` pages, leaving the README as a
-  concise overview that points at them. (Not urgent — docs are accurate today.)
+  concise overview that points at them. (Not urgent — docs re-verified 8 Sep 2026.)
 - TypeScript migration of core modules
 - Ship `.d.ts` type definitions with the package
 - Add type checking to CI
