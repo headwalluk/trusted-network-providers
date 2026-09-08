@@ -1,5 +1,37 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 3.1.0 :: 2026-09-08
+
+### ✨ Mailgun and Seobility are registered by default
+
+Both had been commented out of `defaultProviders`, and in both cases the comment
+misdescribed the problem. The default set goes from 26 providers to 28.
+
+**Mailgun** was never broken. Its SPF record resolves cleanly and yields 11 IPv4
+ranges — but its single `testAddresses` entry, `69.72.36.213`, had dropped out of
+that record, so `runTests()` failed and the provider was disabled rather than the
+test address refreshed. The address is now `161.38.204.1`, inside
+`161.38.204.0/22`, which sits within Mailgun's own ARIN allocation
+`161.38.192.0/20` — it survives the SPF record being re-cut in a way an arbitrary
+host address does not.
+
+**Seobility** was labelled an unreliable data source. Its two `.txt` endpoints
+under `/static/ip_lists/bots/` now return 404; Seobility publishes
+[`bots.json`](https://www.seobility.net/bots.json) instead, linked from its own
+[bot page](https://www.seobility.net/en/bot/) for automated discovery. The
+provider is rewritten against it and loads 277 entries (205 IPv4, 72 IPv6).
+
+The feed reuses Google's `{prefixes: [{ipv4Prefix | ipv6Prefix}]}` schema, but
+unlike Google's it is mostly **bare host addresses rather than CIDR blocks**, so
+each entry is routed on whether it carries a mask — pushing an unmasked address
+into `ranges` would throw on the first `parseCIDR()`. Its response is
+structure-checked, and a payload with an empty or missing `prefixes` array is
+rejected rather than silently emptying the provider.
+
+Both providers' test addresses had rotted the same way, which is worth noting for
+anything similar: a provider whose data is fetched at runtime needs a test
+address chosen for longevity, or it disables itself by degrees.
+
 ## 3.0.1 :: 2026-09-08
 
 ### 🧹 GTmetrix removed; `fast-xml-parser` dropped

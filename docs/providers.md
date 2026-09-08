@@ -32,6 +32,8 @@ This document lists all built-in providers and explains how to add your own.
 | Brevo                          | Static        | Hardcoded ranges                          | None (fixed)                 |
 | GetTerms                       | Static        | Hardcoded address                         | None (fixed)                 |
 | Labrika                        | Static        | Hardcoded addresses                       | None (fixed)                 |
+| Mailgun                        | DNS/SPF       | `mailgun.org`                             | `reloadAll()`                |
+| Seobility                      | HTTP API      | `seobility.net/bots.json`                 | `reloadAll()`                |
 
 ### AI Crawlers
 
@@ -73,16 +75,21 @@ names would silently keep trusting the fifth. Excluding them does not mark the
 networks as bad — it withdraws a privilege, leaving them to be judged on their
 own behaviour. See the README's _Provider Categories_ section.
 
-### Disabled Providers
+### Previously Disabled Providers
 
-These providers exist in `src/providers/` but are commented out in the default provider list:
+Every provider in `src/providers/` is now registered by default.
 
-- **Mailgun** — DNS/SPF based (`mailgun.org`)
-- **Seobility** — HTTP API, unreliable data source
+**Mailgun** and **Seobility** were re-enabled in 3.1.0. Neither was broken in the
+way its comment claimed — both had simply gone stale:
 
-GTmetrix was deleted in 3.0.1. It had been disabled since its locations feed went
-behind a Cloudflare proxy, and it was the only reason the package carried the
-`fast-xml-parser` dependency.
+- **Mailgun** resolved fine, but its `testAddresses` entry had left the SPF
+  record, so `runTests()` failed. The address is now taken from a range inside
+  Mailgun's own ARIN allocation, which outlives a re-cut SPF record.
+- **Seobility** fetched two `.txt` lists that now 404. It publishes
+  `bots.json` instead, in the `{prefixes:[…]}` shape Google uses.
+
+**GTmetrix** was deleted in 3.0.1 — its locations feed went behind a Cloudflare
+proxy, and it was the only reason the package carried `fast-xml-parser`.
 
 ## Provider Types
 

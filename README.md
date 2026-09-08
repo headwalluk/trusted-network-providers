@@ -46,20 +46,17 @@ console.log(unknown); // null
 
 Includes 25+ trusted providers out of the box:
 
-- **Search Engines**: Googlebot, Bingbot, Applebot, AhrefsBot, SemrushBot
+- **Search Engines**: Googlebot, Bingbot, Applebot, AhrefsBot, SemrushBot, Seobility
 - **AI Crawlers**: GPTBot, OAI-SearchBot (OpenAI) — with Applebot and ChatGPT-User, these carry the `ai-crawler` category and can be excluded as a set
 - **Advertising**: Google AdsBot, AdSense (Google Special Crawlers)
 - **User-Triggered Fetchers**: Google (Gmail image proxy, Chrome prefetch proxy, Feedfetcher, etc.), ChatGPT-User
 - **Payment Processors**: Stripe, PayPal, Opayo
-- **Email Services**: Outlook, Brevo
+- **Email Services**: Outlook, Brevo, Mailgun
 - **CDN/Infrastructure**: Cloudflare, BunnyNet
 - **Development Tools**: GetTerms, Labrika
 - **Social Media**: FacebookBot
 - **E-commerce**: ShipHero
 - **Networks**: Private/Internal (RFC 1918)
-
-Mailgun and Seobility ship in `src/providers/` but are **not** registered by
-default — see [Disabled Providers](docs/providers.md#disabled-providers).
 
 ## Key Features
 

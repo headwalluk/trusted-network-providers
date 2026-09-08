@@ -1,52 +1,56 @@
 /**
  * seobility.js
+ *
+ * REF: https://www.seobility.net/en/bot/
+ *
+ * The older https://www.seobility.net/static/ip_lists/bots/*.txt endpoints are
+ * gone (404). Seobility now publishes bots.json for automated discovery, in the
+ * same {prefixes:[{ipv4Prefix|ipv6Prefix}]} shape Google uses — except that most
+ * entries are bare host addresses rather than CIDR blocks, so each one is routed
+ * on whether it carries a mask.
  */
 
-import { fetchText } from '../utils/secure-http-client.js';
-import ipaddr from 'ipaddr.js';
+import { fetchJSON } from '../utils/secure-http-client.js';
 import logger from '../utils/logger.js';
+
+const SEOBILITY_ADDRESS_LIST_URL = 'https://www.seobility.net/bots.json';
+
+/** Reject a payload that parsed but isn't the feed we expect. */
+const hasExpectedStructure = (data) => Boolean(data) && Array.isArray(data.prefixes) && data.prefixes.length > 0;
 
 const self = {
   name: 'Seobility',
-  sources: {
-    ipv4: 'https://www.seobility.net/static/ip_lists/bots/ipv4.txt',
-    ipv6: 'https://www.seobility.net/static/ip_lists/bots/ipv6.txt',
-  },
+  // The feed lists individual crawler hosts, which Seobility rotates. If
+  // runTests() starts failing here, re-pick from https://www.seobility.net/bots.json.
+  testAddresses: ['116.202.182.111', '2a01:4f8:1c0c:4018::1'],
   reload: async () => {
-    const requests = [];
+    try {
+      const data = await fetchJSON(SEOBILITY_ADDRESS_LIST_URL, { verifyStructure: hasExpectedStructure });
 
-    for (const [addressListType, addressListUrl] of Object.entries(self.sources)) {
-      const request = (async () => {
-        try {
-          const text = await fetchText(addressListUrl);
+      const newAddresses = {
+        ipv4: { addresses: [], ranges: [] },
+        ipv6: { addresses: [], ranges: [] },
+      };
 
-          if (!text) {
-            logger.error(`Failed to fetch ${addressListType} from ${addressListUrl}`);
-          } else {
-            // Clear existing data
-            self[addressListType].addresses.length = 0;
-            self[addressListType].ranges.length = 0;
-
-            const records = text.split('\n');
-            records.forEach((record) => {
-              const trimmed = record.trim();
-              if (trimmed && ipaddr.isValid(trimmed) && !self[addressListType].addresses.includes(trimmed)) {
-                self[addressListType].addresses.push(trimmed);
-              }
-            });
-          }
-        } catch (error) {
-          logger.error(`Failed to reload Seobility ${addressListType} IPs: ${error.message}`);
-          throw error;
+      for (const prefix of data.prefixes) {
+        if (prefix.ipv4Prefix) {
+          const target = prefix.ipv4Prefix.includes('/') ? newAddresses.ipv4.ranges : newAddresses.ipv4.addresses;
+          target.push(prefix.ipv4Prefix);
         }
-      })();
 
-      requests.push(request);
+        if (prefix.ipv6Prefix) {
+          const target = prefix.ipv6Prefix.includes('/') ? newAddresses.ipv6.ranges : newAddresses.ipv6.addresses;
+          target.push(prefix.ipv6Prefix);
+        }
+      }
+
+      self.ipv4 = newAddresses.ipv4;
+      self.ipv6 = newAddresses.ipv6;
+    } catch (error) {
+      logger.error(`Failed to reload Seobility IPs: ${error.message}`);
+      throw error;
     }
-
-    await Promise.all(requests);
   },
-  testAddresses: ['159.69.152.187', '2a01:4f8:1c1c:4064::1'],
   ipv4: {
     addresses: [],
     ranges: [],

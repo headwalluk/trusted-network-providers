@@ -4,8 +4,7 @@ This guide helps you understand and mitigate DNS security risks when using trust
 
 ## Quick Start: Securing DNS-Based Providers
 
-If you're using the Google Workspace provider — or Mailgun, which ships
-disabled and has to be registered deliberately — follow these steps.
+If you're using the Google Workspace or Mailgun providers, follow these steps.
 
 ### For Production (Recommended)
 
@@ -15,6 +14,7 @@ entirely if you don't need it:
 ```javascript
 trustedProviders.loadDefaultProviders();
 trustedProviders.deleteProvider('Google Workspace');
+trustedProviders.deleteProvider('Mailgun');
 await trustedProviders.reloadAll();
 ```
 
@@ -44,9 +44,8 @@ echo "nameserver 1.0.0.1" | sudo tee -a /etc/resolv.conf
 
 Only providers that use DNS SPF lookups:
 
-- ✅ **Google Workspace** - Uses DNS (registered by default)
-- ✅ **Mailgun** - Uses DNS (**disabled by default**; only affects you if you
-  register it yourself)
+- ✅ **Google Workspace** - Uses DNS
+- ✅ **Mailgun** - Uses DNS
 
 These providers are NOT affected:
 

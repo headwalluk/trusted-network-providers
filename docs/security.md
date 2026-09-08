@@ -37,10 +37,10 @@ API responses (e.g., Stripe) are validated at runtime to confirm they match expe
 
 ## DNS-Based Providers
 
-One provider in the default set — **Google Workspace** — resolves its IP ranges
-from DNS SPF records at runtime. (Mailgun does too, but ships disabled.) Every
-other provider is either static or fetched over HTTPS; MS Outlook, Brevo and
-PayPal in particular are hardcoded ranges, not DNS lookups.
+Two providers in the default set — **Google Workspace** and **Mailgun** —
+resolve their IP ranges from DNS SPF records at runtime. Every other provider is
+either static or fetched over HTTPS; MS Outlook, Brevo and PayPal in particular
+are hardcoded ranges, not DNS lookups.
 
 **DNS responses are not cryptographically verified** — they could be spoofed via
 DNS poisoning.
@@ -48,8 +48,8 @@ DNS poisoning.
 Mitigations:
 
 1. Use DNSSEC-validating resolvers (e.g., `1.1.1.1`, `8.8.8.8`)
-2. Drop the provider — `deleteProvider('Google Workspace')` — and no runtime DNS
-   lookup happens at all
+2. Drop them — `deleteProvider('Google Workspace')` and
+   `deleteProvider('Mailgun')` — and no runtime DNS lookup happens at all
 3. In high-security environments, rely on the bundled and static providers only
 
 Note that `./scripts/update-assets.sh` does **not** cover this: it refreshes the

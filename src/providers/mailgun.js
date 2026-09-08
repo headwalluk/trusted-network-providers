@@ -13,7 +13,9 @@ import spfAnalyser from '../spf-analyser.js';
 const self = {
   name: 'Mailgun',
 
-  testAddresses: ['69.72.36.213'],
+  // 161.38.204.0/22, inside Mailgun's own ARIN allocation 161.38.192.0/20, so
+  // this survives the SPF record being re-cut in a way a host address would not.
+  testAddresses: ['161.38.204.1'],
 
   ipv4: {
     addresses: [],
