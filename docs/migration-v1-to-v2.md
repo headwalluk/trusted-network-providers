@@ -224,7 +224,7 @@ v2.0.0 removes **superagent** and replaces it with Node.js **native `fetch()`**.
 
 **After (v2.x):**
 
-- Dependencies: `fast-xml-parser`, `ipaddr.js`
+- Dependencies: `fast-xml-parser`, `ipaddr.js` (3.0.1 drops `fast-xml-parser`, leaving `ipaddr.js` as the only runtime dependency)
 - HTTP requests now use `fetch()` (available in Node.js >=18)
 
 **Why this matters:**

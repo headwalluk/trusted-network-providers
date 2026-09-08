@@ -58,8 +58,8 @@ Includes 25+ trusted providers out of the box:
 - **E-commerce**: ShipHero
 - **Networks**: Private/Internal (RFC 1918)
 
-Mailgun, GTmetrix and Seobility ship in `src/providers/` but are **not**
-registered by default — see [Disabled Providers](docs/providers.md#disabled-providers).
+Mailgun and Seobility ship in `src/providers/` but are **not** registered by
+default — see [Disabled Providers](docs/providers.md#disabled-providers).
 
 ## Key Features
 

@@ -13,7 +13,6 @@ import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import {
   fetchJSON,
   fetchText,
-  fetchXML,
   calculateSHA256,
   verifyChecksum,
   DEFAULT_CONFIG,
@@ -325,89 +324,6 @@ describe('fetchText', () => {
     const result = await fetchText('https://example.com/slow.txt', { retryDelay: 10 });
 
     expect(result).toBe('success');
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-  });
-});
-
-describe('fetchXML', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('should successfully fetch XML as buffer', async () => {
-    const mockXML = '<root><data>value</data></root>';
-    global.fetch.mockResolvedValue(createMockResponse(mockXML));
-
-    const result = await fetchXML('https://example.com/data.xml');
-
-    expect(Buffer.isBuffer(result)).toBe(true);
-    expect(result.toString()).toBe(mockXML);
-    expect(global.fetch).toHaveBeenCalledWith(
-      'https://example.com/data.xml',
-      expect.objectContaining({
-        method: 'GET',
-        headers: { Accept: 'application/xml' },
-      })
-    );
-  });
-
-  it('should reject HTTP URLs', async () => {
-    await expect(fetchXML('http://example.com/data.xml')).rejects.toThrow(/Insecure URL rejected/);
-  });
-
-  it('should handle 404 errors without retry', async () => {
-    global.fetch.mockResolvedValue(createMockResponse('Not Found', 404));
-
-    await expect(fetchXML('https://example.com/missing.xml')).rejects.toThrow(/HTTP 404 error/);
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-  });
-
-  it('should handle 500 errors with retry', async () => {
-    const mockXML = '<root><data>value</data></root>';
-    global.fetch
-      .mockResolvedValueOnce(createMockResponse('Server Error', 500))
-      .mockResolvedValueOnce(createMockResponse(mockXML));
-
-    const result = await fetchXML('https://example.com/retry.xml');
-
-    expect(Buffer.isBuffer(result)).toBe(true);
-    expect(result.toString()).toBe(mockXML);
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-  });
-
-  it('should retry on network errors', async () => {
-    const mockXML = '<root><data>value</data></root>';
-    global.fetch.mockRejectedValueOnce(new Error('Network error')).mockResolvedValueOnce(createMockResponse(mockXML));
-
-    const result = await fetchXML('https://example.com/retry.xml');
-
-    expect(Buffer.isBuffer(result)).toBe(true);
-    expect(result.toString()).toBe(mockXML);
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-  });
-
-  it('should handle SSL certificate errors without retry', async () => {
-    const certError = new Error('Certificate untrusted');
-    certError.code = 'CERT_UNTRUSTED';
-    global.fetch.mockRejectedValue(certError);
-
-    await expect(fetchXML('https://example.com/untrusted-cert.xml')).rejects.toThrow(
-      /SSL certificate validation failed/
-    );
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-  });
-
-  it('should handle timeout with retry', async () => {
-    const abortError = new Error('Aborted');
-    abortError.name = 'AbortError';
-    const mockXML = '<root><data>value</data></root>';
-
-    global.fetch.mockRejectedValueOnce(abortError).mockResolvedValueOnce(createMockResponse(mockXML));
-
-    const result = await fetchXML('https://example.com/slow.xml', { retryDelay: 10 });
-
-    expect(Buffer.isBuffer(result)).toBe(true);
-    expect(result.toString()).toBe(mockXML);
     expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 });

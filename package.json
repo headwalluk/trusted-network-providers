@@ -1,6 +1,6 @@
 {
   "name": "@headwall/trusted-network-providers",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Trusted network hosts and address ranges.",
   "type": "module",
   "main": "./src/index.js",
@@ -39,7 +39,6 @@
   "author": "Paul Faulkner",
   "license": "MIT",
   "dependencies": {
-    "fast-xml-parser": "^5.3.2",
     "ipaddr.js": "^2.0.1"
   },
   "keywords": [

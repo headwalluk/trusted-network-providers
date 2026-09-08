@@ -1,5 +1,25 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 3.0.1 :: 2026-09-08
+
+### 🧹 GTmetrix removed; `fast-xml-parser` dropped
+
+`src/providers/gtmetrix.js` is deleted. It had been commented out of
+`defaultProviders` since its locations feed went behind a Cloudflare proxy, so
+it never loaded — but it was the sole importer of `fast-xml-parser`, meaning
+every consumer installed an XML parser for a provider that could not run.
+
+**`ipaddr.js` is now the only runtime dependency.**
+
+Also removed `fetchXML()` from `secure-http-client.js`. It existed solely to
+feed the GTmetrix provider and nothing else fetches XML; `fetchJSON()` and
+`fetchText()` are unaffected. It was internal — only `.` is exported from the
+package — so no consumer can have been using it.
+
+No registered provider changed: the default set is the same 26 as in 3.0.0, and
+lookups are unaffected. Mailgun and Seobility remain in `src/providers/`,
+disabled.
+
 ## 3.0.0 :: 2026-09-08
 
 ### ⚠️ Breaking: Node.js >= 22.0.0

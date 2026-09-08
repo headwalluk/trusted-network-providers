@@ -43,6 +43,9 @@ Milestone 2 focused on reducing external dependencies by replacing third-party H
 
 ### fast-xml-parser
 
+> **Superseded (8 Sep 2026, 3.0.1):** removed along with the GTmetrix provider.
+> The "KEEP" verdict below held only while GTmetrix existed.
+
 **Status:** Required  
 **Used by:** src/providers/gtmetrix.js
 

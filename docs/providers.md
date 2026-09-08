@@ -78,8 +78,11 @@ own behaviour. See the README's _Provider Categories_ section.
 These providers exist in `src/providers/` but are commented out in the default provider list:
 
 - **Mailgun** — DNS/SPF based (`mailgun.org`)
-- **GTmetrix** — HTTP API (`gtmetrix.com/locations.xml`), removed due to Cloudflare proxy issue
 - **Seobility** — HTTP API, unreliable data source
+
+GTmetrix was deleted in 3.0.1. It had been disabled since its locations feed went
+behind a Cloudflare proxy, and it was the only reason the package carried the
+`fast-xml-parser` dependency.
 
 ## Provider Types
 

@@ -211,21 +211,4 @@ async function fetchText(url, options = {}) {
   });
 }
 
-/**
- * Fetch XML data from a URL with security best practices
- *
- * @param {string} url - The URL to fetch from (must be HTTPS)
- * @param {object} options - Optional configuration overrides
- * @returns {Promise<Buffer>} - The response body as a buffer (for XML parsing)
- * @throws {Error} - If the request fails or URL is not HTTPS
- */
-async function fetchXML(url, options = {}) {
-  const config = { ...DEFAULT_CONFIG, ...options };
-
-  return fetchWithRetry(url, config, { method: 'GET', headers: { Accept: 'application/xml' } }, async (response) => {
-    const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
-  });
-}
-
-export { fetchJSON, fetchText, fetchXML, calculateSHA256, verifyChecksum, DEFAULT_CONFIG, HttpError };
+export { fetchJSON, fetchText, calculateSHA256, verifyChecksum, DEFAULT_CONFIG, HttpError };

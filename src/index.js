@@ -35,7 +35,6 @@ import brevoProvider from './providers/brevo.js';
 import getTermsProvider from './providers/get-terms.js';
 import labrikaProvider from './providers/labrika.js';
 // import mailgunProvider from './providers/mailgun.js';
-// import gtmetrixProvider from './providers/gtmetrix.js';
 // import seobilityProvider from './providers/seobility.js'; // Unreliable
 
 // Constants for IP address versions
@@ -83,7 +82,6 @@ const defaultProviders = [
   getTermsProvider,
   labrikaProvider,
   // mailgunProvider,
-  // gtmetrixProvider,
   // seobilityProvider, // Unreliable
 ];
 
