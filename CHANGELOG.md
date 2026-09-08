@@ -1,5 +1,42 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 2.4.2 :: 2026-09-08
+
+### 🔗 Thrown errors now carry their cause
+
+Errors that wrap a lower-level failure now attach the original via the standard
+`cause` option, so the chain survives to the consumer instead of being flattened
+into a message string:
+
+- `secure-http-client.js` — SSL validation failures, request timeouts, JSON
+  parse failures, and the "all retries exhausted" error.
+- `checksum-verifier.js` — the `ENOENT` behind "Asset file not found".
+
+Messages are unchanged, so anything matching on error text still works.
+
+### 🔧 ESLint 10
+
+Upgraded `eslint` 9.39.5 → 10.10.0 (9.x is end-of-life) and promoted
+`@eslint/js` to a direct devDependency — `eslint.config.js` imports it, so
+relying on it arriving transitively was a latent break.
+
+Two rules new to `recommended` in v10 found the four real defects fixed above
+(`preserve-caught-error`) plus a redundant assignment in `getTrustedProvider()`
+(`no-useless-assignment`).
+
+The seven core formatting rules the config carried (`semi`, `quotes`,
+`brace-style`, `arrow-parens`, `comma-dangle`, `no-trailing-spaces`,
+`no-multiple-empty-lines`) are deprecated in v10 in favour of the `@stylistic`
+plugin. They were dropped rather than replaced: Prettier already enforces all
+seven from `.prettierrc.json`, and CI runs `format:check` alongside `lint`, so
+this removes a duplicated concern rather than a check.
+
+**CI:** lint and formatting moved out of the Node version matrix into their own
+job on Node 22. ESLint 10 requires Node >= 20.19, which the matrix's Node 18 leg
+cannot satisfy — but that is a toolchain floor, not a runtime one. The library
+still supports and is still tested on Node 18, 20 and 22, and `engines` is
+unchanged at `>=18.0.0`.
+
 ## 2.4.1 :: 2026-09-08
 
 ### 🔄 Asset refresh

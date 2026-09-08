@@ -215,9 +215,7 @@ export default {
 **v1.x (CommonJS)**:
 
 ```javascript
-module.exports = {
-  /* same structure */
-};
+module.exports = {/* same structure */};
 ```
 
 **Provider Categories**:

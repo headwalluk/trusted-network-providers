@@ -128,12 +128,12 @@ async function fetchWithRetry(url, config, fetchOptions, processResponse) {
         error.code === 'CERT_UNTRUSTED' ||
         error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
       ) {
-        throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`);
+        throw new Error(`SSL certificate validation failed for ${url}: ${error.message}`, { cause: error });
       }
 
       // Timeout errors (transient — retry makes sense)
       if (error.name === 'AbortError') {
-        lastError = new Error(`Request timeout for ${url} after ${config.timeout}ms`);
+        lastError = new Error(`Request timeout for ${url} after ${config.timeout}ms`, { cause: error });
       }
 
       // If this isn't the last attempt, wait before retrying
@@ -146,7 +146,9 @@ async function fetchWithRetry(url, config, fetchOptions, processResponse) {
   }
 
   // All retries exhausted
-  throw new Error(`Failed to fetch ${url} after ${config.retries + 1} attempts: ${lastError.message}`);
+  throw new Error(`Failed to fetch ${url} after ${config.retries + 1} attempts: ${lastError.message}`, {
+    cause: lastError,
+  });
 }
 
 /**
@@ -175,7 +177,7 @@ async function fetchJSON(url, options = {}) {
     try {
       body = JSON.parse(text);
     } catch (parseError) {
-      throw new Error(`Failed to parse JSON from ${url}: ${parseError.message}`);
+      throw new Error(`Failed to parse JSON from ${url}: ${parseError.message}`, { cause: parseError });
     }
 
     if (config.expectedChecksum) {

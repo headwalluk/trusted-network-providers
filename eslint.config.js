@@ -19,6 +19,9 @@ export default [
         AbortController: 'readonly',
       },
     },
+    // Whitespace, quotes, semicolons and trailing commas are Prettier's, not
+    // ESLint's: the equivalent core rules are deprecated as of ESLint 10 and
+    // `npm run format:check` already enforces .prettierrc.json in CI.
     rules: {
       'no-console': 'off',
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
@@ -26,13 +29,6 @@ export default [
       'no-var': 'error',
       eqeqeq: ['warn', 'smart'],
       curly: ['warn', 'all'],
-      'brace-style': ['warn', '1tbs'],
-      semi: ['error', 'always'],
-      quotes: ['warn', 'single', { avoidEscape: true }],
-      'no-trailing-spaces': 'warn',
-      'no-multiple-empty-lines': ['warn', { max: 2, maxEOF: 1 }],
-      'comma-dangle': ['warn', 'only-multiline'],
-      'arrow-parens': ['warn', 'always'],
       'prefer-arrow-callback': 'warn',
     },
   },

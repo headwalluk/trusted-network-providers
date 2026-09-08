@@ -794,9 +794,9 @@ const self = {
     try {
       parsedIp = ipaddr.parse(ipAddress);
     } catch (error) {
+      // parsedIp is already null; the catch exists to log the malformed input
       logger.error(`Failed to parse IP: ${ipAddress}`);
       logger.error(error);
-      parsedIp = null;
     }
 
     if (parsedIp) {

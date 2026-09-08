@@ -80,7 +80,7 @@ async function verifyAssetChecksum(filePath, providerKey, strict = false) {
     if (error.code === 'ENOENT') {
       const message = `Asset file not found: ${filePath}`;
       if (strict) {
-        throw new Error(message);
+        throw new Error(message, { cause: error });
       } else {
         logger.warn(`Warning: ${message}`);
         return false;
