@@ -35,7 +35,6 @@ import brevoProvider from './providers/brevo.js';
 import getTermsProvider from './providers/get-terms.js';
 import labrikaProvider from './providers/labrika.js';
 import mailgunProvider from './providers/mailgun.js';
-import seobilityProvider from './providers/seobility.js';
 
 // Constants for IP address versions
 const IP_VERSION_V4 = 'ipv4';
@@ -82,7 +81,6 @@ const defaultProviders = [
   getTermsProvider,
   labrikaProvider,
   mailgunProvider,
-  seobilityProvider,
 ];
 
 const parsedAddresses = new LRUCache(MAX_PARSED_ADDRESSES);

@@ -1,5 +1,53 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 3.2.0 :: 2026-09-08
+
+### 🐛 SPF includes are followed to the bottom, not one level down
+
+`spf-analyser.js` resolved `include:` targets a single level deep. Where the
+includes nest, everything below the first level was silently dropped.
+
+Mailgun is exactly that shape:
+
+```
+mailgun.org
+├── include:_spf.mailgun.org
+│   ├── include:_spf1.mailgun.org   → 4 ranges   ← never resolved
+│   └── include:_spf2.mailgun.org   → 7 ranges   ← never resolved
+└── include:_spf.eu.mailgun.org     → 11 ranges  ← the only ones we saw
+```
+
+The provider loaded 11 of its 22 ranges and looked healthy doing it. Checked
+against a day of real deliveries (875 messages from 109 distinct Mailgun sender
+IPs), it matched **38 of 109 IPs — 29.7% by volume**. After the fix it matches
+**109 of 109, 100%**, and the range count goes 11 → 22.
+
+Resolution now walks the include chain a level at a time, capped at the RFC 7208
+§4.6.4 limit of ten DNS-querying mechanisms, which also bounds an include loop.
+Hitting the cap logs the unfollowed targets rather than passing over them.
+
+This also corrects **3.1.0**, which claimed Mailgun's `testAddresses` entry had
+dropped out of the SPF record. It had not: `69.72.36.213` was in
+`_spf1.mailgun.org` the whole time, two levels down. The provider had been
+disabled for a fault in this analyser, not for a stale constant. Its test
+addresses are now one from each half of the include tree, so a regression here
+fails the test instead of quietly halving the ranges.
+
+### 🗑️ Seobility removed
+
+Removed and **not to be re-added** without new evidence. Its `bots.json` feed
+does not describe its own crawler: against a day of live traffic, 5 of 60 unique
+IPv6 hosts sending `SeobilityBot` matched, none of them via the feed's 64 bare
+host entries. No PTR records exist on either side, so forward-confirmed reverse
+DNS is unavailable, and the only widening that would close the gap is Hetzner's
+`2a01:4f8::/32` — every Hetzner customer.
+
+The full measurement, the reasoning, and what would change the answer are in
+[docs/providers.md](docs/providers.md#seobility--removed-320-do-not-re-add) so
+this does not get investigated a third time.
+
+Default providers: 28 → 27.
+
 ## 3.1.0 :: 2026-09-08
 
 ### ✨ Mailgun and Seobility are registered by default

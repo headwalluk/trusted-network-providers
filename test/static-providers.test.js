@@ -17,7 +17,6 @@ import privateIPs from '../src/providers/private.js';
 import semrush from '../src/providers/semrush.js';
 import shipHero from '../src/providers/ship-hero.js';
 import labrika from '../src/providers/labrika.js';
-import seobility from '../src/providers/seobility.js';
 import ipaddr from 'ipaddr.js';
 
 /**
@@ -367,27 +366,6 @@ describe('Static Providers', () => {
       labrika.testAddresses.forEach((testAddr) => {
         expect(isTestAddressInRanges(testAddr, labrika)).toBe(true);
       });
-    });
-  });
-
-  describe('Seobility', () => {
-    test('should have required structure', () => {
-      expect(seobility.name).toBe('Seobility');
-      expect(Array.isArray(seobility.testAddresses)).toBe(true);
-      expect(seobility.testAddresses.length).toBeGreaterThan(0);
-      expect(seobility.ipv4).toBeDefined();
-      expect(seobility.ipv6).toBeDefined();
-    });
-
-    test('should have reload function', () => {
-      expect(typeof seobility.reload).toBe('function');
-    });
-
-    test('should have empty arrays before reload', () => {
-      expect(Array.isArray(seobility.ipv4.addresses)).toBe(true);
-      expect(Array.isArray(seobility.ipv4.ranges)).toBe(true);
-      expect(Array.isArray(seobility.ipv6.addresses)).toBe(true);
-      expect(Array.isArray(seobility.ipv6.ranges)).toBe(true);
     });
   });
 });

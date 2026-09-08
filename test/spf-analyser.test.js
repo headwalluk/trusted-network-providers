@@ -153,6 +153,33 @@ describe('spfAnalyser', () => {
       expect(mockResolveTxt).toHaveBeenCalledTimes(1); // No includes to follow
     });
 
+    it('should follow includes nested inside includes', async () => {
+      // The shape mailgun.org uses: root -> _spf -> _spf1/_spf2, IPs only at the leaves
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf1.example.com include:_spf2.example.com ~all']]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.0/24 ~all']]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:198.51.100.0/24 ~all']]);
+
+      await spfAnalyser('example.com', mockProvider);
+
+      expect(mockProvider.ipv4.ranges).toEqual(['192.0.2.0/24', '198.51.100.0/24']);
+      expect(mockResolveTxt).toHaveBeenCalledTimes(4); // root + _spf + _spf1 + _spf2
+    });
+
+    it('should stop at the RFC 7208 ten-lookup limit rather than chase a loop', async () => {
+      // Each record includes the next, forever; the guard must cut it off.
+      mockResolveTxt.mockImplementation((domain) => {
+        const depth = Number(String(domain).replace(/\D/g, '') || 0);
+        return Promise.resolve([[`v=spf1 ip4:192.0.2.${depth} include:_spf${depth + 1}.example.com ~all`]]);
+      });
+
+      await spfAnalyser('_spf0.example.com', mockProvider);
+
+      // The root lookup plus at most 10 include lookups.
+      expect(mockResolveTxt.mock.calls.length).toBeLessThanOrEqual(11);
+      expect(mockProvider.ipv4.addresses.length).toBeGreaterThan(0);
+    });
+
     it('should combine inline root IPs with those from includes', async () => {
       mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1 include:_spf.example.com ~all']]);
 

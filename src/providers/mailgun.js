@@ -13,9 +13,11 @@ import spfAnalyser from '../spf-analyser.js';
 const self = {
   name: 'Mailgun',
 
-  // 161.38.204.0/22, inside Mailgun's own ARIN allocation 161.38.192.0/20, so
-  // this survives the SPF record being re-cut in a way a host address would not.
-  testAddresses: ['161.38.204.1'],
+  // One address from each half of the include tree: 161.38.204.0/22 comes from
+  // _spf.eu.mailgun.org, 69.72.32.0/20 from _spf1.mailgun.org two levels down.
+  // A regression in nested-include resolution then fails the test rather than
+  // silently halving the ranges.
+  testAddresses: ['161.38.204.1', '69.72.36.213'],
 
   ipv4: {
     addresses: [],

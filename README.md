@@ -46,7 +46,7 @@ console.log(unknown); // null
 
 Includes 25+ trusted providers out of the box:
 
-- **Search Engines**: Googlebot, Bingbot, Applebot, AhrefsBot, SemrushBot, Seobility
+- **Search Engines**: Googlebot, Bingbot, Applebot, AhrefsBot, SemrushBot
 - **AI Crawlers**: GPTBot, OAI-SearchBot (OpenAI) — with Applebot and ChatGPT-User, these carry the `ai-crawler` category and can be excluded as a set
 - **Advertising**: Google AdsBot, AdSense (Google Special Crawlers)
 - **User-Triggered Fetchers**: Google (Gmail image proxy, Chrome prefetch proxy, Feedfetcher, etc.), ChatGPT-User

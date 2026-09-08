@@ -33,7 +33,6 @@ This document lists all built-in providers and explains how to add your own.
 | GetTerms                       | Static        | Hardcoded address                         | None (fixed)                 |
 | Labrika                        | Static        | Hardcoded addresses                       | None (fixed)                 |
 | Mailgun                        | DNS/SPF       | `mailgun.org`                             | `reloadAll()`                |
-| Seobility                      | HTTP API      | `seobility.net/bots.json`                 | `reloadAll()`                |
 
 ### AI Crawlers
 
@@ -75,34 +74,66 @@ names would silently keep trusting the fifth. Excluding them does not mark the
 networks as bad — it withdraws a privilege, leaving them to be judged on their
 own behaviour. See the README's _Provider Categories_ section.
 
+### Removed Providers
+
+Providers that were tried and taken out. **Read this before adding one back.**
+
+#### Seobility — removed 3.2.0, do not re-add
+
+Seobility is not addable on the evidence available, and has cost time twice.
+Adding it a third time needs new evidence, not a new attempt.
+
+It was first disabled as an "unreliable data source". That was half right: its
+`/static/ip_lists/bots/*.txt` endpoints now 404. It does publish a current feed
+at `seobility.net/bots.json`, linked from its own bot page, so the provider was
+briefly rebuilt against that in 3.1.0 — and the feed turns out not to describe
+the crawler.
+
+Measured 8 Sep 2026 against a day of live traffic (85 hits, 19 hours):
+
+|                                              |                                 |
+| -------------------------------------------- | ------------------------------- |
+| Unique IPv6 hosts sending `SeobilityBot`     | 60                              |
+| Feed IPv6 entries (64 bare hosts + 8 `/64`s) | 72                              |
+| Observed hosts matching the feed             | **5**, all via the `/64` blocks |
+| Observed hosts matching a bare feed entry    | **0**                           |
+
+Every observed address was the `::1` of a Hetzner `/64`, and so is every bare
+entry in the feed — different `/64`s. Two `/48`s carrying 50 of the 60 hosts had
+no feed presence at all. Neither the observed hosts nor the feed's own entries
+carry a PTR record, so forward-confirmed reverse DNS is not available as a
+fallback. There is no other published source.
+
+The consequences are what settle it:
+
+- Trusting the feed as published matches under 10% of the real crawler, so the
+  provider does not do the job it exists to do.
+- Widening to the enclosing `/48` or to Hetzner's `2a01:4f8::/32` would extend
+  trusted status to every Hetzner customer. A spoofed `SeobilityBot`
+  user-agent from any Hetzner VM would then be trusted. This is disqualifying,
+  not a trade-off — see the standing rule against guessing ranges below.
+- With the user-agent spoofable and rDNS unavailable, a genuine unlisted
+  Seobility host and an impostor are **indistinguishable**.
+
+Being rate-limited costs an SEO crawler little, so the honest position is to
+leave it untrusted.
+
+**What would change the answer:** Seobility publishing a feed that actually
+covers its fleet, or PTR records enabling FCrDNS. Re-measure against live logs
+before trusting either claim — that is the check that caught this.
+
+#### GTmetrix — removed 3.0.1
+
+Its locations feed went behind a Cloudflare proxy. It was also the only reason
+the package carried the `fast-xml-parser` dependency.
+
 ### Previously Disabled Providers
 
-Every provider in `src/providers/` is now registered by default.
-
-**Mailgun** and **Seobility** were re-enabled in 3.1.0. Neither was broken in the
-way its comment claimed — both had simply gone stale:
-
-- **Mailgun** resolved fine, but its `testAddresses` entry had left the SPF
-  record, so `runTests()` failed. The address is now taken from a range inside
-  Mailgun's own ARIN allocation, which outlives a re-cut SPF record.
-- **Seobility** fetched two `.txt` lists that now 404. It publishes
-  `bots.json` instead, in the `{prefixes:[…]}` shape Google uses.
-
-> **Seobility's IPv6 list is incomplete.** Measured 8 Sep 2026 against a day of
-> live traffic: of 60 unique IPv6 hosts sending `SeobilityBot` in 19 hours, the
-> feed matched **5**, all via its eight `/64` blocks — not one of its 64 bare
-> IPv6 host entries appeared in the log. Seobility's crawler fleet rotates
-> Hetzner `/64`s faster than it publishes them, and the hosts carry no PTR
-> record, so forward-confirmed reverse DNS is not available as a fallback.
->
-> The provider is still correct: it trusts exactly what Seobility vouches for.
-> Do **not** widen the match to the enclosing `/48` or to Hetzner's
-> `2a01:4f8::/32` — that would extend trusted status to every Hetzner customer.
-> The practical consequence is that whitelisting Seobility catches a minority of
-> its IPv6 crawling, which for an SEO crawler is a tolerable outcome.
-
-**GTmetrix** was deleted in 3.0.1 — its locations feed went behind a Cloudflare
-proxy, and it was the only reason the package carried `fast-xml-parser`.
+**Mailgun** was re-enabled in 3.1.0 and is registered by default. It was never
+broken: the fault was in `spf-analyser.js`, which resolved `include:` targets
+only one level deep. `mailgun.org` includes `_spf.mailgun.org`, which includes
+`_spf1`/`_spf2` — where most of the ranges live. Fixed in 3.2.0; see the
+changelog.
 
 ## Provider Types
 

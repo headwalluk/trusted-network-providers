@@ -23,6 +23,11 @@
 import dns from 'node:dns/promises';
 import logger from './utils/logger.js';
 
+// RFC 7208 §4.6.4 caps an SPF evaluation at 10 DNS-querying mechanisms. Includes
+// nest — mailgun.org points at _spf.mailgun.org, which points at _spf1/_spf2 —
+// so resolution walks the chain rather than stopping at the first level.
+const MAX_SPF_DNS_LOOKUPS = 10;
+
 /**
  * Join one TXT answer's fragments into a single record string.
  * DNS splits TXT records longer than 255 characters across several strings.
@@ -118,23 +123,42 @@ export default async (domain, provider) => {
       readSpfRecord(spfRecord, collected, includeTargets);
     }
 
-    // Step 2: Resolve include targets in parallel.
-    // allSettled (not all) lets some lookups fail without losing the rest.
-    const lookupResults = await Promise.allSettled(
-      includeTargets.map((includeTarget) => dns.resolveTxt(includeTarget))
-    );
+    // Step 2: Walk the include chain a level at a time, resolving each level in
+    // parallel. readSpfRecord() appends anything it finds to includeTargets, so
+    // the next level is whatever this one added. allSettled (not all) lets some
+    // lookups fail without losing the rest.
+    const resolvedTargets = new Set();
+    let pendingTargets = includeTargets.filter((target) => !resolvedTargets.has(target));
 
-    for (let resultIndex = 0; resultIndex < lookupResults.length; resultIndex++) {
-      const result = lookupResults[resultIndex];
-      if (result.status === 'fulfilled') {
-        for (const spfRecord of extractSpfRecords(result.value)) {
-          readSpfRecord(spfRecord, collected, includeTargets);
-        }
-      } else {
-        logger.error(
-          `Failed to resolve SPF include ${includeTargets[resultIndex]} for ${provider.name}: ${result.reason.message}`
-        );
+    while (pendingTargets.length > 0 && resolvedTargets.size < MAX_SPF_DNS_LOOKUPS) {
+      const currentLevel = pendingTargets.slice(0, MAX_SPF_DNS_LOOKUPS - resolvedTargets.size);
+      for (const target of currentLevel) {
+        resolvedTargets.add(target);
       }
+
+      const lookupResults = await Promise.allSettled(currentLevel.map((target) => dns.resolveTxt(target)));
+
+      for (let resultIndex = 0; resultIndex < lookupResults.length; resultIndex++) {
+        const result = lookupResults[resultIndex];
+        if (result.status === 'fulfilled') {
+          for (const spfRecord of extractSpfRecords(result.value)) {
+            readSpfRecord(spfRecord, collected, includeTargets);
+          }
+        } else {
+          logger.error(
+            `Failed to resolve SPF include ${currentLevel[resultIndex]} for ${provider.name}: ${result.reason.message}`
+          );
+        }
+      }
+
+      pendingTargets = includeTargets.filter((target) => !resolvedTargets.has(target));
+    }
+
+    if (pendingTargets.length > 0) {
+      logger.error(
+        `Stopped resolving SPF includes for ${provider.name} at the ${MAX_SPF_DNS_LOOKUPS}-lookup limit; ` +
+          `not followed: ${pendingTargets.join(', ')}`
+      );
     }
 
     // Step 3: Replace provider data, but never with nothing. An SPF record that
