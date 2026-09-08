@@ -1,5 +1,31 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 2.4.1 :: 2026-09-08
+
+### 🔄 Asset refresh
+
+Routine refresh of bundled IP lists from upstream sources:
+
+- **Googlebot** (`googlebot-ips.json`): 315 → 317 prefixes
+- **Google Special Crawlers** (`google-special-crawlers.json`): 270 → 272
+  prefixes
+- **Google User-Triggered Fetchers** (`google-user-fetchers.json`): 494 → 496
+  prefixes
+- **ChatGPT-User** (`chatgpt-user-ips.json`): 204 → 207 prefixes
+- **BunnyNet IPv4** (`bunnynet-ip4s.json`): 590 → 586 addresses
+- **BunnyNet IPv6** (`bunnynet-ip6s.json`): 324 → 322 addresses
+
+Bingbot, Applebot, GPTBot, OAI-SearchBot and both FacebookBot lists were
+unchanged. Checksum manifest regenerated.
+
+### 🔒 Dependency maintenance
+
+- Lockfile refreshed within the existing semver ranges: `ipaddr.js` 2.2.0 →
+  2.5.0, `fast-xml-parser` 5.8.0 → 5.11.1, plus dev toolchain (`eslint` 9.39.1 →
+  9.39.5, `jest` 30.2.0 → 30.5.1, `prettier` 3.6.2 → 3.9.6). Clears one moderate
+  advisory in `@humanfs/node` (a transitive ESLint dependency); `npm audit` is
+  now clean. No declared ranges changed and no public API impact.
+
 ## 2.4.0 :: 2026-09-08
 
 ### ✨ Provider categories, and an `ai-crawler` category

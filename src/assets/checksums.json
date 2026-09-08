@@ -3,17 +3,17 @@
   "providers": {
     "googlebot": {
       "url": "https://developers.google.com/static/crawling/ipranges/common-crawlers.json",
-      "sha256": "d37460f81f826cf666966e45b728e7642f989a961da4e9933788866d83dd86fa",
+      "sha256": "a8c6d437da128d74bc49255df57abde6e833b47649ccf3313d14439b22af025a",
       "comment": "Bundled asset - checksum verified on load"
     },
     "google-special-crawlers": {
       "url": "https://developers.google.com/static/crawling/ipranges/special-crawlers.json",
-      "sha256": "15fae3ab46986cff5d574b36ad977b92455e6ceaaf6b42179b10d8188e620ff5",
+      "sha256": "8a69e0c0816f2caecfcbde207e31a9b6499d41e4a8402b9ac6aa65026feb6946",
       "comment": "Bundled asset - checksum verified on load"
     },
     "google-user-fetchers": {
       "url": "https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json",
-      "sha256": "d30f2dbd4d32bc5bbe32410a61769a50b1c469780e43a92a8d1e72ba7a3fd005",
+      "sha256": "b38cc245b1261b0bb55a2c4d5b411680823ec484e6e1b598ba4db96c322a4a04",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bingbot": {
@@ -38,17 +38,17 @@
     },
     "chatgpt-user": {
       "url": "https://openai.com/chatgpt-user.json",
-      "sha256": "812f11df46d6fcac5779082dba32f7e2d571673f72b3e63b10ef706a25420996",
+      "sha256": "d9e16f6d00d8ce95dd4fc732d0ba3ec8efb2bd9181d660754b4c5a2bf24544df",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv4": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist",
-      "sha256": "38db132b581aefb5666511e6667ae651bd98a76c5237062af09f35fa4c965a2e",
+      "sha256": "7b2d7c045e764b22ec2da58d8531e77d111b37645826881d2110c13c06162f4e",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv6": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist/IPv6",
-      "sha256": "0376c96b57c9494263850994c9a4b29ce1ccb4ae9b711f450f9cb5de7977ed13",
+      "sha256": "db2a3578c209b6194402fc92c3fbef0df708a3ff09375692f0ecea14b13370ff",
       "comment": "Bundled asset - checksum verified on load"
     },
     "facebookbot-ipv4": {
@@ -72,5 +72,5 @@
       "comment": "Runtime verification - structure validation used instead (data changes frequently)"
     }
   },
-  "lastUpdated": "2026-08-29T18:25:58Z"
+  "lastUpdated": "2026-09-08T17:49:55Z"
 }
