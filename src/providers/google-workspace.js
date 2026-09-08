@@ -14,8 +14,7 @@ import spfAnalyser from '../spf-analyser.js';
 
 const self = {
   name: 'Google Workspace',
-  // TODO: Re-enable test once bundled IP data is updated
-  // testAddresses: ['216.58.192.190'],
+  testAddresses: ['74.125.0.1'],
   ipv4: {
     addresses: [],
     ranges: [],

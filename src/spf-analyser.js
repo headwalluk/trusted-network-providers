@@ -3,86 +3,104 @@
  *
  * Extracts IP addresses from DNS SPF (Sender Policy Framework) records.
  *
+ * Handles both shapes an SPF record can take: `ip4:`/`ip6:` directives written
+ * inline, and `include:` targets whose own records carry them. Google flattened
+ * _spf.google.com from the second shape to the first, so reading only includes
+ * silently yields nothing.
+ *
  * SECURITY WARNING: This module does NOT perform DNSSEC validation.
  * DNS responses are not cryptographically verified and could be spoofed
  * via DNS poisoning attacks.
  *
  * Mitigations:
  * - Use DNSSEC-validating DNS resolvers (e.g., 1.1.1.1, 8.8.8.8)
- * - Run update-assets.sh to fetch SPF data at build time instead of runtime
- * - Use bundled assets in high-security environments
+ * - Unregister the provider entirely, if runtime DNS is unacceptable
  * - Verify DNS records out-of-band when possible
  *
- * For production use, consider disabling runtime DNS lookups and relying
- * on bundled assets that are updated via the build process.
+ * See docs/dns-security-guide.md.
  */
 
 import dns from 'node:dns/promises';
 import logger from './utils/logger.js';
 
-export default async (domain, provider) => {
-  try {
-    const records = await dns.resolveTxt(domain);
-    const sourceNetblocks = [];
+/**
+ * Join one TXT answer's fragments into a single record string.
+ * DNS splits TXT records longer than 255 characters across several strings.
+ */
+const joinTxtFragments = (txtAnswer) => {
+  let record = '';
 
-    // Step 1: Parse the root TXT records to find SPF includes
-    // DNS TXT records can be arrays of strings (for long records split across multiple DNS strings)
-    for (const record of records) {
-      if (Array.isArray(record)) {
-        for (const subRecord of record) {
-          const fields = subRecord.split(' ');
-          let isSpf = false;
+  if (Array.isArray(txtAnswer)) {
+    record = txtAnswer.join('');
+  } else if (typeof txtAnswer === 'string') {
+    record = txtAnswer;
+  }
 
-          // Walk through each SPF field (space-delimited)
-          for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
-            const field = fields[fieldIndex];
+  return record;
+};
 
-            // First field must be "v=spf1" to be a valid SPF record
-            if (fieldIndex === 0 && field === 'v=spf1') {
-              isSpf = true;
-            }
+/**
+ * Reduce a resolveTxt() result to the SPF records it contains.
+ */
+const extractSpfRecords = (txtAnswers) => {
+  const spfRecords = [];
 
-            // Extract "include:" domains to resolve (e.g., "include:_netblocks.google.com")
-            if (isSpf && field.startsWith('include:')) {
-              const components = field.split(':');
-              if (components.length === 2) {
-                const potentialNetblock = components[1];
-                if (!sourceNetblocks.includes(potentialNetblock)) {
-                  sourceNetblocks.push(potentialNetblock);
-                }
-              }
-            }
-          }
+  for (const txtAnswer of txtAnswers) {
+    const record = joinTxtFragments(txtAnswer);
+    if (record.startsWith('v=spf1 ') || record === 'v=spf1') {
+      spfRecords.push(record);
+    }
+  }
+
+  return spfRecords;
+};
+
+/**
+ * Read one SPF record, adding its inline IPs to `collected` and its include
+ * targets to `includeTargets`.
+ */
+const readSpfRecord = (spfRecord, collected, includeTargets) => {
+  const fields = spfRecord.split(' ');
+
+  for (const field of fields) {
+    const components = field.split(':');
+
+    if (field.startsWith('include:')) {
+      // Only a bare "include:domain" is usable; anything with further colons is malformed.
+      if (components.length === 2 && !includeTargets.includes(components[1])) {
+        includeTargets.push(components[1]);
+      }
+    } else if (components[0] === 'ip4') {
+      const possibleAddress = components[1];
+      if (possibleAddress !== undefined) {
+        if (possibleAddress.indexOf('/') > 0) {
+          collected.ipv4.ranges.push(possibleAddress);
+        } else {
+          collected.ipv4.addresses.push(possibleAddress);
         }
       }
-    }
-
-    // Early exit: If no SPF includes found, the DNS record is incomplete or invalid
-    if (sourceNetblocks.length === 0) {
-      logger.info(`Not updating ${provider.name} addresses because no SPF netblocks found`);
-      return;
-    }
-
-    // Step 2: Resolve all include domains in parallel
-    // Use allSettled (not all) to allow some lookups to fail without aborting the whole operation
-    const lookups = sourceNetblocks.map((sourceNetblock) => dns.resolveTxt(sourceNetblock));
-    const lookupResults = await Promise.allSettled(lookups);
-
-    // Filter out failed DNS lookups and log them
-    // This is resilient to partial failures (e.g., one netblock domain is down)
-    const successfulResults = [];
-    for (let i = 0; i < lookupResults.length; i++) {
-      const result = lookupResults[i];
-      if (result.status === 'fulfilled') {
-        successfulResults.push(result.value);
+    } else if (components[0] === 'ip6') {
+      // IPv6 uses colon notation, so we can't split on ':' — use substring instead
+      const possibleAddress = field.substring(4); // Skip "ip6:"
+      if (possibleAddress.indexOf('/') > 0) {
+        collected.ipv6.ranges.push(possibleAddress);
       } else {
-        logger.error(
-          `Failed to resolve SPF include ${sourceNetblocks[i]} for ${provider.name}: ${result.reason.message}`
-        );
+        collected.ipv6.addresses.push(possibleAddress);
       }
     }
+  }
+};
 
-    const newAddresses = {
+/** Total number of addresses and ranges gathered across both IP versions. */
+const countCollected = (collected) =>
+  collected.ipv4.addresses.length +
+  collected.ipv4.ranges.length +
+  collected.ipv6.addresses.length +
+  collected.ipv6.ranges.length;
+
+export default async (domain, provider) => {
+  try {
+    const collected = {
       ipv4: {
         addresses: [],
         ranges: [],
@@ -92,63 +110,42 @@ export default async (domain, provider) => {
         ranges: [],
       },
     };
+    const includeTargets = [];
 
-    // Step 3: Reconstruct full TXT records from DNS response fragments
-    // DNS TXT records can be split into multiple strings (255 char limit per string)
-    const spfRecords = [];
+    // Step 1: Read the root record — inline IPs count, and includes are queued
+    const rootRecords = extractSpfRecords(await dns.resolveTxt(domain));
+    for (const spfRecord of rootRecords) {
+      readSpfRecord(spfRecord, collected, includeTargets);
+    }
 
-    for (const lookupResult of successfulResults) {
-      if (Array.isArray(lookupResult)) {
-        for (const subRecord of lookupResult) {
-          let txtRecord = '';
-          // Concatenate fragmented TXT record strings into a single record
-          if (Array.isArray(subRecord) && subRecord.length > 0) {
-            for (const partialTxtRecord of subRecord) {
-              txtRecord += partialTxtRecord;
-            }
+    // Step 2: Resolve include targets in parallel.
+    // allSettled (not all) lets some lookups fail without losing the rest.
+    const lookupResults = await Promise.allSettled(
+      includeTargets.map((includeTarget) => dns.resolveTxt(includeTarget))
+    );
 
-            // Only process valid SPF records
-            if (txtRecord.length > 0 && txtRecord.startsWith('v=spf1 ')) {
-              spfRecords.push(txtRecord);
-            }
-          }
+    for (let resultIndex = 0; resultIndex < lookupResults.length; resultIndex++) {
+      const result = lookupResults[resultIndex];
+      if (result.status === 'fulfilled') {
+        for (const spfRecord of extractSpfRecords(result.value)) {
+          readSpfRecord(spfRecord, collected, includeTargets);
         }
+      } else {
+        logger.error(
+          `Failed to resolve SPF include ${includeTargets[resultIndex]} for ${provider.name}: ${result.reason.message}`
+        );
       }
     }
 
-    // Step 4: Extract IP addresses and CIDR ranges from SPF records
-    for (const spfRecord of spfRecords) {
-      const fields = spfRecord.split(' ');
-      for (const field of fields) {
-        const components = field.split(':');
-        if (components.length < 1) {
-          continue;
-        }
-
-        // Parse IPv4 addresses and ranges (e.g., "ip4:35.190.247.0/24")
-        if (components[0] === 'ip4') {
-          const possibleAddress = components[1];
-          // CIDR range if it contains a slash (e.g., /24)
-          if (possibleAddress.indexOf('/') > 0) {
-            newAddresses.ipv4.ranges.push(possibleAddress);
-          } else {
-            newAddresses.ipv4.addresses.push(possibleAddress);
-          }
-        } else if (components[0] === 'ip6') {
-          // Parse IPv6 addresses and ranges (e.g., "ip6:2001:4860:4000::/36")
-          // IPv6 uses colon notation, so we can't split on ':' — use substring instead
-          const possibleAddress = field.substring(4); // Skip "ip6:"
-          if (possibleAddress.indexOf('/') > 0) {
-            newAddresses.ipv6.ranges.push(possibleAddress);
-          } else {
-            newAddresses.ipv6.addresses.push(possibleAddress);
-          }
-        }
-      }
+    // Step 3: Replace provider data, but never with nothing. An SPF record that
+    // yields no IPs means the record changed shape or the lookup was poisoned;
+    // either way the previous data is better than an empty provider that
+    // silently reports every address as untrusted.
+    if (countCollected(collected) > 0) {
+      Object.assign(provider, collected);
+    } else {
+      logger.error(`Not updating ${provider.name} addresses because no SPF netblocks found`);
     }
-
-    // Step 5: Atomically replace provider data
-    Object.assign(provider, newAddresses);
   } catch (error) {
     logger.error(`Failed to analyse SPF records for ${provider.name}: ${error.message}`);
     throw error;

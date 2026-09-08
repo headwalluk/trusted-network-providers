@@ -103,7 +103,7 @@ groups (commits `60af8b6`…`4f39a2e`):
 - [x] `npm run format:check` clean
 - [x] `npm run lint` clean (0 warnings)
 - [x] `npm test` green (306 passing, 17 suites)
-- [ ] Confirm CI workflow (`.github/workflows/ci.yml`) passes on Node 18/20/22 — verify after push
+- [ ] Confirm CI workflow (`.github/workflows/ci.yml`) passes on Node 22/24/26 — verify after push
 - [x] `npm audit` — 0 vulnerabilities (fast-xml-parser advisory fixed via lockfile; dev-only picomatch advisories not shipped)
 
 #### Phase 5: Package hygiene

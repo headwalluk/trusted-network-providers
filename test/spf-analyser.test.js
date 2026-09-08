@@ -139,6 +139,29 @@ describe('spfAnalyser', () => {
       // Should only call resolveTxt twice (main + one include), not three times
       expect(mockResolveTxt).toHaveBeenCalledTimes(2);
     });
+
+    it('should extract IPs written inline on the root record, with no includes', async () => {
+      // The shape _spf.google.com uses: directives inline, nothing to include
+      mockResolveTxt.mockResolvedValueOnce([
+        ['v=spf1 ip4:74.125.0.0/16 ip4:209.85.128.0/17 ip6:2001:4860:4864::/56 ~all'],
+      ]);
+
+      await spfAnalyser('example.com', mockProvider);
+
+      expect(mockProvider.ipv4.ranges).toEqual(['74.125.0.0/16', '209.85.128.0/17']);
+      expect(mockProvider.ipv6.ranges).toEqual(['2001:4860:4864::/56']);
+      expect(mockResolveTxt).toHaveBeenCalledTimes(1); // No includes to follow
+    });
+
+    it('should combine inline root IPs with those from includes', async () => {
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1 include:_spf.example.com ~all']]);
+
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:198.51.100.5 ~all']]);
+
+      await spfAnalyser('example.com', mockProvider);
+
+      expect(mockProvider.ipv4.addresses).toEqual(['192.0.2.1', '198.51.100.5']);
+    });
   });
 
   describe('provider mutation', () => {
@@ -160,6 +183,18 @@ describe('spfAnalyser', () => {
       expect(mockProvider.ipv6.addresses).toEqual([]);
       expect(mockProvider.ipv6.ranges).toEqual([]);
     });
+
+    it('should keep existing data when a record yields no IPs', async () => {
+      mockProvider.ipv4.ranges = ['198.51.100.0/24'];
+
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ~all']]);
+
+      await spfAnalyser('example.com', mockProvider);
+
+      // An empty provider silently reports every address as untrusted, so the
+      // previous data is kept rather than replaced with nothing.
+      expect(mockProvider.ipv4.ranges).toEqual(['198.51.100.0/24']);
+    });
   });
 
   describe('edge cases', () => {
@@ -174,11 +209,8 @@ describe('spfAnalyser', () => {
       expect(mockProvider.ipv6.ranges).toEqual([]);
     });
 
-    it('should return early when no SPF netblocks found', async () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-      // Set log level to info so the message appears
-      logger.setLevel('info');
+    it('should report, at the default log level, when no SPF netblocks are found', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
       mockResolveTxt.mockResolvedValueOnce([['v=spf1 ~all']]);
 
@@ -187,7 +219,6 @@ describe('spfAnalyser', () => {
       expect(consoleSpy).toHaveBeenCalledWith('Not updating test-provider addresses because no SPF netblocks found');
       expect(mockResolveTxt).toHaveBeenCalledTimes(1); // Only main domain, no includes
 
-      logger.setLevel('error'); // Reset to default
       consoleSpy.mockRestore();
     });
 

@@ -28,7 +28,7 @@ This project follows a simple code of conduct:
 
 ### Prerequisites
 
-- Node.js 18+ (LTS recommended)
+- Node.js 22+ (LTS recommended)
 - Git
 - Basic understanding of IP networking (CIDR notation, IPv4/IPv6)
 

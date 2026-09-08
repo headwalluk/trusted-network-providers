@@ -72,7 +72,8 @@ console.log(provider); // "Googlebot"
 
 4. **Node.js Version Requirement**
 
-   v2.0.0 requires **Node.js >= 18.0.0** (tested on v22.21.0). Upgrade if you're on an older version.
+   v2.0.0 required **Node.js >= 18.0.0**. From **3.0.0 the floor is Node.js >= 22.0.0** —
+   check `engines` in `package.json` for the version you are installing.
 
 ---
 
@@ -238,7 +239,7 @@ v2.0.0 removes **superagent** and replaces it with Node.js **native `fetch()`**.
 
 ### 1. Update Node.js
 
-Ensure you're running **Node.js >= 18.0.0**:
+Ensure you're running **Node.js >= 18.0.0** — or **>= 22.0.0** for 3.0.0 and later:
 
 ```bash
 node --version
@@ -439,7 +440,8 @@ Then revert your code changes (replace `import` with `require()`, `.then()` inst
 
 - **GitHub Issues:** https://github.com/headwalluk/trusted-network-providers/issues
 - **Email:** paul@headwall.co.uk
-- **Security Issues:** See [docs/security.md](./security.md) for responsible disclosure
+- **Security Issues:** Email the address above rather than opening a public issue.
+  [docs/security.md](./security.md) covers the library's own security measures.
 
 ---
 
@@ -450,7 +452,7 @@ Then revert your code changes (replace `import` with `require()`, `.then()` inst
 | Module System              | CommonJS                  | ES Modules                                 |
 | Import Syntax              | `require()`               | `import`                                   |
 | Async Handling             | `.then()` / `.catch()`    | `await` / `try...catch`                    |
-| Node.js Version            | Not specified             | >= 18.0.0 (tested on v22.21.0)             |
+| Node.js Version            | Not specified             | >= 18.0.0 (>= 22.0.0 from 3.0.0)           |
 | HTTP Client                | `superagent`              | Native `fetch()`                           |
 | Provider Lifecycle Events  | Not available             | `reload:success`, `reload:error`, etc      |
 | Provider State Tracking    | Not available             | `getProviderStatus()`                      |

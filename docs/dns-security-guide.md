@@ -4,25 +4,27 @@ This guide helps you understand and mitigate DNS security risks when using trust
 
 ## Quick Start: Securing DNS-Based Providers
 
-If you're using Google Workspace or Mailgun providers, follow these steps:
+If you're using the Google Workspace provider — or Mailgun, which ships
+disabled and has to be registered deliberately — follow these steps.
 
 ### For Production (Recommended)
 
-Use bundled assets instead of runtime DNS lookups:
+Point the host at a DNSSEC-validating resolver (below), or drop the provider
+entirely if you don't need it:
 
-```bash
-# 1. Update assets before deployment
-./scripts/update-assets.sh
-
-# 2. Commit to version control
-git add src/assets/
-git commit -m "Update provider assets"
-
-# 3. Deploy with bundled assets
-npm publish
+```javascript
+trustedProviders.loadDefaultProviders();
+trustedProviders.deleteProvider('Google Workspace');
+await trustedProviders.reloadAll();
 ```
 
-Your application now uses verified, checksummed data instead of DNS.
+With it unregistered, the library makes no DNS queries at all — every remaining
+provider is static or fetched over HTTPS.
+
+> **`./scripts/update-assets.sh` does not help here.** It refreshes the bundled
+> assets listed in [providers.md](providers.md), and the SPF-based providers are
+> not among them. Bundling their data would take the work sketched under
+> _Solution 1_ below, which is a proposal, not something the package does today.
 
 ### For Development
 
@@ -42,8 +44,9 @@ echo "nameserver 1.0.0.1" | sudo tee -a /etc/resolv.conf
 
 Only providers that use DNS SPF lookups:
 
-- ✅ **Google Workspace** - Uses DNS
-- ✅ **Mailgun** - Uses DNS
+- ✅ **Google Workspace** - Uses DNS (registered by default)
+- ✅ **Mailgun** - Uses DNS (**disabled by default**; only affects you if you
+  register it yourself)
 
 These providers are NOT affected:
 
@@ -79,59 +82,58 @@ console.log(provider); // "Google Workspace" ❌ Attacker's IP!
 
 ## Solution 1: Bundled Assets (Best Security)
 
-### How It Works
+> **Status: proposal, not a feature.** The SPF providers have no bundled-asset
+> support today. This section sketches what adding it would involve, for anyone
+> who needs it in their own fork or in a custom provider. Nothing below works
+> out of the box.
 
-1. `update-assets.sh` fetches DNS records at build time
+### How It Would Work
+
+1. `update-assets.sh` resolves the SPF records at build time
 2. Records stored as JSON files with SHA-256 checksums
 3. Application loads from disk, not DNS
 4. No runtime DNS = No DNS poisoning risk
 
 ### Implementation
 
-Currently, DNS providers don't have bundled asset support. You can add it:
-
 #### Create Bundled Asset for Google Workspace
 
 ```javascript
 // src/providers/google-workspace.js
-const path = require('path');
-const { verifyAssetChecksum } = require('../utils/checksum-verifier');
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
+
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 const self = {
   name: 'Google Workspace',
   testAddresses: ['216.58.192.190'],
 
   // Load from bundled asset instead of DNS
-  reload: () => {
-    return new Promise((resolve, reject) => {
-      try {
-        const assetPath = path.join(__dirname, '../assets/google-workspace-ips.json');
-        verifyAssetChecksum(assetPath, 'google-workspace', false);
+  reload: async () => {
+    const assetPath = path.join(currentDirectory, '../assets/google-workspace-ips.json');
+    await verifyAssetChecksum(assetPath, 'google-workspace', false);
 
-        const data = require('../assets/google-workspace-ips.json');
+    const data = JSON.parse(await readFile(assetPath, 'utf8'));
 
-        self.ipv4.addresses.length = 0;
-        self.ipv4.ranges.length = 0;
-        self.ipv6.addresses.length = 0;
-        self.ipv6.ranges.length = 0;
+    self.ipv4.addresses.length = 0;
+    self.ipv4.ranges.length = 0;
+    self.ipv6.addresses.length = 0;
+    self.ipv6.ranges.length = 0;
 
-        data.ipv4.addresses.forEach((ip) => self.ipv4.addresses.push(ip));
-        data.ipv4.ranges.forEach((range) => self.ipv4.ranges.push(range));
-        data.ipv6.addresses.forEach((ip) => self.ipv6.addresses.push(ip));
-        data.ipv6.ranges.forEach((range) => self.ipv6.ranges.push(range));
-
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
+    self.ipv4.addresses.push(...data.ipv4.addresses);
+    self.ipv4.ranges.push(...data.ipv4.ranges);
+    self.ipv6.addresses.push(...data.ipv6.addresses);
+    self.ipv6.ranges.push(...data.ipv6.ranges);
   },
 
   ipv4: { addresses: [], ranges: [] },
   ipv6: { addresses: [], ranges: [] },
 };
 
-module.exports = self;
+export default self;
 ```
 
 #### Update update-assets.sh to Fetch SPF Records
@@ -293,8 +295,7 @@ if (process.env.NODE_ENV === 'production') {
 Monitor provider data for suspicious changes:
 
 ```javascript
-const fs = require('fs');
-const crypto = require('crypto');
+import crypto from 'node:crypto';
 
 // Store previous state
 const previousState = JSON.stringify(trustedProviders.getAllProviders());
@@ -444,15 +445,21 @@ npm run test
 Verify IPs are correct:
 
 ```bash
-node -e "
-const tp = require('./src/index');
-tp.loadDefaultProviders();
-tp.reloadAll().then(() => {
-  console.log(tp.getTrustedProvider('216.58.192.190'));
-  // Should print: Google Workspace
-});
+node --input-type=module -e "
+import trustedProviders from './src/index.js';
+trustedProviders.loadDefaultProviders();
+await trustedProviders.reloadAll();
+
+const workspace = trustedProviders.getAllProviders().find((provider) => provider.name === 'Google Workspace');
+console.log('ranges loaded:', workspace.ipv4.ranges.length + workspace.ipv6.ranges.length);
+// A count of 0 means the SPF lookup resolved nothing — check your resolver.
 "
 ```
+
+Checking the range count rather than one hardcoded IP is deliberate: the SPF
+record is Google's to change, so any address named here can stop being theirs.
+The count answers the question that actually matters — did the lookup produce
+data at all.
 
 ### Step 5: Monitor
 

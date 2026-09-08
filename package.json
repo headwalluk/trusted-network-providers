@@ -1,6 +1,6 @@
 {
   "name": "@headwall/trusted-network-providers",
-  "version": "2.4.2",
+  "version": "3.0.0",
   "description": "Trusted network hosts and address ranges.",
   "type": "module",
   "main": "./src/index.js",
@@ -60,7 +60,7 @@
     "bot-detection"
   ],
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "files": [
     "bin/",

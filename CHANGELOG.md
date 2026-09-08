@@ -1,5 +1,72 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 3.0.0 :: 2026-09-08
+
+### ⚠️ Breaking: Node.js >= 22.0.0
+
+`engines` moves from `>=18.0.0` to `>=22.0.0`. Node 18 has been end-of-life
+since April 2025 and Node 20 since April 2026. CI now tests on Node 22, 24 and
+26.
+
+No API changed and no runtime feature depends on Node 22 — this only stops the
+package claiming support for versions that no longer receive security fixes.
+
+### 🐛 Google Workspace resolved no addresses at all
+
+`spf-analyser.js` only read IPs from `include:` targets, never from `ip4:`/`ip6:`
+directives written directly on the record it was given. Google has since
+flattened `_spf.google.com` from
+
+```
+v=spf1 include:_netblocks.google.com include:_netblocks2.google.com ... ~all
+```
+
+to inline directives:
+
+```
+v=spf1 ip4:74.125.0.0/16 ip4:209.85.128.0/17 ip6:2001:4860:4864::/56 ... ~all
+```
+
+With no `include:` left to follow, the analyser returned early and the **Google
+Workspace provider held zero ranges** — every Google Workspace address was
+reported as untrusted. The provider still reported `state: 'ready'` with no
+error, and the one log line it did emit was at `info`, below the default level
+of `error`, so nothing surfaced.
+
+- The analyser now reads inline `ip4:`/`ip6:` directives from the root record as
+  well as from includes, and combines both.
+- It **no longer replaces provider data with nothing.** A lookup that yields no
+  IPs keeps the previous data and logs at `error`, because an empty provider is
+  indistinguishable from a working one that trusts nobody.
+- Google Workspace's `testAddresses` is re-enabled, so `runTests()` covers it.
+
+Fragmented (>255 character) TXT records are now reassembled for the root record
+too, not just for includes.
+
+### 📝 Documentation corrections
+
+Audited `docs/**` against the code:
+
+- **`security.md`** named MS Outlook, Brevo and PayPal as DNS/SPF providers.
+  They are static hardcoded ranges; Google Workspace is the only SPF provider in
+  the default set. It also claimed `update-assets.sh` could fetch that data at
+  build time — it never has.
+- **`dns-security-guide.md`** was still written for v1: six `require()` calls
+  and a `module.exports` in a package that has been ESM-only since 2.0.0. Its
+  "Solution 1" described bundled SPF assets as how the library works, three
+  lines above admitting the support doesn't exist; it is now marked as a
+  proposal. Its verification snippet asserted an IP that no longer resolves.
+- **`README.md`** listed Mailgun and GTmetrix among the built-in providers —
+  both are commented out of `defaultProviders`. `getProviderStatus()` was
+  documented as returning a `name` key it has never returned. Added the missing
+  link to `regular-maintenance.md`, and documented `once()`, `off()`,
+  `checkStaleness()` and `getStalenessThreshold()`.
+- **`migration-v1-to-v2.md`** pointed at `security.md` for a responsible
+  disclosure policy that isn't there.
+
+`providers.md` and `regular-maintenance.md` were checked line by line against
+the registry and the update script and needed no corrections.
+
 ## 2.4.2 :: 2026-09-08
 
 ### 🔗 Thrown errors now carry their cause

@@ -48,7 +48,7 @@ Each provider is a module exporting `{ name, testAddresses, reload?, ipv4: { add
 - **Static**: Hardcoded ranges, no `reload` (e.g., `private.js`, `cloudflare.js`)
 - **Bundled asset**: Loads from `src/assets/*.json` with checksum verification (e.g., `googlebot.js`, `bunnynet.js`)
 - **HTTP API**: Fetches from external APIs via `secure-http-client.js` (e.g., `stripe-api.js`)
-- **DNS/SPF**: Resolves SPF records via `spf-analyser.js` (e.g., `google-workspace.js`, `outlook.js`)
+- **DNS/SPF**: Resolves SPF records via `spf-analyser.js` (`google-workspace.js`; also `mailgun.js`, which is disabled by default)
 
 To add a provider: create file in `src/providers/`, add import and entry to `defaultProviders` array in `src/index.js`, include test addresses.
 

@@ -17,7 +17,7 @@ All HTTP requests are routed through `secure-http-client.js` which enforces:
 
 ### Checksum Verification
 
-Bundled JSON assets (Googlebot, BunnyNet IP ranges) are verified against SHA-256 checksums stored in `src/assets/checksums.json`. This detects file corruption or tampering.
+Every bundled asset — the Google crawler feeds, Bingbot, Applebot, the three OpenAI crawler feeds, BunnyNet and FacebookBot — is verified against SHA-256 checksums stored in `src/assets/checksums.json`. This detects file corruption or tampering. See [providers.md](providers.md) for the full list.
 
 Update checksums when refreshing bundled assets:
 
@@ -37,13 +37,23 @@ API responses (e.g., Stripe) are validated at runtime to confirm they match expe
 
 ## DNS-Based Providers
 
-Some providers (Google Workspace, MS Outlook, Brevo, PayPal) resolve IP ranges from DNS SPF records at runtime. **DNS responses are not cryptographically verified** — they could be spoofed via DNS poisoning.
+One provider in the default set — **Google Workspace** — resolves its IP ranges
+from DNS SPF records at runtime. (Mailgun does too, but ships disabled.) Every
+other provider is either static or fetched over HTTPS; MS Outlook, Brevo and
+PayPal in particular are hardcoded ranges, not DNS lookups.
+
+**DNS responses are not cryptographically verified** — they could be spoofed via
+DNS poisoning.
 
 Mitigations:
 
 1. Use DNSSEC-validating resolvers (e.g., `1.1.1.1`, `8.8.8.8`)
-2. Run `./scripts/update-assets.sh` to fetch data at build time instead of runtime
-3. In high-security environments, use bundled assets only and disable runtime DNS lookups
+2. Drop the provider — `deleteProvider('Google Workspace')` — and no runtime DNS
+   lookup happens at all
+3. In high-security environments, rely on the bundled and static providers only
+
+Note that `./scripts/update-assets.sh` does **not** cover this: it refreshes the
+bundled assets, and Google Workspace is not one of them.
 
 See [dns-security-guide.md](dns-security-guide.md) for detailed guidance.
 

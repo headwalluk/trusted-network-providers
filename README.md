@@ -4,10 +4,12 @@ A lightweight Node.js library for identifying IP addresses that belong to truste
 
 [![npm version](https://badge.fury.io/js/%40headwall%2Ftrusted-network-providers.svg)](https://www.npmjs.com/package/@headwall/trusted-network-providers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0%20%7C%20tested%20v22.21.0-brightgreen)](https://nodejs.org/)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen)](https://nodejs.org/)
 [![Test Status](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/headwalluk/trusted-network-providers)
 [![Security](https://img.shields.io/badge/security-hardened-blue)](./docs/security.md)
 
+> **⚠️ v3.0.0:** Requires Node.js >= 22.0.0. No API changes.
+>
 > **⚠️ v2.0.0 Breaking Changes:** This version migrates from CommonJS to ES modules. Use `import` instead of `require()`. See the migration guide for details.
 
 ## Quick Start
@@ -49,12 +51,15 @@ Includes 25+ trusted providers out of the box:
 - **Advertising**: Google AdsBot, AdSense (Google Special Crawlers)
 - **User-Triggered Fetchers**: Google (Gmail image proxy, Chrome prefetch proxy, Feedfetcher, etc.), ChatGPT-User
 - **Payment Processors**: Stripe, PayPal, Opayo
-- **Email Services**: Outlook, Brevo, Mailgun
+- **Email Services**: Outlook, Brevo
 - **CDN/Infrastructure**: Cloudflare, BunnyNet
-- **Development Tools**: GTmetrix, GetTerms, Labrika
+- **Development Tools**: GetTerms, Labrika
 - **Social Media**: FacebookBot
 - **E-commerce**: ShipHero
 - **Networks**: Private/Internal (RFC 1918)
+
+Mailgun, GTmetrix and Seobility ship in `src/providers/` but are **not**
+registered by default — see [Disabled Providers](docs/providers.md#disabled-providers).
 
 ## Key Features
 
@@ -93,9 +98,9 @@ deleteProvider(providerName);
 hasProvider(providerName);
 getAllProviders();
 
-// Category management (returns the names removed)
-getProvidersByCategory(category);
-deleteProvidersByCategory(category);
+// Category management
+getProvidersByCategory(category); // the matching providers
+deleteProvidersByCategory(category); // removes them, returns the names removed
 
 // Testing
 await runTests();
@@ -106,7 +111,7 @@ await runTests();
 ```javascript
 // Get provider status and metadata
 const status = getProviderStatus('Googlebot');
-// Returns: { name, state, lastUpdated, lastError }
+// Returns: { state, lastUpdated, lastError } — or null if no such provider
 // State: 'ready' | 'loading' | 'error' | 'stale'
 
 // Listen to provider lifecycle events
@@ -124,6 +129,14 @@ trustedProviders.on('stale', ({ provider, lastUpdated, staleDuration }) => {
 
 // Configure staleness detection (default: 24 hours)
 trustedProviders.setStalenessThreshold(12 * 60 * 60 * 1000); // 12 hours
+const threshold = trustedProviders.getStalenessThreshold();
+
+// Emit 'stale' for any provider past the threshold, on demand
+trustedProviders.checkStaleness();
+
+// once() fires a listener a single time; off() removes one
+trustedProviders.once('reload:success', ({ provider }) => console.log(`first reload: ${provider}`));
+trustedProviders.off('stale', myStaleHandler);
 ```
 
 ### Caching & Performance
@@ -231,6 +244,7 @@ fi
 - **[Security](docs/security.md)** - Security features and production recommendations
 - **[DNS Security Guide](docs/dns-security-guide.md)** - DNS/SPF provider security considerations
 - **[Migration Guide](docs/migration-v1-to-v2.md)** - Upgrading from v1.x to v2.x
+- **[Regular Maintenance](docs/regular-maintenance.md)** - Refreshing the bundled IP assets
 
 ## Example: Custom Provider
 
