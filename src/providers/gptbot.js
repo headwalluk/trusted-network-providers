@@ -18,6 +18,7 @@ import { readFile } from 'node:fs/promises';
 import { fetchJSON } from '../utils/secure-http-client.js';
 import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
 import logger from '../utils/logger.js';
+import { PROVIDER_CATEGORY_AI_CRAWLER } from '../categories.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,6 +27,7 @@ const GPTBOT_ADDRESS_LIST_URL = 'https://openai.com/gptbot.json';
 
 const self = {
   name: 'GPTBot',
+  category: PROVIDER_CATEGORY_AI_CRAWLER,
   testAddresses: ['132.196.86.1', '172.182.204.1'],
   reload: async () => {
     try {

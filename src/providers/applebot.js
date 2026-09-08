@@ -14,6 +14,7 @@ import { readFile } from 'node:fs/promises';
 import { fetchJSON } from '../utils/secure-http-client.js';
 import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
 import logger from '../utils/logger.js';
+import { PROVIDER_CATEGORY_AI_CRAWLER } from '../categories.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,6 +23,7 @@ const APPLEBOT_ADDRESS_LIST_URL = 'https://search.developer.apple.com/applebot.j
 
 const self = {
   name: 'Applebot',
+  category: PROVIDER_CATEGORY_AI_CRAWLER,
   testAddresses: ['17.241.208.161', '17.241.193.161'],
   reload: async () => {
     try {

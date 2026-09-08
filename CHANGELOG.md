@@ -1,5 +1,59 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 2.4.0 :: 2026-09-08
+
+### ✨ Provider categories, and an `ai-crawler` category
+
+Providers may now carry a `category`, and the registry can act on a category as
+a set. One category is defined: **`ai-crawler`**, covering **Applebot**,
+**GPTBot**, **OAI-SearchBot** and **ChatGPT-User**.
+
+The motivating case is a consumer withdrawing trusted status from the AI
+crawlers. That was already possible by calling `deleteProvider()` four times
+from a hand-maintained list of names — and that list is the problem: it goes
+stale in silence. Add a fifth crawler here and every consumer holding four names
+keeps trusting it, with nothing to notice. The category travels with the
+provider instead, so a provider joining a category is picked up by every
+consumer that filters on it.
+
+**New API:**
+
+- **`loadDefaultProviders({ excludeCategories })`** — leaves a category
+  unregistered rather than registering and then removing it, so no lookup can
+  resolve against one in between. Called with no arguments it behaves exactly as
+  before.
+- **`getProvidersByCategory(category)`** — the matching providers in
+  registration order; `[]` for an unknown category.
+- **`deleteProvidersByCategory(category)`** — removes them and **returns the
+  names removed**, so a consumer can log a change to which networks are trusted
+  rather than have it happen silently. Clears the parsed-address and result
+  caches through `deleteProvider()`, so no stale "trusted" verdict survives.
+- **`PROVIDER_CATEGORY_AI_CRAWLER`** and **`PROVIDER_CATEGORIES`** exported from
+  the package root; the definitions live in `src/categories.js`.
+
+**Notes:**
+
+- **Nothing is excluded by default.** All 26 providers still load, and every
+  existing call site behaves identically — this release only makes the exclusion
+  *expressible*. Whether an AI crawler has earned trusted status is a judgement
+  for the consumer, not for this package.
+- Excluding a category does **not** mark those networks as bad. It withdraws a
+  privilege, leaving them to be judged on their own behaviour like any other
+  network.
+- `category` is **optional** on a provider. Consumers registering their own
+  providers may set one of their own; uncategorised providers never match a
+  category filter. A non-string or blank `category` is now rejected by
+  `addProvider()` rather than silently never matching.
+
+### 🧪 Tests
+
+- **`test/provider-categories.test.js`** — 18 tests covering membership (exactly
+  those four, and explicitly *not* Googlebot, Bingbot, Cloudflare, Stripe API or
+  Private), both removal paths, idempotency, unknown and blank categories, and
+  consumer-registered providers with and without a category.
+
+No breaking changes.
+
 ## 2.3.0 :: 2026-08-29
 
 ### ✨ New providers — AI crawlers and Applebot (Milestone 7)

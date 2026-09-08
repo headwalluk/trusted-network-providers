@@ -1,8 +1,18 @@
 # Project Tracker - Trusted Network Providers
 
-**Current Version:** 2.3.0 (tagged, awaiting publish; 2.2.x line live on npm)
-**Status:** M7 complete — AI crawlers + Applebot (2.3.0)
-**Last Updated:** 29 August 2026
+**Current Version:** 2.4.0 (**awaiting publish — requires Paul / npm auth**; 2.3.0 live on npm)
+**Status:** M9 complete — provider categories + `ai-crawler` (2.4.0)
+**Last Updated:** 8 September 2026
+
+> ⚠ **2.4.0 is a release blocker for spamshield3.** ss3 consumes
+> `loadDefaultProviders({ excludeCategories })` to implement its
+> `EXCLUDE_AI_CRAWLERS_FROM_TRUSTED` switch, and its `package.json` asks for
+> `^2.4.0`. Publishing this version is a handoff step before ss3 can be
+> installed from a clean checkout.
+>
+> An earlier line here said 2.3.0 was "tagged, awaiting publish". That was
+> stale — `npm view` lists 2.3.0 as published, and both spamshield2 and
+> spamshield3 resolve it from the registry.
 
 ---
 
@@ -35,6 +45,7 @@ Special Crawlers / AdsBot provider). M7 grew the trusted-crawler coverage across
 | M6  | Documentation, polish & release (2.0.0 shipped)                | ✅ Complete |
 | M7  | Additional trusted crawlers (Bingbot 2.1.0; AI crawlers 2.3.0) | ✅ Complete |
 | M8  | Google user-triggered fetchers (2.2.0)                         | ✅ Complete |
+| M9  | Provider categories + `ai-crawler` (2.4.0)                     | ✅ Complete |
 
 Detailed write-ups for completed milestones live alongside this file
 (`05-milestone-5-performance.md`) and in `dev-notes/archive/`.
@@ -178,6 +189,46 @@ is a near-clone of `bingbot.js` (bundled asset + checksum):
 (clone of `bingbot.js`), download asset, add to `defaultProviders` +
 `update-assets.sh` + `checksums.json`, add test addresses + provider test, update
 `docs/providers.md` and README, run lint/format/test, bump version + CHANGELOG.
+
+### Milestone 9: Provider Categories ✅ (2.4.0)
+
+**Delivered 8 September 2026.** Providers may carry a `category`; the registry
+can filter and remove by it. One category defined: `ai-crawler` — Applebot,
+GPTBot, OAI-SearchBot, ChatGPT-User.
+
+**Why it exists.** spamshield2 2.28.0 added an `EXCLUDE_AI_CRAWLERS_FROM_TRUSTED`
+switch implemented as four `deleteProvider()` calls against a **hardcoded list of
+names in its own `config.js`**. It works, and its own comment concedes the
+weakness: a stale name in that list is a harmless no-op — but a _missing_ one is
+not. Add a fifth AI crawler to this package and every consumer holding four
+names keeps trusting it, silently, with nothing anywhere to notice. That is a
+defect this package is better placed to prevent than its consumers are, because
+this package is the thing that adds the fifth crawler.
+
+**Shape:**
+
+- `src/categories.js` — the constants, in their own module so providers can
+  import them without a circular dependency through `src/index.js`.
+- `category` on the four AI-crawler providers; optional everywhere else and
+  validated in `validateProvider()` if present (non-empty string, else throw —
+  a non-string category would silently never match a filter).
+- `loadDefaultProviders({ excludeCategories })` — the preferred path, since it
+  never registers them, so no lookup can resolve against one in between.
+  `deleteProvidersByCategory()` covers removal after the fact and **returns the
+  names removed**, so the consumer can log the change rather than have which
+  networks are trusted change in silence.
+- 18 tests in `test/provider-categories.test.js`.
+
+**Deliberately not done: a full taxonomy.** Only the AI crawlers are
+categorised; the other 22 providers have no `category`. Grouping the rest
+(search / CDN / payments / email) is easy to add and nothing needs it yet —
+inventing categories with no consumer would be guessing at what a filter should
+mean. The field is optional precisely so it can be filled in as uses appear.
+
+**Handoff:** publish 2.4.0 to npm (requires Paul's auth), then spamshield3's
+`^2.4.0` resolves from the registry.
+
+---
 
 ---
 

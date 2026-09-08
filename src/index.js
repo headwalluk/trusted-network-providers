@@ -7,6 +7,7 @@ import ipaddr from 'ipaddr.js';
 import { LRUCache } from './lru-cache.js';
 import { TTLCache } from './ttl-cache.js';
 import logger from './utils/logger.js';
+import { PROVIDER_CATEGORIES, PROVIDER_CATEGORY_AI_CRAWLER } from './categories.js';
 import privateProvider from './providers/private.js';
 import googlebotProvider from './providers/googlebot.js';
 import googleSpecialCrawlersProvider from './providers/google-special-crawlers.js';
@@ -121,6 +122,7 @@ let stalenessThresholdMs = 24 * 60 * 60 * 1000;
 /**
  * @typedef {Object} Provider
  * @property {string} name - The display name of the provider
+ * @property {string} [category] - Group this provider belongs to, e.g. 'ai-crawler'. See src/categories.js
  * @property {string[]} [testAddresses] - Sample IP addresses for testing
  * @property {Function|Function[]} [reload] - Function(s) to reload provider data
  * @property {Object} ipv4 - IPv4 configuration
@@ -183,6 +185,14 @@ function validateProvider(provider, currentProviderCount) {
 
   if (invalidRanges.length > 0) {
     throw new Error(`Provider "${provider.name}" contains invalid CIDR ranges: ${invalidRanges.join(', ')}`);
+  }
+
+  // `category` is optional, but a non-string one would never match a category
+  // filter, so it is rejected here rather than silently ignored at lookup time.
+  if (provider.category !== undefined) {
+    if (typeof provider.category !== 'string' || provider.category.trim() === '') {
+      throw new Error(`Provider "${provider.name}" has an invalid category: expected a non-empty string`);
+    }
   }
 }
 
@@ -281,6 +291,53 @@ const self = {
     }
 
     return self.providers.some((testProvider) => testProvider.name === providerName);
+  },
+
+  /**
+   * Returns every registered provider in the given category, in registration
+   * order. Uncategorised providers never match.
+   *
+   * @param {string} category - The category to filter by, e.g. 'ai-crawler'
+   * @returns {Provider[]} The matching providers, or an empty array
+   *
+   * @example
+   * import { PROVIDER_CATEGORY_AI_CRAWLER } from '@headwall/trusted-network-providers';
+   * const crawlers = trustedProviders.getProvidersByCategory(PROVIDER_CATEGORY_AI_CRAWLER);
+   */
+  getProvidersByCategory: (category) => {
+    if (!category) {
+      return [];
+    }
+
+    return self.providers.filter((testProvider) => testProvider.category === category);
+  },
+
+  /**
+   * Removes every registered provider in the given category and reports what
+   * was removed, so a caller can log a change to which networks are trusted
+   * rather than have it happen silently.
+   *
+   * Prefer `loadDefaultProviders({ excludeCategories })` where the providers are
+   * not wanted at all — this exists for removing them after the fact, and for
+   * consumers that register providers of their own.
+   *
+   * @param {string} category - The category to remove, e.g. 'ai-crawler'
+   * @returns {string[]} The names removed, in registration order; empty if none matched
+   *
+   * @example
+   * const removed = trustedProviders.deleteProvidersByCategory('ai-crawler');
+   * console.error(`No longer trusting: ${removed.join(', ')}`);
+   */
+  deleteProvidersByCategory: (category) => {
+    const removedNames = self.getProvidersByCategory(category).map((matchedProvider) => matchedProvider.name);
+
+    // deleteProvider clears the parsed-address and result caches, so no stale
+    // "trusted" verdict can survive the removal.
+    for (const providerName of removedNames) {
+      self.deleteProvider(providerName);
+    }
+
+    return removedNames;
   },
 
   /**
@@ -530,15 +587,32 @@ const self = {
    * Loads all built-in providers (Googlebot, Stripe, Cloudflare, etc.).
    * This is typically called once during application initialization.
    *
+   * @param {Object} [options] - Load options
+   * @param {string[]} [options.excludeCategories] - Categories to leave unregistered, e.g. ['ai-crawler']
    * @returns {void}
    *
    * @example
-   * const trustedProviders = require('@headwall/trusted-network-providers');
+   * import trustedProviders from '@headwall/trusted-network-providers';
    * trustedProviders.loadDefaultProviders();
    * await trustedProviders.reloadAll();
+   *
+   * @example
+   * // Load everything except the AI crawlers, so those ranges are judged on
+   * // their own behaviour rather than trusted outright.
+   * import trustedProviders, { PROVIDER_CATEGORY_AI_CRAWLER } from '@headwall/trusted-network-providers';
+   * trustedProviders.loadDefaultProviders({ excludeCategories: [PROVIDER_CATEGORY_AI_CRAWLER] });
    */
-  loadDefaultProviders: () => {
+  loadDefaultProviders: ({ excludeCategories = [] } = {}) => {
+    // Excluded providers are never registered, rather than registered and then
+    // removed, so no lookup can resolve against one in between.
+    const excludedCategories = new Set(excludeCategories.filter((category) => !!category));
+
     for (const defaultProvider of defaultProviders) {
+      if (excludedCategories.has(defaultProvider.category)) {
+        logger.debug(`⏭️  Skip provider (category "${defaultProvider.category}"): ${defaultProvider.name}`);
+        continue;
+      }
+
       if (!self.hasProvider(defaultProvider.name)) {
         self.addProvider(defaultProvider);
       }
@@ -880,5 +954,8 @@ const self = {
 
 // Export provider state constants for consumers
 export { PROVIDER_STATE_READY, PROVIDER_STATE_LOADING, PROVIDER_STATE_ERROR, PROVIDER_STATE_STALE };
+
+// Export provider category constants for consumers
+export { PROVIDER_CATEGORIES, PROVIDER_CATEGORY_AI_CRAWLER };
 
 export default self;

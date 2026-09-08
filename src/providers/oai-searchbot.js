@@ -19,6 +19,7 @@ import { readFile } from 'node:fs/promises';
 import { fetchJSON } from '../utils/secure-http-client.js';
 import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
 import logger from '../utils/logger.js';
+import { PROVIDER_CATEGORY_AI_CRAWLER } from '../categories.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +28,7 @@ const OAI_SEARCHBOT_ADDRESS_LIST_URL = 'https://openai.com/searchbot.json';
 
 const self = {
   name: 'OAI-SearchBot',
+  category: PROVIDER_CATEGORY_AI_CRAWLER,
   testAddresses: ['135.234.64.1', '104.210.140.129'],
   reload: async () => {
     try {

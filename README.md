@@ -45,7 +45,7 @@ console.log(unknown); // null
 Includes 25+ trusted providers out of the box:
 
 - **Search Engines**: Googlebot, Bingbot, Applebot, AhrefsBot, SemrushBot
-- **AI Crawlers**: GPTBot, OAI-SearchBot (OpenAI)
+- **AI Crawlers**: GPTBot, OAI-SearchBot (OpenAI) — with Applebot and ChatGPT-User, these carry the `ai-crawler` category and can be excluded as a set
 - **Advertising**: Google AdsBot, AdSense (Google Special Crawlers)
 - **User-Triggered Fetchers**: Google (Gmail image proxy, Chrome prefetch proxy, Feedfetcher, etc.), ChatGPT-User
 - **Payment Processors**: Stripe, PayPal, Opayo
@@ -75,6 +75,9 @@ Includes 25+ trusted providers out of the box:
 // Load default providers
 loadDefaultProviders();
 
+// Load them, leaving a whole category unregistered
+loadDefaultProviders({ excludeCategories: ['ai-crawler'] });
+
 // Update all providers with dynamic data
 await reloadAll();
 
@@ -89,6 +92,10 @@ addProvider(provider);
 deleteProvider(providerName);
 hasProvider(providerName);
 getAllProviders();
+
+// Category management (returns the names removed)
+getProvidersByCategory(category);
+deleteProvidersByCategory(category);
 
 // Testing
 await runTests();
@@ -134,6 +141,41 @@ const currentTtl = trustedProviders.getResultCacheTTL();
 trustedProviders.setLogLevel('info');
 const level = trustedProviders.getLogLevel();
 ```
+
+## Provider Categories
+
+A category groups providers a consumer may want to act on as a set. The one
+category defined today is `ai-crawler`, covering **Applebot**, **GPTBot**,
+**OAI-SearchBot** and **ChatGPT-User**.
+
+It exists because trusted status is a strong privilege — consumers use it to
+bypass rate limits and blocklists — and whether an AI crawler has earned that is
+a judgement each consumer makes for itself. Filtering by category rather than by
+name means a crawler added to the category in a later release is picked up
+automatically, where a hand-maintained list of names would silently keep
+trusting it.
+
+```javascript
+import trustedProviders, { PROVIDER_CATEGORY_AI_CRAWLER } from '@headwall/trusted-network-providers';
+
+// Preferred: never register them in the first place, so no lookup can resolve
+// against one in between.
+trustedProviders.loadDefaultProviders({ excludeCategories: [PROVIDER_CATEGORY_AI_CRAWLER] });
+
+// Or withdraw them after the fact — reports what it removed, so a change to
+// which networks are trusted need never be silent.
+const removed = trustedProviders.deleteProvidersByCategory(PROVIDER_CATEGORY_AI_CRAWLER);
+console.error(`No longer trusting: ${removed.join(', ')}`);
+
+// Inspect membership without changing anything.
+trustedProviders.getProvidersByCategory(PROVIDER_CATEGORY_AI_CRAWLER);
+```
+
+Excluding a category does **not** mark those networks as bad — it only withdraws
+the privilege, so they are judged on their own behaviour like any other network.
+
+Providers you register yourself may carry a `category` of your own; a provider
+with no category never matches a category filter.
 
 ## Provider State Constants
 

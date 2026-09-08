@@ -60,6 +60,19 @@ trusted, so this affects only the reported name, never the trust decision — bu
 don't rely on the provider name to distinguish OpenAI's crawlers from one
 another.
 
+**All four carry `category: 'ai-crawler'`** (2.4.0), so a consumer can withdraw
+trusted status from the set without naming them:
+
+```javascript
+trustedProviders.loadDefaultProviders({ excludeCategories: ['ai-crawler'] });
+```
+
+Filter by the category rather than by name. A crawler added to this section in a
+later release joins the category with it, where a hand-maintained list of four
+names would silently keep trusting the fifth. Excluding them does not mark the
+networks as bad — it withdraws a privilege, leaving them to be judged on their
+own behaviour. See the README's _Provider Categories_ section.
+
 ### Disabled Providers
 
 These providers exist in `src/providers/` but are commented out in the default provider list:
@@ -150,6 +163,7 @@ trustedProviders.addProvider({
 ### Provider Checklist
 
 - Include at least one `testAddresses` entry for verification
+- Set `category` if the provider belongs to a group consumers act on as a set (see `src/categories.js`); leave it unset otherwise
 - Implement `reload()` if data is dynamic
 - Clear existing data before repopulating in `reload()`
 - Use `secure-http-client.js` for any HTTPS requests
