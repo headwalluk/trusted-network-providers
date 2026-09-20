@@ -23,7 +23,7 @@
     },
     "applebot": {
       "url": "https://search.developer.apple.com/applebot.json",
-      "sha256": "b845bdfb29aae14da031eab82d7f366dd295f8ea4bc4ef5fe3ce850c94b779b8",
+      "sha256": "5a5e12188891d998341f4fb50d2b31c80aba5002f5cff9d0fa110c13e4e2edd0",
       "comment": "Bundled asset - checksum verified on load"
     },
     "gptbot": {
@@ -33,32 +33,32 @@
     },
     "oai-searchbot": {
       "url": "https://openai.com/searchbot.json",
-      "sha256": "e757b3ed5b84ac71976c02f17d9a77385e7acaf5b50e17c7b60f7e5a9876f102",
+      "sha256": "81806b1665e9bbbc5e0f307b847ad34f7027abc19e0d2d5d3eca1864bf361be6",
       "comment": "Bundled asset - checksum verified on load"
     },
     "chatgpt-user": {
       "url": "https://openai.com/chatgpt-user.json",
-      "sha256": "d9e16f6d00d8ce95dd4fc732d0ba3ec8efb2bd9181d660754b4c5a2bf24544df",
+      "sha256": "53a78eaccafc0ae701e6f65a7582bb2c1ba4d6e8fde98287485fb772f2319da7",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv4": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist",
-      "sha256": "7b2d7c045e764b22ec2da58d8531e77d111b37645826881d2110c13c06162f4e",
+      "sha256": "3c428f160da2e8511cb314c8cd6ab4399653ff51aec7ac4a4e679f9af1abf012",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv6": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist/IPv6",
-      "sha256": "db2a3578c209b6194402fc92c3fbef0df708a3ff09375692f0ecea14b13370ff",
+      "sha256": "f3b61fdd8f3833fc839776d704a5e049ecd6f885e318348d8408ec76877a5111",
       "comment": "Bundled asset - checksum verified on load"
     },
     "facebookbot-ipv4": {
       "url": "whois.radb.net -i origin AS32934 (IPv4 routes)",
-      "sha256": "e2bfde5b6fe28327049d2b5bad76d0215f2a03756c4af5fba365f3f3a0df71df",
+      "sha256": "00d29b987ab098ca646a85c4e9b2382e3ed5e941ae2efc757663d54c4033f785",
       "comment": "Bundled asset - checksum verified on load"
     },
     "facebookbot-ipv6": {
       "url": "whois.radb.net -i origin AS32934 (IPv6 routes)",
-      "sha256": "9b37d4c629fd2bc2f44e7b891249ab33c7d9793e86dbf9bb544c7cb4ad49169c",
+      "sha256": "f94aa0bfb31e5207e26207d23e10a911cc0737ad444b97aed936e2dc0762d001",
       "comment": "Bundled asset - checksum verified on load"
     },
     "stripe-api": {
@@ -72,5 +72,5 @@
       "comment": "Runtime verification - structure validation used instead (data changes frequently)"
     }
   },
-  "lastUpdated": "2026-09-08T17:49:55Z"
+  "lastUpdated": "2026-09-20T16:42:28Z"
 }

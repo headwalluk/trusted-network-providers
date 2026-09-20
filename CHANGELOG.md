@@ -1,5 +1,38 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 3.2.2 :: 2026-09-20
+
+### 🔄 Bundled IP assets refreshed
+
+Routine monthly refresh via `scripts/update-assets.sh`. Data only — no code
+change.
+
+| Asset | Change |
+| --- | --- |
+| `facebookbot-ip4s.txt` | 416 → 433 routes |
+| `facebookbot-ip6s.txt` | 633 → 650 routes |
+| `applebot-ips.json` | 33 → 24 prefixes |
+| `oai-searchbot-ips.json` | 35 → 39 prefixes |
+| `chatgpt-user-ips.json` | 207 → 219 prefixes |
+| `bunnynet-ip4s.json` | 586 → 587 addresses |
+| `bunnynet-ip6s.json` | 322 → 321 addresses |
+
+Unchanged: `googlebot-ips.json`, `google-special-crawlers.json`,
+`google-user-fetchers.json`, `bingbot-ips.json`, `gptbot-ips.json`.
+
+Two of these are worth a note:
+
+**Applebot shed nine `/24`s** — `17.22.237/24`, `17.22.245/24`, `17.22.253/24`,
+`17.241.75/24`, `17.241.219/24`, `17.241.227/24`, `17.246.15/24`,
+`17.246.19/24` and `17.246.23/24`, about 2,300 addresses. This is an upstream
+withdrawal, not a truncated download: the feed's `creationTime` advanced from
+31 Jul 2026 to 15 Sep 2026 and the remaining `/27`s and `/28`s are intact.
+Anything still crawling from those ranges no longer identifies as Applebot.
+
+**OAI-SearchBot gained four prefixes** while its `creationTime` stayed at
+2 Jan 2026 — OpenAI edited the list without restamping it, so the timestamp is
+not a reliable freshness signal for that feed.
+
 ## 3.2.1 :: 2026-09-08
 
 ### 📝 README provider list corrected
