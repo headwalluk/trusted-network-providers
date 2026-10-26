@@ -28,7 +28,7 @@ const GPTBOT_ADDRESS_LIST_URL = 'https://openai.com/gptbot.json';
 const self = {
   name: 'GPTBot',
   category: PROVIDER_CATEGORY_AI_CRAWLER,
-  testAddresses: ['132.196.86.1', '172.182.204.1'],
+  testAddresses: ['132.196.86.1', '172.182.202.1'],
   reload: async () => {
     try {
       // Verify checksum of bundled asset

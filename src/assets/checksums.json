@@ -13,7 +13,7 @@
     },
     "google-user-fetchers": {
       "url": "https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json",
-      "sha256": "b38cc245b1261b0bb55a2c4d5b411680823ec484e6e1b598ba4db96c322a4a04",
+      "sha256": "20efac2c8477ef62a5170930803c24c3e3945841ea90abac4a116576b03429b2",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bingbot": {
@@ -28,7 +28,7 @@
     },
     "gptbot": {
       "url": "https://openai.com/gptbot.json",
-      "sha256": "be778b84e1b5436be6ab9d6139ba2b3d6a98c1f581e038ec386e3a7d44cbfe50",
+      "sha256": "a24d1fa34f094d303400bdf13c45c5e9726e0b553780d16a52f9ba1b790acc72",
       "comment": "Bundled asset - checksum verified on load"
     },
     "oai-searchbot": {
@@ -38,12 +38,12 @@
     },
     "chatgpt-user": {
       "url": "https://openai.com/chatgpt-user.json",
-      "sha256": "53a78eaccafc0ae701e6f65a7582bb2c1ba4d6e8fde98287485fb772f2319da7",
+      "sha256": "e03a9f75b53619286d990e028043ce43d223d93269f3679b28d78142b8f0e7ab",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv4": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist",
-      "sha256": "3c428f160da2e8511cb314c8cd6ab4399653ff51aec7ac4a4e679f9af1abf012",
+      "sha256": "f9cef368ae6059c2d4ca6fd022ace8fa2915125ecaf810320aa5023e8c53b63f",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv6": {
@@ -53,12 +53,12 @@
     },
     "facebookbot-ipv4": {
       "url": "whois.radb.net -i origin AS32934 (IPv4 routes)",
-      "sha256": "00d29b987ab098ca646a85c4e9b2382e3ed5e941ae2efc757663d54c4033f785",
+      "sha256": "395437c572f2d0629ca209ee58d657598cbd4368426c16b9e3a3aa408766b71a",
       "comment": "Bundled asset - checksum verified on load"
     },
     "facebookbot-ipv6": {
       "url": "whois.radb.net -i origin AS32934 (IPv6 routes)",
-      "sha256": "f94aa0bfb31e5207e26207d23e10a911cc0737ad444b97aed936e2dc0762d001",
+      "sha256": "c933ade57d88eea67efb04ad55cea310bc6424d463a21746c534a992e2b42f99",
       "comment": "Bundled asset - checksum verified on load"
     },
     "stripe-api": {
@@ -72,5 +72,5 @@
       "comment": "Runtime verification - structure validation used instead (data changes frequently)"
     }
   },
-  "lastUpdated": "2026-09-20T16:42:28Z"
+  "lastUpdated": "2026-10-26T18:38:41Z"
 }

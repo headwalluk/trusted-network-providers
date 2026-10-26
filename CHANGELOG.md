@@ -1,5 +1,41 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 3.2.3 :: 2026-10-26
+
+### 🔄 Bundled IP assets refreshed
+
+Routine monthly refresh via `scripts/update-assets.sh`.
+
+| Asset | Change |
+| --- | --- |
+| `facebookbot-ip4s.txt` | 433 → 437 routes |
+| `facebookbot-ip6s.txt` | 650 → 654 routes |
+| `google-user-fetchers.json` | 496 → 504 prefixes |
+| `gptbot-ips.json` | 21 → 18 prefixes |
+| `chatgpt-user-ips.json` | 219 → 234 prefixes |
+| `bunnynet-ip4s.json` | 587 → 584 addresses |
+
+Unchanged: `googlebot-ips.json`, `google-special-crawlers.json`,
+`bingbot-ips.json`, `applebot-ips.json`, `oai-searchbot-ips.json`,
+`bunnynet-ip6s.json`.
+
+Two of these are worth a note:
+
+**GPTBot withdrew three `/24`s** — `172.182.204.0/24`, `172.182.214.0/24` and
+`172.182.215.0/24`. This is the feed's first change since October 2025
+(`creationTime` advanced from 30 Oct 2025 to 22 Sep 2026). The provider's
+`172.182.204.1` test address fell inside a withdrawn range and has been moved
+to `172.182.202.1`.
+
+**ChatGPT-User widened `9.129.0.0/17` to `9.129.0.0/16`**, doubling that block
+to 65,536 addresses, alongside 14 new `/28`s.
+
+### 🔧 Maintenance
+
+- `npm audit fix`: `brace-expansion` 5.0.9 → 5.0.12 (dev-only, via
+  `eslint` → `minimatch`; GHSA-q2hr-2g5m-vwhr, GHSA-qhr7-859c-m2p7,
+  GHSA-6j4f-fj2g-mc7p). Production dependencies were already clean.
+
 ## 3.2.2 :: 2026-09-20
 
 ### 🔄 Bundled IP assets refreshed
