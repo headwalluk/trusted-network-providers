@@ -56,7 +56,8 @@ Includes 27 trusted providers out of the box:
 - **Development Tools**: GetTerms, Labrika
 - **Social Media**: FacebookBot
 - **E-commerce**: ShipHero
-- **Networks**: Private/Internal (RFC 1918), Google Services (public DNS)
+- **Public DNS Resolvers**: Cloudflare DNS (1.1.1.1), OpenDNS, Quad9 (9.9.9.9), Google Services (8.8.8.8)
+- **Networks**: Private/Internal (RFC 1918)
 
 ## Key Features
 

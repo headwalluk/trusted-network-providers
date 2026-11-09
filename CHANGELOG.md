@@ -1,5 +1,31 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 3.3.0 :: 2026-11-09
+
+### ✨ Public DNS resolver providers
+
+`1.1.1.1` landed in a firewall RBL and broke name resolution on a host. Public
+resolvers are anycast infrastructure whose addresses are commonly spoofed as
+packet sources, so they attract blocklist entries; they are now trusted.
+
+| Provider | IPv4 | IPv6 |
+| --- | --- | --- |
+| **Cloudflare DNS** (new) | `1.1.1.0/24`, `1.0.0.0/24` | `2606:4700:4700::/48` |
+| **OpenDNS** (new) | `208.67.222.0/24`, `208.67.220.0/24` | `2620:119:35::/48`, `2620:119:53::/48`, `2620:0:ccc::/48`, `2620:0:ccd::/48` |
+| **Quad9** (new) | `9.9.9.0/24`, `149.112.112.0/24` | `2620:fe::/48` |
+| **Google Services** | unchanged (`8.8.8.8`, `8.8.4.4`) | added `2001:4860:4860::8888`, `2001:4860:4860::8844` |
+
+Block ownership was confirmed against registry whois. OpenDNS covers only its
+resolver `/24`s, not the whole of Cisco's `208.67.216.0/21`.
+
+**Cloudflare DNS is registered before Cloudflare.** Its IPv6 `/48` sits inside
+the CDN's `2606:4700::/32`, and lookup is first-match, so
+`2606:4700:4700::1111` reports `Cloudflare DNS` while CDN addresses still
+report `Cloudflare`.
+
+**Behaviour change for consumers:** `1.1.1.1`, `208.67.222.222`, `9.9.9.9` and
+the rest of the ranges above previously returned `null` and are now trusted.
+
 ## 3.2.3 :: 2026-10-26
 
 ### 🔄 Bundled IP assets refreshed

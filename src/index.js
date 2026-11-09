@@ -24,7 +24,10 @@ import stripeWebhooksProvider from './providers/stripe-webhooks.js';
 import opayoProvider from './providers/opayo.js';
 import paypalProvider from './providers/paypal.js';
 import outlookProvider from './providers/outlook.js';
+import cloudflareDnsProvider from './providers/cloudflare-dns.js';
 import cloudflareProvider from './providers/cloudflare.js';
+import openDnsProvider from './providers/opendns.js';
+import quad9Provider from './providers/quad9.js';
 import ezoicProvider from './providers/ezoic.js';
 import shipHeroProvider from './providers/ship-hero.js';
 import bunnynetProvider from './providers/bunnynet.js';
@@ -70,7 +73,10 @@ const defaultProviders = [
   opayoProvider,
   paypalProvider,
   outlookProvider,
+  cloudflareDnsProvider, // must precede cloudflareProvider: overlapping IPv6 range
   cloudflareProvider,
+  openDnsProvider,
+  quad9Provider,
   ezoicProvider,
   shipHeroProvider,
   bunnynetProvider,

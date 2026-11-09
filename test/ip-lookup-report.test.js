@@ -54,7 +54,7 @@ describe('IP Lookup Report', () => {
   });
 
   test('known-untrusted IPs should return null', () => {
-    const untrustedIPs = ['192.42.116.182', '123.123.123.123', '1.1.1.1', '9.9.9.9', '203.0.113.50'];
+    const untrustedIPs = ['192.42.116.182', '123.123.123.123', '198.51.100.7', '198.51.100.99', '203.0.113.50'];
 
     console.log('');
     console.log('  Untrusted IP Verification');
