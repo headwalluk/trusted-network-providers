@@ -341,7 +341,7 @@ describe('Edge Cases and Error Handling', () => {
         reload: () => Promise.resolve(),
         testAddresses: [],
         ipv4: {
-          addresses: null, // This will cause an exception when iterating
+          addresses: [],
           ranges: [],
         },
         ipv6: {
@@ -351,6 +351,9 @@ describe('Edge Cases and Error Handling', () => {
       };
 
       trustedProviders.addProvider(badProvider);
+
+      // Registration rejects a null list, so break it afterwards
+      badProvider.ipv4.addresses = null;
 
       // This should trigger the catch block in getTrustedProvider
       const result = trustedProviders.getTrustedProvider('192.0.2.1');

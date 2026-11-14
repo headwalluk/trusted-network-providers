@@ -137,6 +137,10 @@ trustedProviders.once('reload:success', ({ provider }) => console.log(`first rel
 trustedProviders.off('stale', myStaleHandler);
 ```
 
+**Reload behaviour.** `reloadAll()` returns one settled result per provider that has a `reload()`. A provider fails as a whole if its reload throws (even synchronously) or if any task in a returned array rejects. A failed or incomplete reload keeps the previous data, sets the state to `'error'` and leaves `lastUpdated` alone, so a provider that keeps failing goes stale. SPF providers fail when a record yields nothing or an include cannot be resolved.
+
+Failures are emitted as `reload:error`. The old `error` event is still emitted while something listens for it, but is deprecated.
+
 ### Caching & Performance
 
 ```javascript

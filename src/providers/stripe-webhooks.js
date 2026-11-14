@@ -4,6 +4,7 @@
 
 import { fetchJSON } from '../utils/secure-http-client.js';
 import logger from '../utils/logger.js';
+import { replaceProviderData, snapshotFromAddressList } from '../utils/provider-data.js';
 
 const STRIPE_ADDRESSES_URL = 'https://stripe.com/files/ips/ips_webhooks.json';
 
@@ -25,12 +26,7 @@ const self = {
       const data = await fetchJSON(STRIPE_ADDRESSES_URL, { verifyStructure });
 
       if (data && data.WEBHOOKS && Array.isArray(data.WEBHOOKS)) {
-        // Clear existing addresses
-        self.ipv4.addresses.length = 0;
-
-        data.WEBHOOKS.forEach((ipAddress) => {
-          self.ipv4.addresses.push(ipAddress);
-        });
+        replaceProviderData(self, snapshotFromAddressList(data.WEBHOOKS));
       } else {
         throw new Error('Invalid response format from Stripe Webhooks');
       }

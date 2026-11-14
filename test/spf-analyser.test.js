@@ -173,7 +173,8 @@ describe('spfAnalyser', () => {
         return Promise.resolve([[`v=spf1 ip4:192.0.2.${depth} include:_spf${depth + 1}.example.com ~all`]]);
       });
 
-      await spfAnalyser('_spf0.example.com', mockProvider);
+      // Hitting the cap leaves includes unresolved, so the refresh is reported incomplete
+      await expect(spfAnalyser('_spf0.example.com', mockProvider)).rejects.toThrow(/Incomplete SPF data/);
 
       // The root lookup plus at most 10 include lookups.
       expect(mockResolveTxt.mock.calls.length).toBeLessThanOrEqual(11);
@@ -216,7 +217,7 @@ describe('spfAnalyser', () => {
 
       mockResolveTxt.mockResolvedValueOnce([['v=spf1 ~all']]);
 
-      await spfAnalyser('example.com', mockProvider);
+      await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow(/No SPF netblocks found/);
 
       // An empty provider silently reports every address as untrusted, so the
       // previous data is kept rather than replaced with nothing.
@@ -224,11 +225,49 @@ describe('spfAnalyser', () => {
     });
   });
 
-  describe('edge cases', () => {
-    it('should handle empty SPF records', async () => {
-      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ~all']]);
+  describe('incomplete refreshes', () => {
+    it('should keep all previous data when one include fails', async () => {
+      mockProvider.ipv4.ranges = ['198.51.100.0/24', '203.0.113.0/24'];
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf1.example.com include:_spf2.example.com ~all']]);
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.0/24 ~all']]);
+      mockResolveTxt.mockRejectedValueOnce(new Error('SERVFAIL'));
+
+      await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow(
+        'Incomplete SPF data for test-provider (unresolved: _spf2.example.com); keeping previous data'
+      );
+      expect(mockProvider.ipv4.ranges).toEqual(['198.51.100.0/24', '203.0.113.0/24']);
+
+      console.error.mockRestore();
+    });
+
+    it('should reject a record with an invalid netblock and keep previous data', async () => {
+      mockProvider.ipv4.ranges = ['198.51.100.0/24'];
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.0/24 ip4:999.0.0.0/8 ~all']]);
+
+      await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow(/invalid entry "999.0.0.0\/8"/);
+      expect(mockProvider.ipv4.ranges).toEqual(['198.51.100.0/24']);
+
+      console.error.mockRestore();
+    });
+
+    it('should ignore an ip4 directive with extra colons rather than truncate it', async () => {
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ip4:192.0.2.1:25 ip4:198.51.100.7 ~all']]);
 
       await spfAnalyser('example.com', mockProvider);
+
+      expect(mockProvider.ipv4.addresses).toEqual(['198.51.100.7']);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should reject empty SPF records', async () => {
+      mockResolveTxt.mockResolvedValueOnce([['v=spf1 ~all']]);
+
+      await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow(/No SPF netblocks found/);
 
       expect(mockProvider.ipv4.addresses).toEqual([]);
       expect(mockProvider.ipv4.ranges).toEqual([]);
@@ -241,9 +280,11 @@ describe('spfAnalyser', () => {
 
       mockResolveTxt.mockResolvedValueOnce([['v=spf1 ~all']]);
 
-      await spfAnalyser('example.com', mockProvider);
+      await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow();
 
-      expect(consoleSpy).toHaveBeenCalledWith('Not updating test-provider addresses because no SPF netblocks found');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Failed to analyse SPF records for test-provider: No SPF netblocks found for test-provider; keeping previous data'
+      );
       expect(mockResolveTxt).toHaveBeenCalledTimes(1); // Only main domain, no includes
 
       consoleSpy.mockRestore();
@@ -304,11 +345,9 @@ describe('spfAnalyser', () => {
 
       await spfAnalyser('example.com', mockProvider);
 
-      // Current implementation does not validate empty values
-      // ip4: with no value results in empty string being added
-      expect(mockProvider.ipv4.addresses).toContain('192.0.2.1');
-      expect(mockProvider.ipv4.addresses).toContain(''); // Empty string from ip4:
-      expect(mockProvider.ipv6.addresses).toContain(''); // Empty string from ip6:
+      // Directives with no value are skipped
+      expect(mockProvider.ipv4.addresses).toEqual(['192.0.2.1']);
+      expect(mockProvider.ipv6.addresses).toEqual([]);
     });
   });
 
@@ -326,7 +365,7 @@ describe('spfAnalyser', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should log error when include resolution fails but continue gracefully', async () => {
+    it('should log the failed include and reject when nothing was resolved', async () => {
       // Main domain resolves successfully
       mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf.example.com ~all']]);
 
@@ -335,8 +374,7 @@ describe('spfAnalyser', () => {
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      // Should NOT throw - should complete gracefully with empty results
-      await spfAnalyser('example.com', mockProvider);
+      await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow(/No SPF netblocks found/);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         'Failed to resolve SPF include _spf.example.com for test-provider: DNS timeout'
@@ -351,7 +389,7 @@ describe('spfAnalyser', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should handle partial include resolution failures gracefully', async () => {
+    it('should load partial data on a first load but report the refresh as incomplete', async () => {
       // Main domain with two includes
       mockResolveTxt.mockResolvedValueOnce([['v=spf1 include:_spf1.example.com include:_spf2.example.com ~all']]);
 
@@ -362,8 +400,9 @@ describe('spfAnalyser', () => {
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      // Should NOT throw - should continue with partial results
-      await spfAnalyser('example.com', mockProvider);
+      await expect(spfAnalyser('example.com', mockProvider)).rejects.toThrow(
+        'Incomplete SPF data for test-provider (unresolved: _spf2.example.com); loaded partial data'
+      );
 
       expect(consoleSpy).toHaveBeenCalledWith(
         'Failed to resolve SPF include _spf2.example.com for test-provider: Include resolution failed'

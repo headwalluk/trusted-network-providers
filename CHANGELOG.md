@@ -1,5 +1,79 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 3.4.0 :: 2026-11-14
+
+Fixes from a code review of 3.3.1. The theme: a lookup must never return a
+wrong verdict, and a failed refresh must never quietly change what is trusted.
+
+### 🔒 Lookups
+
+- **Cache expiry could trust an unknown address.** The result cache was read
+  with `has()` then `get()`; if the entry expired between the two calls the
+  lookup returned `undefined`, which `isTrusted()` reported as **trusted**.
+  The cache is now read once, and `isTrusted()` only returns true for a
+  provider name.
+- **Equivalent addresses now get the same verdict.** IPv4-mapped IPv6
+  (`::ffff:198.51.100.42`, common on dual-stack sockets) is matched as IPv4,
+  and exact IPv6 entries match any spelling of the address. Equivalent
+  spellings share one cache entry.
+- **`addProvider()` clears the result cache**, so an address looked up before
+  its provider was registered is no longer reported untrusted for up to an hour.
+- **Direct `reload()` / `reloadFromWeb()` calls invalidate cached verdicts**
+  for the built-in providers, not just `reloadAll()`.
+- Non-string input returns `null` without being cached; overlong input is
+  truncated in error logs.
+
+### 🛡️ Reloads
+
+- **A failed reload keeps the previous data.** Every built-in provider builds
+  and validates a complete snapshot (syntax, family, size, non-empty) before
+  swapping it in. Previously a corrupt asset or a malformed feed entry could
+  empty a provider or leave it half-updated.
+- **Bundled asset checksums are enforced.** A mismatching asset, or one with no
+  manifest entry, is refused instead of loaded with a suppressed warning.
+- **SPF refreshes report failure.** An SPF record yielding nothing, an include
+  that fails to resolve, or hitting the 10-lookup cap now rejects the reload:
+  the provider shows `error` and `lastUpdated` stops advancing, so it goes
+  stale rather than reporting a fresh success on old data. Previous data is
+  kept; a first load with some includes unresolved loads what it has and still
+  reports the failure. An `ip4:` token with extra colons is ignored rather
+  than truncated into an address.
+- **`reloadAll()` records one outcome per provider.** A synchronous throw from
+  a custom `reload()` no longer aborts the whole call, and a provider returning
+  several tasks fails if any task fails.
+- **HTTP**: the timeout now covers reading the body, bodies over 5 MiB
+  (`maxResponseBytes`) are rejected, a redirect to plain HTTP is refused, and
+  certificate errors wrapped by native fetch are no longer retried.
+
+### ⚠️ Behaviour changes
+
+- **`reload:error` is now emitted**, as the README always documented. The
+  `error` event is deprecated: it is still emitted, but only while an `error`
+  listener is registered, so an unheard failure no longer replaces the
+  original error with `ERR_UNHANDLED_ERROR`.
+- `reloadAll()` returns one result per provider rather than one per task; this
+  only differs for providers whose `reload()` returns an array.
+- `addProvider()` rejects invalid exact addresses, entries in the wrong family
+  pool, and lists that are not arrays. Absent pools are filled with empty
+  arrays.
+- The **Private** provider now includes IPv6 loopback `::1`, matching IPv4
+  loopback `127.0.0.0/8`.
+- `setResultCacheTTL()` ignores non-integers, `setStalenessThreshold()`
+  ignores non-finite values, and `setLogLevel()` rejects inherited names such
+  as `toString`.
+
+### 🔧 Maintenance
+
+- `update-assets.sh` runs with `pipefail`, bounds the WHOIS query to 120 s, and
+  checks every staged asset with `scripts/validate-asset.mjs` (the library's
+  own validation, plus no prefix broader than IPv4 /12 or IPv6 /24 and no more
+  than 1.5× growth against the live copy). RADb WHOIS is unauthenticated; these
+  checks bound what a tampered response could introduce.
+- `npm run build-zip` packages the npm `files` list instead of the whole
+  working tree, and fails when `zip` fails.
+- `npm audit --omit=dev` is clean. Outstanding, dev-only: `deepmerge`
+  (GHSA-gcqx-w48m-w2h4, via `jest-config`) has no fixed release.
+
 ## 3.3.1 :: 2026-11-14
 
 ### 🔄 Bundled IP assets refreshed

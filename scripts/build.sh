@@ -4,7 +4,7 @@
 # build-dist.sh
 #
 
-REQUIRED_BINS=('zip' 'jq')
+REQUIRED_BINS=('zip' 'jq' 'npm')
 
 for REQUIRED_BIN in "${REQUIRED_BINS[@]}"; do
   echo -n "Looking for ${REQUIRED_BIN} ... "
@@ -42,26 +42,24 @@ if [ "${ACTION}" == 'clean' ]; then
 elif [ "${ACTION}" == 'zip' ]; then
   mkdir -p "${DIST_FOLDER_NAME}"
 
-  pushd "${PROJECT_DIR}" > /dev/null
+  DIST_FILE_NAME="${DIST_FOLDER_NAME}/${PROJECT_NAME}-${PROJECT_VERSION}.zip"
+  rm -f "${DIST_FILE_NAME}"
 
-  cd ..
-
-  DIST_FILE_NAME="${PROJECT_NAME}/dist/${PROJECT_NAME}-${PROJECT_VERSION}.zip"
-  if [ -f "${DIST_FILE_NAME}" ]; then
-    rm -f "${DIST_FILE_NAME}"
+  # Same file list as the npm package, so ignored local files never ship
+  PACKAGE_FILE_LIST="$(cd "${PROJECT_DIR}" && npm pack --dry-run --json --ignore-scripts | jq -r "(if type == \"array\" then .[0] else .[] end).files[].path")"
+  if [ -z "${PACKAGE_FILE_LIST}" ]; then
+    echo "Failed to list package files" >&2
+    exit 1
   fi
 
-  zip -r "${DIST_FILE_NAME}" "${PROJECT_NAME}" -x "${PROJECT_NAME}/node_modules/*" -x "${PROJECT_NAME}/dist/*" -x "${PROJECT_NAME}/scripts/*" -x "${PROJECT_NAME}/.git/*" -x "${PROJECT_NAME}/.gitignore"
-
-  echo
-
-  if [ $? -ne 0 ]; then
-    echo "Failed to create zip file"
-  else
-    echo "DONE: ${DIST_FILE_NAME}"
+  pushd "${SOURCE_DIR}" > /dev/null
+  if ! sed "s|^|${PROJECT_NAME}/|" <<<"${PACKAGE_FILE_LIST}" | zip -q "${DIST_FILE_NAME}" -@; then
+    echo "Failed to create zip file" >&2
+    exit 1
   fi
-
   popd > /dev/null
+
+  echo "DONE: ${DIST_FILE_NAME}"
 else
   echo "Unknown action: ${ACTION}"
   exit 1

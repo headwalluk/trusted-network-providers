@@ -7,6 +7,7 @@ import ipaddr from 'ipaddr.js';
 import { LRUCache } from './lru-cache.js';
 import { TTLCache } from './ttl-cache.js';
 import logger from './utils/logger.js';
+import { addressFamily, onProviderDataReplaced, rangeFamily } from './utils/provider-data.js';
 import { PROVIDER_CATEGORIES, PROVIDER_CATEGORY_AI_CRAWLER } from './categories.js';
 import privateProvider from './providers/private.js';
 import googlebotProvider from './providers/googlebot.js';
@@ -54,6 +55,7 @@ const MAX_PROVIDERS = 100; // Maximum number of providers that can be registered
 const MAX_IPS_PER_PROVIDER = 10000; // Maximum combined IPs and ranges per provider
 const MAX_PARSED_ADDRESSES = 5000; // Maximum parsed CIDR ranges to cache (LRU)
 const MAX_CACHED_RESULTS = 10000; // Maximum IP lookup results to cache (TTL + LRU)
+const MAX_LOGGED_INPUT_LENGTH = 64; // Longest lookup input echoed into an error log
 const DEFAULT_RESULT_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour default TTL for IP lookup results
 
 const defaultProviders = [
@@ -91,6 +93,9 @@ const defaultProviders = [
 
 const parsedAddresses = new LRUCache(MAX_PARSED_ADDRESSES);
 
+// Provider exact-address string → canonical form (or null if unparseable)
+const canonicalAddresses = new LRUCache(MAX_PARSED_ADDRESSES);
+
 /**
  * Result cache for IP lookups with TTL.
  * Caches the result (provider name or null) for each IP address.
@@ -120,6 +125,50 @@ const events = new EventEmitter();
  * @type {number}
  */
 let stalenessThresholdMs = 24 * 60 * 60 * 1000;
+
+/** Clears every cache derived from provider data. */
+const clearLookupCaches = () => {
+  parsedAddresses.clear();
+  canonicalAddresses.clear();
+  resultCache.clear();
+};
+
+// Built-in providers replace their data through provider-data.js, including
+// direct reload()/reloadFromWeb() calls that bypass reloadAll()
+onProviderDataReplaced(clearLookupCaches);
+
+/** Returns the address in the form used for matching: IPv4-mapped IPv6 becomes IPv4. */
+const toMatchingForm = (parsedIp) => {
+  let matchingIp = parsedIp;
+  if (parsedIp.kind() === IP_VERSION_V6 && parsedIp.isIPv4MappedAddress()) {
+    matchingIp = parsedIp.toIPv4Address();
+  }
+  return matchingIp;
+};
+
+/** Returns the canonical string for a provider's exact address, or null if it does not parse. */
+const canonicalAddress = (address) => {
+  if (!canonicalAddresses.has(address)) {
+    let canonical = null;
+    if (typeof address === 'string' && ipaddr.isValid(address)) {
+      canonical = toMatchingForm(ipaddr.parse(address)).toString();
+    }
+    canonicalAddresses.set(address, canonical);
+  }
+  return canonicalAddresses.get(address);
+};
+
+/** Returns a log-safe rendering of an arbitrary lookup input. */
+const describeInput = (input) => {
+  let description = typeof input;
+  if (typeof input === 'string') {
+    description = JSON.stringify(input.slice(0, MAX_LOGGED_INPUT_LENGTH));
+    if (input.length > MAX_LOGGED_INPUT_LENGTH) {
+      description += ` (${input.length} characters)`;
+    }
+  }
+  return description;
+};
 
 /**
  * @typedef {Object} Provider
@@ -153,40 +202,55 @@ function validateProvider(provider, currentProviderCount) {
     throw new Error(`Maximum provider limit reached (${MAX_PROVIDERS}). Cannot add provider: ${provider.name}`);
   }
 
-  // Count total IPs and ranges
-  const ipv4Addresses = provider.ipv4?.addresses?.length || 0;
-  const ipv4Ranges = provider.ipv4?.ranges?.length || 0;
-  const ipv6Addresses = provider.ipv6?.addresses?.length || 0;
-  const ipv6Ranges = provider.ipv6?.ranges?.length || 0;
-  const totalIps = ipv4Addresses + ipv4Ranges + ipv6Addresses + ipv6Ranges;
+  // Each list is optional (absent lists become empty on registration) but must be an array
+  const lists = [];
+  const structureProblems = [];
+  for (const family of [IP_VERSION_V4, IP_VERSION_V6]) {
+    for (const listName of ['addresses', 'ranges']) {
+      const entries = provider[family]?.[listName] ?? [];
+      if (Array.isArray(entries)) {
+        lists.push({ family, listName, entries });
+      } else {
+        structureProblems.push(`${family}.${listName} is not an array`);
+      }
+    }
+  }
 
+  if (structureProblems.length > 0) {
+    throw new Error(`Provider "${provider.name}" is malformed: ${structureProblems.join('; ')}`);
+  }
+
+  const totalIps = lists.reduce((total, list) => total + list.entries.length, 0);
   if (totalIps > MAX_IPS_PER_PROVIDER) {
     throw new Error(
       `Provider "${provider.name}" exceeds maximum IP limit (${MAX_IPS_PER_PROVIDER}). Total IPs: ${totalIps}`
     );
   }
 
-  // Validate all CIDR ranges
-  const invalidRanges = [];
-
-  if (provider.ipv4?.ranges) {
-    for (const range of provider.ipv4.ranges) {
-      if (!ipaddr.isValidCIDR(range)) {
-        invalidRanges.push(range);
-      }
-    }
-  }
-
-  if (provider.ipv6?.ranges) {
-    for (const range of provider.ipv6.ranges) {
-      if (!ipaddr.isValidCIDR(range)) {
-        invalidRanges.push(range);
-      }
-    }
-  }
+  const invalidRanges = lists
+    .filter((list) => list.listName === 'ranges')
+    .flatMap((list) => list.entries.filter((range) => !ipaddr.isValidCIDR(range)));
 
   if (invalidRanges.length > 0) {
     throw new Error(`Provider "${provider.name}" contains invalid CIDR ranges: ${invalidRanges.join(', ')}`);
+  }
+
+  // Every entry must parse and belong to its pool's family
+  const entryProblems = [];
+  for (const { family, listName, entries } of lists) {
+    const familyOf = listName === 'addresses' ? addressFamily : rangeFamily;
+    for (const entry of entries) {
+      const entryFamily = familyOf(entry);
+      if (entryFamily === null) {
+        entryProblems.push(`${family}.${listName}: invalid entry ${JSON.stringify(entry)}`);
+      } else if (entryFamily !== family) {
+        entryProblems.push(`${family}.${listName}: ${entry} is ${entryFamily}`);
+      }
+    }
+  }
+
+  if (entryProblems.length > 0) {
+    throw new Error(`Provider "${provider.name}" contains invalid entries: ${entryProblems.join('; ')}`);
   }
 
   // `category` is optional, but a non-string one would never match a category
@@ -197,6 +261,56 @@ function validateProvider(provider, currentProviderCount) {
     }
   }
 }
+
+/** Emits a reload failure, plus the deprecated 'error' alias only when someone listens for it. */
+const emitReloadError = (payload) => {
+  events.emit('reload:error', payload);
+
+  // An 'error' event with no listener makes EventEmitter throw, so it is never emitted unheard
+  if (events.listenerCount('error') > 0) {
+    events.emit('error', payload);
+  }
+};
+
+/**
+ * Runs one provider's reload and records a single outcome for it. reload() may
+ * return a promise, an array of promises (all must succeed) or nothing.
+ */
+const reloadProvider = async (provider) => {
+  const metadata = providerMetadata.get(provider.name);
+  if (metadata) {
+    metadata.state = PROVIDER_STATE_LOADING;
+  }
+
+  events.emit('reload:start', { provider: provider.name });
+
+  try {
+    // Inside the try, so a synchronous throw is this provider's failure alone
+    const reloadOutcome = await provider.reload();
+
+    if (Array.isArray(reloadOutcome)) {
+      const taskResults = await Promise.allSettled(reloadOutcome);
+      const failedTask = taskResults.find((taskResult) => taskResult.status === 'rejected');
+      if (failedTask) {
+        throw failedTask.reason;
+      }
+    }
+  } catch (error) {
+    if (metadata) {
+      metadata.state = PROVIDER_STATE_ERROR;
+      metadata.lastError = error;
+    }
+    emitReloadError({ provider: provider.name, error, timestamp: Date.now() });
+    throw error;
+  }
+
+  if (metadata) {
+    metadata.state = PROVIDER_STATE_READY;
+    metadata.lastUpdated = Date.now();
+    metadata.lastError = null;
+  }
+  events.emit('reload:success', { provider: provider.name, timestamp: Date.now() });
+};
 
 const self = {
   providers: [],
@@ -228,6 +342,13 @@ const self = {
 
       logger.debug(`➕ Add provider: ${provider.name}`);
 
+      // Absent pools and lists become empty arrays so lookups can rely on them
+      for (const family of [IP_VERSION_V4, IP_VERSION_V6]) {
+        provider[family] = provider[family] ?? {};
+        provider[family].addresses = provider[family].addresses ?? [];
+        provider[family].ranges = provider[family].ranges ?? [];
+      }
+
       self.providers.push(provider);
 
       // Initialize provider metadata
@@ -236,6 +357,9 @@ const self = {
         lastUpdated: null,
         lastError: null,
       });
+
+      // A cached miss from before registration would otherwise hide the new provider
+      clearLookupCaches();
     }
   },
 
@@ -257,8 +381,7 @@ const self = {
         providerMetadata.delete(providerName);
 
         // Clear caches to prevent stale results
-        parsedAddresses.clear();
-        resultCache.clear();
+        clearLookupCaches();
       }
     }
   },
@@ -348,7 +471,8 @@ const self = {
    * Supported events:
    * - 'reload:start': Emitted when a provider begins reloading. Payload: { provider: string }
    * - 'reload:success': Emitted when a provider successfully reloads. Payload: { provider: string, timestamp: number }
-   * - 'error': Emitted when a provider fails to reload. Payload: { provider: string, error: Error, timestamp: number }
+   * - 'reload:error': Emitted when a provider fails to reload. Payload: { provider: string, error: Error, timestamp: number }
+   * - 'error': Deprecated alias of 'reload:error', emitted only while an 'error' listener is registered
    * - 'stale': Emitted when a provider becomes stale. Payload: { provider: string, lastUpdated: number, staleDuration: number, timestamp: number }
    *
    * @param {string} event - The event name to listen for
@@ -360,7 +484,7 @@ const self = {
    *   console.log(`Provider ${provider} reloaded successfully at ${new Date(timestamp)}`);
    * });
    *
-   * trustedProviders.on('error', ({ provider, error }) => {
+   * trustedProviders.on('reload:error', ({ provider, error }) => {
    *   console.error(`Provider ${provider} failed to reload: ${error.message}`);
    * });
    *
@@ -401,9 +525,9 @@ const self = {
    *   console.error(`Error in ${provider}: ${error.message}`);
    * };
    *
-   * trustedProviders.on('error', handleError);
+   * trustedProviders.on('reload:error', handleError);
    * // ... later ...
-   * trustedProviders.off('error', handleError);
+   * trustedProviders.off('reload:error', handleError);
    */
   off: (event, listener) => {
     return events.off(event, listener);
@@ -455,7 +579,7 @@ const self = {
    * trustedProviders.setStalenessThreshold(12 * 60 * 60 * 1000);
    */
   setStalenessThreshold: (thresholdMs) => {
-    if (typeof thresholdMs === 'number' && thresholdMs > 0) {
+    if (Number.isFinite(thresholdMs) && thresholdMs > 0) {
       stalenessThresholdMs = thresholdMs;
     }
   },
@@ -486,10 +610,10 @@ const self = {
    * trustedProviders.setResultCacheTTL(30 * 60 * 1000);
    */
   setResultCacheTTL: (ttlMs) => {
-    if (typeof ttlMs === 'number' && ttlMs > 0) {
+    // TTLCache requires a positive integer; build it before committing the setting
+    if (Number.isInteger(ttlMs) && ttlMs > 0) {
+      resultCache = new TTLCache(MAX_CACHED_RESULTS, ttlMs);
       resultCacheTtlMs = ttlMs;
-      // Recreate cache with new TTL (clears existing entries)
-      resultCache = new TTLCache(MAX_CACHED_RESULTS, resultCacheTtlMs);
     }
   },
 
@@ -628,8 +752,9 @@ const self = {
    *
    * Uses Promise.allSettled() to ensure all providers are attempted, even if some fail.
    * Failed reloads are logged but don't prevent other providers from updating.
+   * A failed reload keeps the provider's previous data.
    *
-   * @returns {Promise<PromiseSettledResult<void>[]>} Promise that resolves with results for all providers
+   * @returns {Promise<PromiseSettledResult<void>[]>} One result per provider with a reload(), in registration order
    *
    * @example
    * // Initial load
@@ -657,97 +782,15 @@ const self = {
     for (const provider of self.providers) {
       if (typeof provider.reload === 'function') {
         logger.debug(`🔃 Reload: ${provider.name}`);
-
-        // Set provider state to LOADING before starting the reload
-        // This allows consumers to detect when a provider is updating
-        const metadata = providerMetadata.get(provider.name);
-        if (metadata) {
-          metadata.state = PROVIDER_STATE_LOADING;
-        }
-
-        // Emit reload:start event for monitoring/observability
-        events.emit('reload:start', { provider: provider.name });
-
-        const reloadPromises = provider.reload();
-
-        // Some providers return multiple promises (e.g., multiple API endpoints)
-        // Others return a single promise. We handle both cases.
-        if (Array.isArray(reloadPromises)) {
-          // Multiple reload tasks (e.g., fetching from different endpoints)
-          // Each promise is wrapped with state management callbacks
-          for (const promise of reloadPromises) {
-            reloadRequests.push(
-              promise
-                .then(() => {
-                  // Update metadata on success
-                  // All provider reloads must succeed for the state to become READY
-                  const meta = providerMetadata.get(provider.name);
-                  if (meta) {
-                    meta.state = PROVIDER_STATE_READY;
-                    meta.lastUpdated = Date.now();
-                    meta.lastError = null;
-                  }
-                  // Emit reload:success event for monitoring
-                  events.emit('reload:success', { provider: provider.name, timestamp: Date.now() });
-                })
-                .catch((error) => {
-                  // Update metadata on failure
-                  // The provider enters ERROR state, but other providers continue loading
-                  const meta = providerMetadata.get(provider.name);
-                  if (meta) {
-                    meta.state = PROVIDER_STATE_ERROR;
-                    meta.lastError = error;
-                  }
-                  // Emit error event for monitoring
-                  events.emit('error', { provider: provider.name, error, timestamp: Date.now() });
-                  // Re-throw to maintain Promise.allSettled behavior
-                  // This ensures the result array shows which providers failed
-                  throw error;
-                })
-            );
-          }
-        } else {
-          // Single reload task (most common case)
-          reloadRequests.push(
-            reloadPromises
-              .then(() => {
-                // Update metadata on success
-                const meta = providerMetadata.get(provider.name);
-                if (meta) {
-                  meta.state = PROVIDER_STATE_READY;
-                  meta.lastUpdated = Date.now();
-                  meta.lastError = null;
-                }
-                // Emit reload:success event
-                events.emit('reload:success', { provider: provider.name, timestamp: Date.now() });
-              })
-              .catch((error) => {
-                // Update metadata on failure
-                const meta = providerMetadata.get(provider.name);
-                if (meta) {
-                  meta.state = PROVIDER_STATE_ERROR;
-                  meta.lastError = error;
-                }
-                // Emit error event
-                events.emit('error', { provider: provider.name, error, timestamp: Date.now() });
-                throw error; // Re-throw to maintain Promise.allSettled behavior
-              })
-          );
-        }
+        reloadRequests.push(reloadProvider(provider));
       }
     }
 
-    // Use Promise.allSettled (not Promise.all) to ensure all providers are attempted
-    // even if some fail. This is critical for resilience — we want partial success.
-    // If we used Promise.all, a single provider failure would abort the entire reload.
+    // allSettled, so one provider's failure never stops the others
     const results = await Promise.allSettled(reloadRequests);
 
-    // Clear both caches after all reloads complete (success or failure)
-    // This prevents stale data from being used with updated provider ranges
-    // The result cache (IP lookups) must be invalidated because provider ranges changed
-    // The parsed address cache (CIDR ranges) must be invalidated because ranges may have been added/removed
-    parsedAddresses.clear();
-    resultCache.clear();
+    // Providers that mutate their arrays directly do not notify the registry
+    clearLookupCaches();
 
     return results;
   },
@@ -782,89 +825,71 @@ const self = {
    * });
    */
   getTrustedProvider: (ipAddress) => {
-    // Check result cache first (hot path for repeated lookups)
-    // This cache has TTL expiry, so stale results are automatically invalidated
-    if (resultCache.has(ipAddress)) {
-      return resultCache.get(ipAddress);
-    }
-
     let trustedSource = null;
 
-    // Parse the IP address string into an ipaddr.js object
-    // This validates the IP format and provides methods for CIDR matching
     let parsedIp = null;
-    try {
-      parsedIp = ipaddr.parse(ipAddress);
-    } catch (error) {
-      // parsedIp is already null; the catch exists to log the malformed input
-      logger.error(`Failed to parse IP: ${ipAddress}`);
-      logger.error(error);
+    if (typeof ipAddress !== 'string') {
+      logger.error(`Failed to parse IP: expected a string, got ${describeInput(ipAddress)}`);
+    } else {
+      try {
+        parsedIp = toMatchingForm(ipaddr.parse(ipAddress));
+      } catch (error) {
+        // parsedIp stays null, so the miss is cached below like any other
+        logger.error(`Failed to parse IP: ${describeInput(ipAddress)}: ${error.message}`);
+      }
     }
 
-    if (parsedIp) {
-      const ipAddressVersion = parsedIp.kind(); // 'ipv4' or 'ipv6'
+    // Equivalent spellings of one address share a cache entry
+    const cacheKey = parsedIp ? parsedIp.toString() : ipAddress;
 
-      // Linear search through providers in registration order
-      // First match wins, so provider order matters if ranges overlap
-      // This allows prioritizing more specific providers before catch-all ones
+    // One read: a separate has()/get() pair can straddle the expiry instant
+    const cachedSource = typeof ipAddress === 'string' ? resultCache.get(cacheKey) : undefined;
+
+    if (cachedSource !== undefined) {
+      trustedSource = cachedSource;
+    } else if (parsedIp) {
+      const ipAddressVersion = parsedIp.kind(); // 'ipv4' or 'ipv6'
+      const canonicalIp = parsedIp.toString();
+
+      // Linear search in registration order; first match wins
       const providerCount = self.providers.length;
       let providerIndex = 0;
       while (providerIndex < providerCount) {
         const provider = self.providers[providerIndex];
-
-        // Select the appropriate test pool (ipv4 or ipv6) based on the IP version
-        // This prevents testing IPv4 addresses against IPv6 ranges and vice versa
-        let testPool = null;
-        if (ipAddressVersion === IP_VERSION_V4) {
-          testPool = provider.ipv4;
-        } else if (ipAddressVersion === IP_VERSION_V6) {
-          testPool = provider.ipv6;
-        } else {
-          // Unknown IP version (should never happen with ipaddr.js)
-        }
+        const testPool = ipAddressVersion === IP_VERSION_V4 ? provider.ipv4 : provider.ipv6;
 
         try {
           if (testPool) {
-            // Step 1: Check exact address matches (fast string comparison)
-            // This is significantly faster than CIDR parsing, so we check these first
-            // Example: "1.2.3.4" === "1.2.3.4" (simple string equality)
+            // Exact addresses, compared in canonical form
             const addressCount = testPool.addresses.length;
             for (let addressIndex = 0; addressIndex < addressCount; ++addressIndex) {
-              if (testPool.addresses[addressIndex] === ipAddress) {
+              if (canonicalAddress(testPool.addresses[addressIndex]) === canonicalIp) {
                 trustedSource = provider.name;
                 break;
               }
             }
 
-            // Step 2: Check CIDR range matches (slower, requires CIDR parsing)
-            // Only run this if we didn't find an exact match above
-            // Example: Check if "1.2.3.4" falls within "1.2.3.0/24"
-            const rangeCount = testPool.ranges.length;
+            // CIDR ranges, parsed once and cached
+            const rangeCount = trustedSource ? 0 : testPool.ranges.length;
             for (let rangeIndex = 0; rangeIndex < rangeCount; ++rangeIndex) {
               const testRange = testPool.ranges[rangeIndex];
 
-              // Cache parsed CIDR ranges (LRU) to avoid re-parsing on every lookup
-              // Parsing "1.2.3.0/24" into a range object is expensive, so we only do it once
-              // The LRU cache automatically evicts old entries when full (5000 max)
               if (!parsedAddresses.has(testRange)) {
                 parsedAddresses.set(testRange, ipaddr.parseCIDR(testRange));
               }
 
-              // Check if the IP falls within this CIDR range using ipaddr.js's match() method
-              // This performs bitwise comparison of the IP against the range's network/mask
-              if (parsedIp.match(parsedAddresses.get(testRange))) {
+              const parsedRange = parsedAddresses.get(testRange);
+              if (parsedRange[0].kind() === ipAddressVersion && parsedIp.match(parsedRange)) {
                 trustedSource = provider.name;
                 break;
               }
             }
           }
         } catch (error) {
-          logger.error(`ERROR: Failed to find trusted source of ${ipAddress}`);
+          logger.error(`ERROR: Failed to find trusted source of ${describeInput(ipAddress)} in ${provider.name}`);
           logger.error(error);
         }
 
-        // Exit early if we found a match (no need to check remaining providers)
-        // This is important for performance when dealing with 20+ providers
         if (trustedSource) {
           break;
         } else {
@@ -873,10 +898,10 @@ const self = {
       }
     }
 
-    // Cache the result (including null for negative lookups) with TTL
-    // Negative caching prevents repeated expensive lookups for unknown IPs
-    // This is especially important during high-volume attacks from untrusted sources
-    resultCache.set(ipAddress, trustedSource);
+    // Negative results are cached too, so repeated unknown addresses stay cheap
+    if (cachedSource === undefined && typeof ipAddress === 'string') {
+      resultCache.set(cacheKey, trustedSource);
+    }
 
     return trustedSource;
   },
@@ -894,7 +919,7 @@ const self = {
    * }
    */
   isTrusted: (ipAddress) => {
-    return self.getTrustedProvider(ipAddress) !== null;
+    return typeof self.getTrustedProvider(ipAddress) === 'string';
   },
 
   /**

@@ -334,6 +334,7 @@ describe('DEFAULT_CONFIG', () => {
       timeout: 30000,
       retries: 2,
       retryDelay: 1000,
+      maxResponseBytes: 5 * 1024 * 1024,
     });
   });
 });

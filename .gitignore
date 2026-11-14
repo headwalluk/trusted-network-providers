@@ -165,3 +165,6 @@ Desktop.ini
 
 # Local development notes (not tracked)
 dev-notes/
+
+# Local code review reports
+/code-review/

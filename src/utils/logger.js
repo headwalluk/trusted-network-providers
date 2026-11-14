@@ -35,7 +35,7 @@ let currentLevel = LOG_LEVELS.error; // Default: only show errors
  * logger.setLevel('silent'); // Suppress all output
  */
 export const setLevel = (level) => {
-  if (!(level in LOG_LEVELS)) {
+  if (!Object.hasOwn(LOG_LEVELS, level)) {
     throw new Error(`Invalid log level: ${level}. Must be one of: ${Object.keys(LOG_LEVELS).join(', ')}`);
   }
   currentLevel = LOG_LEVELS[level];

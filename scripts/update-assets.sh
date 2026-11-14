@@ -10,7 +10,10 @@
 # changed are written back into src/assets/. The checksums manifest is
 # regenerated whenever the bundled data changes.
 #
-# All downloads use HTTPS with TLS 1.2+ and certificate validation.
+# HTTPS downloads use TLS 1.2+ and certificate validation. FacebookBot routes
+# come from RADb over WHOIS, which is unauthenticated, so every staged asset
+# is also checked by scripts/validate-asset.mjs: syntax, family, prefix
+# breadth and growth against the live copy.
 #
 # Exit codes:
 #   0  - success, no assets changed (nothing to commit)
@@ -22,10 +25,12 @@
 
 set -e # Exit on error
 set -u # Exit on undefined variable
+set -o pipefail # A failure anywhere in a pipeline fails it
 
 THIS_FULL_PATH=$(realpath "${BASH_SOURCE[0]}")
 BASE_DIR=$(dirname "${THIS_FULL_PATH}")
 BASE_DIR=$(dirname "${BASE_DIR}")
+VALIDATE_ASSET="${BASE_DIR}/scripts/validate-asset.mjs"
 
 SRC_DIR="${BASE_DIR}/src"
 ASSETS_DIR="${SRC_DIR}/assets"
@@ -57,7 +62,7 @@ UNCHANGED=()
 ##
 # Preflight: make sure every external tool we depend on is available.
 #
-for cmd in wget jq whois sha256sum mktemp cmp diff awk grep; do
+for cmd in wget jq whois timeout node sha256sum mktemp cmp diff awk grep; do
   if ! command -v "${cmd}" >/dev/null 2>&1; then
     echo "ERROR: required command not found: ${cmd}" >&2
     exit 1
@@ -99,6 +104,16 @@ validate_json() {
   local file="$1" expr="$2" label="$3"
   if ! jq -e "${expr}" "${file}" >/dev/null 2>&1; then
     echo "ERROR: ${label} failed structure validation (${expr})" >&2
+    exit 1
+  fi
+}
+
+# validate_asset <format> <staged> <live> <label>
+# Runs the library's own validation over a staged asset; see validate-asset.mjs.
+validate_asset() {
+  local format="$1" staged="$2" live="$3" label="$4"
+  if ! node "${VALIDATE_ASSET}" "${format}" "${staged}" "${live}"; then
+    echo "ERROR: ${label} failed IP validation" >&2
     exit 1
   fi
 }
@@ -155,7 +170,7 @@ commit_asset() {
 #
 echo "Fetching FacebookBot IPs from WHOIS..."
 FB_RAW="${STAGE_DIR}/facebook-raw.txt"
-if ! whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{print $2}' | awk '!seen[$0]++' >"${FB_RAW}"; then
+if ! timeout 120 whois -h whois.radb.net -- '-i origin AS32934' | grep ^route | awk '{print $2}' | awk '!seen[$0]++' >"${FB_RAW}"; then
   echo "ERROR: Failed to fetch FacebookBot IPs from WHOIS" >&2
   exit 1
 fi
@@ -174,6 +189,8 @@ if [ ! -s "${FB_STAGE_V4}" ] || [ ! -s "${FB_STAGE_V6}" ]; then
   echo "ERROR: FacebookBot split produced an empty IPv4 or IPv6 list" >&2
   exit 1
 fi
+validate_asset lines-ipv4 "${FB_STAGE_V4}" "${ASSETS_DIR}/facebookbot-ip4s.txt" "FacebookBot IPv4"
+validate_asset lines-ipv6 "${FB_STAGE_V6}" "${ASSETS_DIR}/facebookbot-ip6s.txt" "FacebookBot IPv6"
 
 ##
 # GoogleBot
@@ -181,6 +198,7 @@ fi
 GOOGLEBOT_STAGE="${STAGE_DIR}/googlebot-ips.json"
 download "${GOOGLEBOT_URL}" "${GOOGLEBOT_STAGE}" "GoogleBot"
 validate_json "${GOOGLEBOT_STAGE}" '.prefixes | length > 0' "GoogleBot"
+validate_asset prefixes "${GOOGLEBOT_STAGE}" "${ASSETS_DIR}/googlebot-ips.json" "GoogleBot"
 
 ##
 # Google Special Crawlers (AdsBot, AdSense/Mediapartners, APIs-Google, Google-Safety)
@@ -188,6 +206,7 @@ validate_json "${GOOGLEBOT_STAGE}" '.prefixes | length > 0' "GoogleBot"
 GOOGLE_SPECIAL_STAGE="${STAGE_DIR}/google-special-crawlers.json"
 download "${GOOGLE_SPECIAL_URL}" "${GOOGLE_SPECIAL_STAGE}" "Google Special Crawlers"
 validate_json "${GOOGLE_SPECIAL_STAGE}" '.prefixes | length > 0' "Google Special Crawlers"
+validate_asset prefixes "${GOOGLE_SPECIAL_STAGE}" "${ASSETS_DIR}/google-special-crawlers.json" "Google Special Crawlers"
 
 ##
 # Google User-Triggered Fetchers (Gmail image proxy, Chrome prefetch proxy, Feedfetcher, etc.)
@@ -195,6 +214,7 @@ validate_json "${GOOGLE_SPECIAL_STAGE}" '.prefixes | length > 0' "Google Special
 GOOGLE_USER_FETCHERS_STAGE="${STAGE_DIR}/google-user-fetchers.json"
 download "${GOOGLE_USER_FETCHERS_URL}" "${GOOGLE_USER_FETCHERS_STAGE}" "Google User-Triggered Fetchers"
 validate_json "${GOOGLE_USER_FETCHERS_STAGE}" '.prefixes | length > 0' "Google User-Triggered Fetchers"
+validate_asset prefixes "${GOOGLE_USER_FETCHERS_STAGE}" "${ASSETS_DIR}/google-user-fetchers.json" "Google User-Triggered Fetchers"
 
 ##
 # Bingbot
@@ -202,6 +222,7 @@ validate_json "${GOOGLE_USER_FETCHERS_STAGE}" '.prefixes | length > 0' "Google U
 BINGBOT_STAGE="${STAGE_DIR}/bingbot-ips.json"
 download "${BINGBOT_URL}" "${BINGBOT_STAGE}" "Bingbot"
 validate_json "${BINGBOT_STAGE}" '.prefixes | length > 0' "Bingbot"
+validate_asset prefixes "${BINGBOT_STAGE}" "${ASSETS_DIR}/bingbot-ips.json" "Bingbot"
 
 ##
 # Applebot (Siri / Spotlight / Safari search suggestions)
@@ -209,6 +230,7 @@ validate_json "${BINGBOT_STAGE}" '.prefixes | length > 0' "Bingbot"
 APPLEBOT_STAGE="${STAGE_DIR}/applebot-ips.json"
 download "${APPLEBOT_URL}" "${APPLEBOT_STAGE}" "Applebot"
 validate_json "${APPLEBOT_STAGE}" '.prefixes | length > 0' "Applebot"
+validate_asset prefixes "${APPLEBOT_STAGE}" "${ASSETS_DIR}/applebot-ips.json" "Applebot"
 
 ##
 # GPTBot (OpenAI training crawler)
@@ -216,6 +238,7 @@ validate_json "${APPLEBOT_STAGE}" '.prefixes | length > 0' "Applebot"
 GPTBOT_STAGE="${STAGE_DIR}/gptbot-ips.json"
 download "${GPTBOT_URL}" "${GPTBOT_STAGE}" "GPTBot"
 validate_json "${GPTBOT_STAGE}" '.prefixes | length > 0' "GPTBot"
+validate_asset prefixes "${GPTBOT_STAGE}" "${ASSETS_DIR}/gptbot-ips.json" "GPTBot"
 
 ##
 # OAI-SearchBot (OpenAI search/indexing crawler)
@@ -223,6 +246,7 @@ validate_json "${GPTBOT_STAGE}" '.prefixes | length > 0' "GPTBot"
 OAI_SEARCHBOT_STAGE="${STAGE_DIR}/oai-searchbot-ips.json"
 download "${OAI_SEARCHBOT_URL}" "${OAI_SEARCHBOT_STAGE}" "OAI-SearchBot"
 validate_json "${OAI_SEARCHBOT_STAGE}" '.prefixes | length > 0' "OAI-SearchBot"
+validate_asset prefixes "${OAI_SEARCHBOT_STAGE}" "${ASSETS_DIR}/oai-searchbot-ips.json" "OAI-SearchBot"
 
 ##
 # ChatGPT-User (OpenAI user-triggered fetcher)
@@ -230,6 +254,7 @@ validate_json "${OAI_SEARCHBOT_STAGE}" '.prefixes | length > 0' "OAI-SearchBot"
 CHATGPT_USER_STAGE="${STAGE_DIR}/chatgpt-user-ips.json"
 download "${CHATGPT_USER_URL}" "${CHATGPT_USER_STAGE}" "ChatGPT-User"
 validate_json "${CHATGPT_USER_STAGE}" '.prefixes | length > 0' "ChatGPT-User"
+validate_asset prefixes "${CHATGPT_USER_STAGE}" "${ASSETS_DIR}/chatgpt-user-ips.json" "ChatGPT-User"
 
 ##
 # BunnyNet IPv4 (JSON array of addresses)
@@ -237,6 +262,7 @@ validate_json "${CHATGPT_USER_STAGE}" '.prefixes | length > 0' "ChatGPT-User"
 BUNNYNET_IP4_STAGE="${STAGE_DIR}/bunnynet-ip4s.json"
 download "${BUNNYNET_IP4_URL}" "${BUNNYNET_IP4_STAGE}" "BunnyNet IPv4"
 validate_json "${BUNNYNET_IP4_STAGE}" 'type == "array" and length > 0' "BunnyNet IPv4"
+validate_asset addresses "${BUNNYNET_IP4_STAGE}" "${ASSETS_DIR}/bunnynet-ip4s.json" "BunnyNet IPv4"
 
 ##
 # BunnyNet IPv6 (JSON array of addresses)
@@ -244,6 +270,7 @@ validate_json "${BUNNYNET_IP4_STAGE}" 'type == "array" and length > 0' "BunnyNet
 BUNNYNET_IP6_STAGE="${STAGE_DIR}/bunnynet-ip6s.json"
 download "${BUNNYNET_IP6_URL}" "${BUNNYNET_IP6_STAGE}" "BunnyNet IPv6"
 validate_json "${BUNNYNET_IP6_STAGE}" 'type == "array" and length > 0' "BunnyNet IPv6"
+validate_asset addresses "${BUNNYNET_IP6_STAGE}" "${ASSETS_DIR}/bunnynet-ip6s.json" "BunnyNet IPv6"
 
 ##
 # All downloads validated — now diff each against the live asset and commit

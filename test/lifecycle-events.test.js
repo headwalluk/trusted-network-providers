@@ -302,10 +302,9 @@ describe('Lifecycle Events', () => {
       trustedProviders.addProvider(multiReloadProvider);
       await trustedProviders.reloadAll();
 
-      // Should emit two success events (one per promise)
-      expect(successEvents.length).toBe(2);
+      // One success event for the provider, once every task has finished
+      expect(successEvents.length).toBe(1);
       expect(successEvents[0].provider).toBe('Multi Reload Provider');
-      expect(successEvents[1].provider).toBe('Multi Reload Provider');
     });
 
     test('should emit error events for failing promises in array', async () => {
@@ -319,7 +318,7 @@ describe('Lifecycle Events', () => {
         successEvents.push(data);
       };
 
-      registerListener('error', errorListener);
+      registerListener('reload:error', errorListener);
       registerListener('reload:success', successListener);
 
       // Create a provider with mixed success/failure promises
@@ -333,8 +332,9 @@ describe('Lifecycle Events', () => {
       trustedProviders.addProvider(mixedProvider);
       await trustedProviders.reloadAll();
 
-      expect(successEvents.length).toBe(1);
-      expect(successEvents[0].provider).toBe('Mixed Provider');
+      // Any failed task fails the provider as a whole
+      expect(successEvents.length).toBe(0);
+      expect(trustedProviders.getProviderStatus('Mixed Provider').state).toBe('error');
 
       expect(errorEvents.length).toBe(1);
       expect(errorEvents[0].provider).toBe('Mixed Provider');

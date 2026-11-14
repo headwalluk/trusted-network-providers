@@ -101,4 +101,35 @@ async function getExpectedChecksum(providerKey) {
   return providerConfig ? providerConfig.sha256 : null;
 }
 
-export { loadChecksums, verifyAssetChecksum, getExpectedChecksum };
+/**
+ * Reads a bundled asset and returns its contents only if they match the manifest.
+ * Throws if the manifest is unreadable, has no entry for the asset, or the hash differs.
+ * @param {string} filePath - Path to the asset
+ * @param {string} providerKey - Key in checksums.json
+ * @returns {Promise<string>} - The verified file contents
+ */
+async function readVerifiedAsset(filePath, providerKey) {
+  if (!cachedChecksums) {
+    const checksumsPath = path.join(__dirname, '../assets/checksums.json');
+    cachedChecksums = JSON.parse(await readFile(checksumsPath, 'utf8'));
+  }
+
+  const expectedChecksum = cachedChecksums.providers?.[providerKey]?.sha256;
+  if (!expectedChecksum) {
+    throw new Error(`No checksum configured for ${providerKey}; refusing to load ${filePath}`);
+  }
+
+  // One read serves both the hash and the caller, so the bytes checked are the bytes used
+  const fileContent = await readFile(filePath, 'utf8');
+  const actualChecksum = calculateSHA256(fileContent);
+  if (actualChecksum !== expectedChecksum) {
+    throw new Error(
+      `Checksum mismatch for ${providerKey} at ${filePath} ` +
+        `(expected ${expectedChecksum}, got ${actualChecksum}); refusing to load it`
+    );
+  }
+
+  return fileContent;
+}
+
+export { loadChecksums, verifyAssetChecksum, getExpectedChecksum, readVerifiedAsset };

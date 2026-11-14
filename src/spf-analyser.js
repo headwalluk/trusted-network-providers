@@ -22,6 +22,7 @@
 
 import dns from 'node:dns/promises';
 import logger from './utils/logger.js';
+import { createEmptySnapshot, replaceProviderData } from './utils/provider-data.js';
 
 // RFC 7208 §4.6.4 caps an SPF evaluation at 10 DNS-querying mechanisms. Includes
 // nest — mailgun.org points at _spf.mailgun.org, which points at _spf1/_spf2 —
@@ -76,8 +77,9 @@ const readSpfRecord = (spfRecord, collected, includeTargets) => {
         includeTargets.push(components[1]);
       }
     } else if (components[0] === 'ip4') {
+      // Exactly one colon; anything else is malformed rather than truncated into an address
       const possibleAddress = components[1];
-      if (possibleAddress !== undefined) {
+      if (components.length === 2 && possibleAddress) {
         if (possibleAddress.indexOf('/') > 0) {
           collected.ipv4.ranges.push(possibleAddress);
         } else {
@@ -87,7 +89,9 @@ const readSpfRecord = (spfRecord, collected, includeTargets) => {
     } else if (components[0] === 'ip6') {
       // IPv6 uses colon notation, so we can't split on ':' — use substring instead
       const possibleAddress = field.substring(4); // Skip "ip6:"
-      if (possibleAddress.indexOf('/') > 0) {
+      if (!possibleAddress) {
+        // An empty ip6: directive carries nothing
+      } else if (possibleAddress.indexOf('/') > 0) {
         collected.ipv6.ranges.push(possibleAddress);
       } else {
         collected.ipv6.addresses.push(possibleAddress);
@@ -105,16 +109,8 @@ const countCollected = (collected) =>
 
 export default async (domain, provider) => {
   try {
-    const collected = {
-      ipv4: {
-        addresses: [],
-        ranges: [],
-      },
-      ipv6: {
-        addresses: [],
-        ranges: [],
-      },
-    };
+    const collected = createEmptySnapshot();
+    const failedTargets = [];
     const includeTargets = [];
 
     // Step 1: Read the root record — inline IPs count, and includes are queued
@@ -145,6 +141,7 @@ export default async (domain, provider) => {
             readSpfRecord(spfRecord, collected, includeTargets);
           }
         } else {
+          failedTargets.push(currentLevel[resultIndex]);
           logger.error(
             `Failed to resolve SPF include ${currentLevel[resultIndex]} for ${provider.name}: ${result.reason.message}`
           );
@@ -161,14 +158,27 @@ export default async (domain, provider) => {
       );
     }
 
-    // Step 3: Replace provider data, but never with nothing. An SPF record that
-    // yields no IPs means the record changed shape or the lookup was poisoned;
-    // either way the previous data is better than an empty provider that
-    // silently reports every address as untrusted.
-    if (countCollected(collected) > 0) {
-      Object.assign(provider, collected);
+    // Step 3: Install the result only if it is complete and non-empty. A failure
+    // throws so reloadAll() reports the provider as failed and its last-updated
+    // time does not advance; the previous data stays in place.
+    if (countCollected(collected) === 0) {
+      throw new Error(`No SPF netblocks found for ${provider.name}; keeping previous data`);
+    }
+
+    const isComplete = failedTargets.length === 0 && pendingTargets.length === 0;
+    if (isComplete) {
+      replaceProviderData(provider, collected);
     } else {
-      logger.error(`Not updating ${provider.name} addresses because no SPF netblocks found`);
+      // A partial result is still better than nothing on a first load
+      const hasExistingData = countCollected(provider) > 0;
+      if (!hasExistingData) {
+        replaceProviderData(provider, collected);
+      }
+      const unresolvedTargets = [...failedTargets, ...pendingTargets].join(', ');
+      throw new Error(
+        `Incomplete SPF data for ${provider.name} (unresolved: ${unresolvedTargets}); ` +
+          (hasExistingData ? 'keeping previous data' : 'loaded partial data')
+      );
     }
   } catch (error) {
     logger.error(`Failed to analyse SPF records for ${provider.name}: ${error.message}`);

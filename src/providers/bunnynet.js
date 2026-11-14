@@ -4,9 +4,8 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readFile } from 'node:fs/promises';
-import ipaddr from 'ipaddr.js';
-import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
+import { readVerifiedAsset } from '../utils/checksum-verifier.js';
+import { replaceProviderData, snapshotFromAddressList } from '../utils/provider-data.js';
 import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,37 +16,18 @@ const self = {
   testAddresses: ['193.162.131.1', '200.25.16.103', '2400:52e0:1a01::907:1'],
   reload: async () => {
     try {
-      // Verify checksums of bundled assets
-      const ipv4Path = path.join(__dirname, '../assets/bunnynet-ip4s.json');
-      const ipv6Path = path.join(__dirname, '../assets/bunnynet-ip6s.json');
-      await verifyAssetChecksum(ipv4Path, 'bunnynet-ipv4', false);
-      await verifyAssetChecksum(ipv6Path, 'bunnynet-ipv6', false);
+      const ipv4Addresses = JSON.parse(
+        await readVerifiedAsset(path.join(__dirname, '../assets/bunnynet-ip4s.json'), 'bunnynet-ipv4')
+      );
+      const ipv6Addresses = JSON.parse(
+        await readVerifiedAsset(path.join(__dirname, '../assets/bunnynet-ip6s.json'), 'bunnynet-ipv6')
+      );
 
-      // Clear existing data
-      self.ipv4.ranges.length = 0;
-      self.ipv6.ranges.length = 0;
-      self.ipv4.addresses.length = 0;
-      self.ipv6.addresses.length = 0;
-
-      const newIps = [];
-      const sources = [
-        path.join(__dirname, '../assets/bunnynet-ip4s.json'),
-        path.join(__dirname, '../assets/bunnynet-ip6s.json'),
-      ];
-
-      for (const source of sources) {
-        newIps.push(...JSON.parse(await readFile(source, 'utf8')));
+      if (!Array.isArray(ipv4Addresses) || !Array.isArray(ipv6Addresses)) {
+        throw new Error('Expected each BunnyNet asset to be an array of addresses');
       }
 
-      newIps.forEach((address) => {
-        const parsedIp = ipaddr.parse(address);
-
-        if (parsedIp.kind() === 'ipv4') {
-          self.ipv4.addresses.push(address);
-        } else if (parsedIp.kind() === 'ipv6') {
-          self.ipv6.addresses.push(address);
-        }
-      });
+      replaceProviderData(self, snapshotFromAddressList([...ipv4Addresses, ...ipv6Addresses]));
     } catch (error) {
       logger.error(`Failed to load BunnyNet IPs: ${error.message}`);
       throw error;

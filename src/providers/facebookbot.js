@@ -2,10 +2,10 @@
  * facebookbot.js
  */
 
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
+import { readVerifiedAsset } from '../utils/checksum-verifier.js';
+import { createEmptySnapshot, nonBlankLines, replaceProviderData } from '../utils/provider-data.js';
 import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,37 +15,18 @@ const self = {
   name: 'FacebookBot',
   testAddresses: ['57.141.0.3'],
   reload: async () => {
-    // Clear existing data
-    self.ipv4.ranges.length = 0;
-    self.ipv6.ranges.length = 0;
-
     try {
-      const assetPath = path.resolve(__dirname, '../assets/facebookbot-ip4s.txt');
-      await verifyAssetChecksum(assetPath, 'facebookbot-ipv4', false);
-      const data = await readFile(assetPath, 'utf8');
-      const ranges = data.split('\n');
-      ranges.forEach((range) => {
-        if (range.length) {
-          self.ipv4.ranges.push(range);
-        }
-      });
-    } catch (error) {
-      logger.error(`Failed to load FacebookBot IPv4 IPs: ${error.message}`);
-      throw error;
-    }
+      const snapshot = createEmptySnapshot();
+      snapshot.ipv4.ranges = nonBlankLines(
+        await readVerifiedAsset(path.resolve(__dirname, '../assets/facebookbot-ip4s.txt'), 'facebookbot-ipv4')
+      );
+      snapshot.ipv6.ranges = nonBlankLines(
+        await readVerifiedAsset(path.resolve(__dirname, '../assets/facebookbot-ip6s.txt'), 'facebookbot-ipv6')
+      );
 
-    try {
-      const assetPath = path.resolve(__dirname, '../assets/facebookbot-ip6s.txt');
-      await verifyAssetChecksum(assetPath, 'facebookbot-ipv6', false);
-      const data = await readFile(assetPath, 'utf8');
-      const ranges = data.split('\n');
-      ranges.forEach((range) => {
-        if (range.length) {
-          self.ipv6.ranges.push(range);
-        }
-      });
+      replaceProviderData(self, snapshot);
     } catch (error) {
-      logger.error(`Failed to load FacebookBot IPv6 IPs: ${error.message}`);
+      logger.error(`Failed to load FacebookBot IPs: ${error.message}`);
       throw error;
     }
   },

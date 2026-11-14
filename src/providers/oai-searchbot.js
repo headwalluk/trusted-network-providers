@@ -15,10 +15,7 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readFile } from 'node:fs/promises';
-import { fetchJSON } from '../utils/secure-http-client.js';
-import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
-import logger from '../utils/logger.js';
+import { fetchPrefixes, loadBundledPrefixes } from '../utils/prefix-feed.js';
 import { PROVIDER_CATEGORY_AI_CRAWLER } from '../categories.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,55 +28,10 @@ const self = {
   category: PROVIDER_CATEGORY_AI_CRAWLER,
   testAddresses: ['135.234.64.1', '104.210.140.129'],
   reload: async () => {
-    try {
-      // Verify checksum of bundled asset
-      const assetPath = path.join(__dirname, '../assets/oai-searchbot-ips.json');
-      await verifyAssetChecksum(assetPath, 'oai-searchbot', false);
-
-      // Clear existing ranges
-      self.ipv4.ranges.length = 0;
-      self.ipv6.ranges.length = 0;
-
-      const newIps = JSON.parse(await readFile(assetPath, 'utf8'));
-      newIps.prefixes.forEach((range) => {
-        if (range.ipv4Prefix) {
-          self.ipv4.ranges.push(range.ipv4Prefix);
-        }
-
-        if (range.ipv6Prefix) {
-          self.ipv6.ranges.push(range.ipv6Prefix);
-        }
-      });
-    } catch (error) {
-      logger.error(`Failed to load OAI-SearchBot IPs: ${error.message}`);
-      throw error;
-    }
+    await loadBundledPrefixes(self, path.join(__dirname, '../assets/oai-searchbot-ips.json'), 'oai-searchbot');
   },
   reloadFromWeb: async () => {
-    try {
-      const data = await fetchJSON(OAI_SEARCHBOT_ADDRESS_LIST_URL);
-
-      if (data && data.prefixes && Array.isArray(data.prefixes)) {
-        // Clear existing ranges
-        self.ipv4.ranges.length = 0;
-        self.ipv6.ranges.length = 0;
-
-        data.prefixes.forEach((range) => {
-          if (range.ipv4Prefix) {
-            self.ipv4.ranges.push(range.ipv4Prefix);
-          }
-
-          if (range.ipv6Prefix) {
-            self.ipv6.ranges.push(range.ipv6Prefix);
-          }
-        });
-      } else {
-        throw new Error('Invalid response format from OAI-SearchBot API');
-      }
-    } catch (error) {
-      logger.error(`Failed to reload OAI-SearchBot IPs from web: ${error.message}`);
-      throw error;
-    }
+    await fetchPrefixes(self, OAI_SEARCHBOT_ADDRESS_LIST_URL);
   },
   ipv4: {
     addresses: [],

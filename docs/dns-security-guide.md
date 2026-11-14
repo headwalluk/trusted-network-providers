@@ -99,10 +99,10 @@ console.log(provider); // "Google Workspace" ❌ Attacker's IP!
 
 ```javascript
 // src/providers/google-workspace.js
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { verifyAssetChecksum } from '../utils/checksum-verifier.js';
+import { readVerifiedAsset } from '../utils/checksum-verifier.js';
+import { replaceProviderData } from '../utils/provider-data.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
@@ -110,22 +110,14 @@ const self = {
   name: 'Google Workspace',
   testAddresses: ['216.58.192.190'],
 
-  // Load from bundled asset instead of DNS
+  // Load from bundled asset instead of DNS. readVerifiedAsset() refuses a file
+  // whose hash does not match checksums.json, and replaceProviderData()
+  // validates the whole snapshot before swapping it in, so a bad asset leaves
+  // the previous data in place.
   reload: async () => {
     const assetPath = path.join(currentDirectory, '../assets/google-workspace-ips.json');
-    await verifyAssetChecksum(assetPath, 'google-workspace', false);
-
-    const data = JSON.parse(await readFile(assetPath, 'utf8'));
-
-    self.ipv4.addresses.length = 0;
-    self.ipv4.ranges.length = 0;
-    self.ipv6.addresses.length = 0;
-    self.ipv6.ranges.length = 0;
-
-    self.ipv4.addresses.push(...data.ipv4.addresses);
-    self.ipv4.ranges.push(...data.ipv4.ranges);
-    self.ipv6.addresses.push(...data.ipv6.addresses);
-    self.ipv6.ranges.push(...data.ipv6.ranges);
+    const data = JSON.parse(await readVerifiedAsset(assetPath, 'google-workspace'));
+    replaceProviderData(self, data);
   },
 
   ipv4: { addresses: [], ranges: [] },

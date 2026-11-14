@@ -4,35 +4,35 @@ This document lists all built-in providers and explains how to add your own.
 
 ## Provider Reference
 
-| Provider                       | Type          | Data Source                               | Update Method                |
-| ------------------------------ | ------------- | ----------------------------------------- | ---------------------------- |
-| Private                        | Static        | RFC 1918/4193 ranges                      | None (fixed)                 |
-| Googlebot                      | Bundled asset | `src/assets/googlebot-ips.json`           | `./scripts/update-assets.sh` |
-| Google Special Crawlers        | Bundled asset | `src/assets/google-special-crawlers.json` | `./scripts/update-assets.sh` |
-| Google User-Triggered Fetchers | Bundled asset | `src/assets/google-user-fetchers.json`    | `./scripts/update-assets.sh` |
-| Bingbot                        | Bundled asset | `src/assets/bingbot-ips.json`             | `./scripts/update-assets.sh` |
-| Applebot                       | Bundled asset | `src/assets/applebot-ips.json`            | `./scripts/update-assets.sh` |
-| GPTBot                         | Bundled asset | `src/assets/gptbot-ips.json`              | `./scripts/update-assets.sh` |
-| OAI-SearchBot                  | Bundled asset | `src/assets/oai-searchbot-ips.json`       | `./scripts/update-assets.sh` |
-| ChatGPT-User                   | Bundled asset | `src/assets/chatgpt-user-ips.json`        | `./scripts/update-assets.sh` |
-| Google Workspace               | DNS/SPF       | `_spf.google.com`                         | `reloadAll()`                |
-| Google Services                | Static        | `8.8.8.8`, `8.8.4.4`                      | None (fixed)                 |
-| Stripe API                     | HTTP API      | `stripe.com/files/ips/ips_api.json`       | `reloadAll()`                |
-| Stripe Webhooks                | HTTP API      | `stripe.com/files/ips/ips_webhooks.json`  | `reloadAll()`                |
-| Opayo                          | Static        | Hardcoded ranges                          | None (fixed)                 |
-| PayPal                         | Static        | Hardcoded ranges                          | None (fixed)                 |
-| MS Outlook                     | Static        | Hardcoded ranges                          | None (fixed)                 |
-| Cloudflare                     | Static        | Hardcoded ranges                          | None (fixed)                 |
-| Ezoic                          | Static        | Hardcoded ranges                          | None (fixed)                 |
-| ShipHero                       | Static        | Hardcoded addresses                       | None (fixed)                 |
-| BunnyNet                       | Bundled asset | `src/assets/bunnynet-ip*.json`            | `./scripts/update-assets.sh` |
-| SemrushBot                     | Static        | Hardcoded ranges                          | None (fixed)                 |
-| AhrefsBot                      | Static        | Hardcoded ranges                          | None (fixed)                 |
-| FacebookBot                    | Bundled asset | `src/assets/facebookbot-ip*.txt`          | `./scripts/update-assets.sh` |
-| Brevo                          | Static        | Hardcoded ranges                          | None (fixed)                 |
-| GetTerms                       | Static        | Hardcoded address                         | None (fixed)                 |
-| Labrika                        | Static        | Hardcoded addresses                       | None (fixed)                 |
-| Mailgun                        | DNS/SPF       | `mailgun.org`                             | `reloadAll()`                |
+| Provider                       | Type          | Data Source                                      | Update Method                |
+| ------------------------------ | ------------- | ------------------------------------------------ | ---------------------------- |
+| Private                        | Static        | RFC 1918/4193, loopback (incl. `::1`), multicast | None (fixed)                 |
+| Googlebot                      | Bundled asset | `src/assets/googlebot-ips.json`                  | `./scripts/update-assets.sh` |
+| Google Special Crawlers        | Bundled asset | `src/assets/google-special-crawlers.json`        | `./scripts/update-assets.sh` |
+| Google User-Triggered Fetchers | Bundled asset | `src/assets/google-user-fetchers.json`           | `./scripts/update-assets.sh` |
+| Bingbot                        | Bundled asset | `src/assets/bingbot-ips.json`                    | `./scripts/update-assets.sh` |
+| Applebot                       | Bundled asset | `src/assets/applebot-ips.json`                   | `./scripts/update-assets.sh` |
+| GPTBot                         | Bundled asset | `src/assets/gptbot-ips.json`                     | `./scripts/update-assets.sh` |
+| OAI-SearchBot                  | Bundled asset | `src/assets/oai-searchbot-ips.json`              | `./scripts/update-assets.sh` |
+| ChatGPT-User                   | Bundled asset | `src/assets/chatgpt-user-ips.json`               | `./scripts/update-assets.sh` |
+| Google Workspace               | DNS/SPF       | `_spf.google.com`                                | `reloadAll()`                |
+| Google Services                | Static        | `8.8.8.8`, `8.8.4.4`                             | None (fixed)                 |
+| Stripe API                     | HTTP API      | `stripe.com/files/ips/ips_api.json`              | `reloadAll()`                |
+| Stripe Webhooks                | HTTP API      | `stripe.com/files/ips/ips_webhooks.json`         | `reloadAll()`                |
+| Opayo                          | Static        | Hardcoded ranges                                 | None (fixed)                 |
+| PayPal                         | Static        | Hardcoded ranges                                 | None (fixed)                 |
+| MS Outlook                     | Static        | Hardcoded ranges                                 | None (fixed)                 |
+| Cloudflare                     | Static        | Hardcoded ranges                                 | None (fixed)                 |
+| Ezoic                          | Static        | Hardcoded ranges                                 | None (fixed)                 |
+| ShipHero                       | Static        | Hardcoded addresses                              | None (fixed)                 |
+| BunnyNet                       | Bundled asset | `src/assets/bunnynet-ip*.json`                   | `./scripts/update-assets.sh` |
+| SemrushBot                     | Static        | Hardcoded ranges                                 | None (fixed)                 |
+| AhrefsBot                      | Static        | Hardcoded ranges                                 | None (fixed)                 |
+| FacebookBot                    | Bundled asset | `src/assets/facebookbot-ip*.txt`                 | `./scripts/update-assets.sh` |
+| Brevo                          | Static        | Hardcoded ranges                                 | None (fixed)                 |
+| GetTerms                       | Static        | Hardcoded address                                | None (fixed)                 |
+| Labrika                        | Static        | Hardcoded addresses                              | None (fixed)                 |
+| Mailgun                        | DNS/SPF       | `mailgun.org`                                    | `reloadAll()`                |
 
 ### AI Crawlers
 

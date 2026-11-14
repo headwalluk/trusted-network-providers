@@ -10,14 +10,17 @@ The library fetches IP ranges from external sources (APIs, DNS, bundled JSON ass
 
 All HTTP requests are routed through `secure-http-client.js` which enforces:
 
-- **HTTPS-only** — plain HTTP URLs are rejected
+- **HTTPS-only** — plain HTTP URLs are rejected, including a redirect that lands on one
 - **Strict certificate validation** — expired, self-signed, and untrusted certificates are rejected without retry
-- **Timeouts** — requests abort after 30 seconds (configurable)
+- **Timeouts** — requests abort after 30 seconds (configurable), and the deadline covers reading the body, not just the headers
+- **Size limit** — response bodies over 5 MiB are rejected (`maxResponseBytes`)
 - **Retries** — transient failures (5xx, network errors) are retried up to 2 times with linear backoff
 
 ### Checksum Verification
 
-Every bundled asset — the Google crawler feeds, Bingbot, Applebot, the three OpenAI crawler feeds, BunnyNet and FacebookBot — is verified against SHA-256 checksums stored in `src/assets/checksums.json`. This detects file corruption or tampering. See [providers.md](providers.md) for the full list.
+Every bundled asset — the Google crawler feeds, Bingbot, Applebot, the three OpenAI crawler feeds, BunnyNet and FacebookBot — is verified against SHA-256 checksums stored in `src/assets/checksums.json`. An asset whose hash does not match, or that has no manifest entry, is refused: the reload fails and the provider keeps its previous data. This detects file corruption or an edited asset; it does not authenticate where the data came from, since the manifest ships alongside the assets. See [providers.md](providers.md) for the full list.
+
+Every reload — bundled, HTTP or SPF — builds a complete snapshot and validates it (address syntax, CIDR syntax, family, entry count, non-empty) before swapping it in. A failed or incomplete reload never empties or half-replaces a provider.
 
 Update checksums when refreshing bundled assets:
 
@@ -33,7 +36,9 @@ API responses (e.g., Stripe) are validated at runtime to confirm they match expe
 
 - Maximum 100 providers
 - Maximum 10,000 IPs/ranges per provider
-- All CIDR ranges validated on registration
+- All CIDR ranges and exact addresses validated on registration, including that each sits in the right family pool
+- Lookups normalise the address first: IPv4-mapped IPv6 (`::ffff:192.0.2.1`) is matched as IPv4, and any spelling of an IPv6 address matches its exact entry
+- Non-string lookup input returns `null`; overlong input is truncated in error logs
 
 ## DNS-Based Providers
 
