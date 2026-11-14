@@ -1,6 +1,6 @@
 {
   "name": "@headwall/trusted-network-providers",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "Trusted network hosts and address ranges.",
   "type": "module",
   "main": "./src/index.js",
@@ -70,8 +70,12 @@
   ],
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.10.0",
+    "eslint": "^10.15.0",
     "jest": "^30.2.0",
-    "prettier": "^3.6.2"
+    "prettier": "^3.10.1"
+  },
+  "overrides": {
+    "glob": "^14.0.6",
+    "minimatch": "^11.0.8"
   }
 }

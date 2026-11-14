@@ -18,7 +18,7 @@
     },
     "bingbot": {
       "url": "https://www.bing.com/toolbox/bingbot.json",
-      "sha256": "a2d1cf229544205a24c61fb7c459408b1afe18f9fd5b172fe181f0eb73c1594d",
+      "sha256": "14a769e25c9cc745889fb985850415eb901d519404c66206b796e93978eacab5",
       "comment": "Bundled asset - checksum verified on load"
     },
     "applebot": {
@@ -38,27 +38,27 @@
     },
     "chatgpt-user": {
       "url": "https://openai.com/chatgpt-user.json",
-      "sha256": "e03a9f75b53619286d990e028043ce43d223d93269f3679b28d78142b8f0e7ab",
+      "sha256": "7d467d6cdf1f68d9339072bfb7077ee145bba31ba6471f067b2c70b7b4674de9",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv4": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist",
-      "sha256": "f9cef368ae6059c2d4ca6fd022ace8fa2915125ecaf810320aa5023e8c53b63f",
+      "sha256": "57cafb6e52b86126d4d104a8053072c11ce79c710542e69c1dd6f75188828bb9",
       "comment": "Bundled asset - checksum verified on load"
     },
     "bunnynet-ipv6": {
       "url": "https://bunnycdn.com/api/system/edgeserverlist/IPv6",
-      "sha256": "f3b61fdd8f3833fc839776d704a5e049ecd6f885e318348d8408ec76877a5111",
+      "sha256": "52e12769631034490aa2e12c87023da5a31ce203aab6a5eb40c5fe4389c407bd",
       "comment": "Bundled asset - checksum verified on load"
     },
     "facebookbot-ipv4": {
       "url": "whois.radb.net -i origin AS32934 (IPv4 routes)",
-      "sha256": "395437c572f2d0629ca209ee58d657598cbd4368426c16b9e3a3aa408766b71a",
+      "sha256": "c07c59b86217b13efbc7b92f294eafaea63ed7bfe082dbf1fec6a9c80ded7c03",
       "comment": "Bundled asset - checksum verified on load"
     },
     "facebookbot-ipv6": {
       "url": "whois.radb.net -i origin AS32934 (IPv6 routes)",
-      "sha256": "c933ade57d88eea67efb04ad55cea310bc6424d463a21746c534a992e2b42f99",
+      "sha256": "7200e813eafc65fe73e495c42579f9f5d568d1b9d721e4c5a419d510ee2d4864",
       "comment": "Bundled asset - checksum verified on load"
     },
     "stripe-api": {
@@ -72,5 +72,5 @@
       "comment": "Runtime verification - structure validation used instead (data changes frequently)"
     }
   },
-  "lastUpdated": "2026-10-26T18:38:41Z"
+  "lastUpdated": "2026-11-14T06:17:18Z"
 }

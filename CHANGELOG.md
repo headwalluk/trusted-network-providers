@@ -1,5 +1,38 @@
 # Changelog for @headwall/trusted-network-providers
 
+## 3.3.1 :: 2026-11-14
+
+### 🔄 Bundled IP assets refreshed
+
+Routine monthly refresh via `scripts/update-assets.sh`. Data only — no code
+change.
+
+| Asset | Change |
+| --- | --- |
+| `facebookbot-ip4s.txt` | 437 → 439 routes |
+| `facebookbot-ip6s.txt` | 654 → 656 routes |
+| `bingbot-ips.json` | 28 → 29 prefixes |
+| `chatgpt-user-ips.json` | 234 → 237 prefixes |
+| `bunnynet-ip4s.json` | 584 → 587 addresses |
+| `bunnynet-ip6s.json` | 321 → 339 addresses |
+
+Unchanged: `googlebot-ips.json`, `google-special-crawlers.json`,
+`google-user-fetchers.json`, `applebot-ips.json`, `gptbot-ips.json`,
+`oai-searchbot-ips.json`.
+
+The Cloudflare provider's static ranges were checked against
+`cloudflare.com/ips-v4` and `/ips-v6` and still match exactly.
+
+### 🔧 Maintenance
+
+- Dev toolchain: `eslint` 10.11.0 → 10.15.0, `prettier` 3.9.8 → 3.10.1.
+- `overrides` pin `glob` ^14.0.6 and `minimatch` ^11.0.8, clearing the
+  moderate advisories GHSA-3g3m-2fjr-6pw4 and GHSA-g3hv-75wg-m249 in jest's
+  transitive tree (jest 30.5.2 is already the latest).
+- Outstanding, dev-only: `deepmerge` (GHSA-gcqx-w48m-w2h4, via
+  `jest-config`) has no fixed release; 5 low-severity entries remain.
+  `npm audit --omit=dev` is clean.
+
 ## 3.3.0 :: 2026-11-09
 
 ### ✨ Public DNS resolver providers
