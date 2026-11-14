@@ -47,6 +47,10 @@ wrong verdict, and a failed refresh must never quietly change what is trusted.
 
 ### ⚠️ Behaviour changes
 
+- **SPF providers (Google Workspace, Mailgun) fail more often.** An include
+  that can't be resolved now fails the reload instead of being a silent partial
+  success, so expect occasional `error` states during upstream DNS trouble. The
+  previous data stays in use throughout.
 - **`reload:error` is now emitted**, as the README always documented. The
   `error` event is deprecated: it is still emitted, but only while an `error`
   listener is registered, so an unheard failure no longer replaces the
