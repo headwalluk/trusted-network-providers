@@ -162,3 +162,6 @@ Desktop.ini
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Local development notes (not tracked)
+dev-notes/
